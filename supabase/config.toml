@@ -1,0 +1,6 @@
+[functions.fotos-proposta]
+verify_jwt = false
+[functions.assistente-oficina]
+verify_jwt = false
+[functions.automacoes-oficina]
+verify_jwt = false

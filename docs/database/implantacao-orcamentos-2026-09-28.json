@@ -1,0 +1,11 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migracao": "20260928000700_fluxo_orcamentos.sql",
+  "sha256": "88CDB076DC1C5EFA934B629AD2D3FC5ED4E57A74089503E9874011AA2D727328",
+  "aplicada_em": "2026-09-28",
+  "metodo": "SQL Editor do Supabase",
+  "resultado": "Success. No rows returned",
+  "avaliacao": {"oficina": "Oficina do Marcelo", "plano": "intermediate", "situacao": "trialing", "valido_ate": "2026-10-28T22:41:37.673895Z", "cobranca": false},
+  "testes_locais": 25,
+  "observacao": "Histórico do Supabase CLI ainda precisa ser conciliado."
+}

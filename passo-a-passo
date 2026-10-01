@@ -1,0 +1,17 @@
+- O sistema deverá ser simples de usar, funcional, profissional, intuitivo e muito bonito. Fazer ele completamente responsivo para o mecanico utilizar com a mão suja no celular rapidamente.
+- O sistema deverá conseguir criar orçamentos e ordens de serviço de forma rápida e prática, sem o mecânico precisar perder muito tempo.
+- Ao mesmo tempo que deve ser simples e rápido, também deve ser completo e funcional. A ordem de serviço precisa ter todos os campos e histórico do serviço, o usuario poderá anexar fotos de antes e depois. O orçamento poderá ser transformado em OS de forma rápida.
+- O sistema terá 3 planos. o básico que será só cadastro de clientes e fazer notinhas, cadastro de serviços e produtos. o intermediario que terá praticamente todas as funções que vamos fazer e o completo que vai ter IA e automação juntamente com i site
+- o plano fodão terá conexão com o site criado para o cliente, o dono do carro terá uma área onde poderá consultar seus serviços e andamentos, assim como fazer pedido de peças se a oficina permitir.
+- O sistema deverá apresentar ao usuário de forma simples e fácil de visualizar o ''mapa'' da oficina. Todos os carros que estão lá, suas situações, porque está parado, data prometida de entrega, etc etc... para uma fácil e profissional gestão da produção da oficina.
+- Tecnologias utilizadas: typescript, tailwind, react query, supabase
+
+Ordem	O que falta	Por que importa
+
+
+4	Publicar o sistema	O aplicativo está local. O cliente precisa conseguir abrir o orçamento e aprovar pelo próprio celular, fora do computador da oficina.
+
+
+
+
+

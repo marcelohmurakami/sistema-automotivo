@@ -1,0 +1,67 @@
+.preco-plano {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.preco-plano small {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.painel-cobranca {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid var(--borda, #d5ddd9);
+  border-radius: 20px;
+}
+.painel-cobranca h2 {
+  margin: 8px 0;
+}
+.painel-cobranca p {
+  max-width: 76ch;
+  line-height: 1.65;
+}
+.campos-cobranca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 20px 0;
+}
+.campos-cobranca label {
+  display: grid;
+  gap: 8px;
+  flex: 1 1 240px;
+}
+.campos-cobranca select {
+  padding: 12px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--borda, #d5ddd9);
+  background: var(--superficie, #fff);
+  color: inherit;
+  font: inherit;
+  width: 100%;
+}
+.acoes-cobranca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.historico-cobranca {
+  list-style: none;
+  padding: 0;
+}
+.historico-cobranca li {
+  display: grid;
+  gap: 5px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--borda, #d5ddd9);
+}
+.historico-cobranca time {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+@media (max-width: 600px) {
+  .painel-cobranca {
+    padding: 18px;
+  }
+}

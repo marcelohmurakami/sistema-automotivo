@@ -1,0 +1,10 @@
+begin;
+revoke insert,update,delete on public.notas_atendimento,public.itens_nota_atendimento from authenticated,anon;
+create function private.pode_ler_foto_orcamento(p_caminho text) returns boolean language sql stable security definer set search_path='' as $$ select not exists(select 1 from public.arquivos f join public.anexos_orcamento a on a.arquivo_id=f.id and a.oficina_id=f.oficina_id where f.caminho_arquivo=p_caminho and not private.has_feature(f.oficina_id,'quotes')); $$;
+revoke all on function private.pode_ler_foto_orcamento(text) from public,anon,authenticated;
+grant execute on function private.pode_ler_foto_orcamento(text) to authenticated;
+create policy foto_orcamento_plano on storage.objects as restrictive for select to authenticated using(bucket_id<>'workshop-files' or private.pode_ler_foto_orcamento(name));
+create function public.consultar_sugestoes_ia(p_oficina uuid) returns jsonb language plpgsql security definer set search_path='' as $$begin perform private.require_staff(p_oficina);if not private.has_feature(p_oficina,'ai') then raise exception 'IA indisponível.' using errcode='42501';end if;return (select coalesce(jsonb_agg(jsonb_build_object('id',id,'situacao',situacao,'criado_em',criado_em,'sugestao',resultado->>'sugestao') order by criado_em desc),'[]') from (select * from public.execucoes_ia where oficina_id=p_oficina and solicitado_por=auth.uid() order by criado_em desc limit 20) e);end $$;
+revoke all on function public.consultar_sugestoes_ia(uuid) from public,anon,authenticated;
+grant execute on function public.consultar_sugestoes_ia(uuid) to authenticated;
+notify pgrst,'reload schema';commit;

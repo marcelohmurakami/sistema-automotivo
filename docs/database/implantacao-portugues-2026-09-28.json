@@ -1,0 +1,20 @@
+{
+  "data": "2026-09-28",
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migracao": "20260928000500_nomes_em_portugues.sql",
+  "sha256": "C58E9D7616111593B60988A8035D40B70535C37E0ABD03A0D0139689B9C5FC08",
+  "aplicada": true,
+  "metodo": "Editor SQL do Supabase",
+  "verificacao_remota": {
+    "tabelas_com_rls": 48,
+    "campos_com_comentarios": 526,
+    "operacoes_publicas_portugues": 9,
+    "mapa": "mapa_oficina",
+    "acesso_anonimo_tabelas": 0
+  },
+  "testes_locais": {
+    "banco_traduzido": 63,
+    "migracao_com_dados": 115
+  },
+  "historico_cli_conciliado": false
+}

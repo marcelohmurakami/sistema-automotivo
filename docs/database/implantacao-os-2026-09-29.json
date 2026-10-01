@@ -1,0 +1,17 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "aplicada_em": "2026-09-29",
+  "metodo": "SQL Editor do Supabase",
+  "resultado": "Success. No rows returned",
+  "migracoes": [
+    {
+      "arquivo": "20260928000800_modulo_ordens_servico.sql",
+      "sha256": "af3d83bd363c74c8f38e9332d4c33363a6724a81fe2e4745132e3a83f78e3e90"
+    },
+    {
+      "arquivo": "20260929000100_correcao_itens_os.sql",
+      "sha256": "0c66f59df08cd703e379807e003c8a67641a4a244f9f17551ca4ad726b56c3ac"
+    }
+  ],
+  "verificacoes_locais": 28
+}

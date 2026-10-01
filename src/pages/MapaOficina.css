@@ -1,0 +1,84 @@
+.mapa-real .quadro {
+  grid-template-columns: repeat(5, minmax(215px, 1fr));
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+.mapa-real .etapas-mapa-real {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.mapa-real .etapas-mapa-real button {
+  min-height: 44px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.mapa-real .etapas-mapa-real button.ativo {
+  background: var(--tema-fundo-2f3928, #2f3928);
+  color: var(--tema-texto-eef6e0, #eef6e0);
+  font-weight: 700;
+}
+.mapa-responsavel,
+.mapa-nota {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.mapa-atualizacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 22px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.mapa-real .motivo-parada,
+.mapa-real .servico-cartao {
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.mapa-real .prazo {
+  white-space: normal;
+  text-align: left;
+}
+.mapa-real .abas-filtro {
+  overflow-x: auto;
+}
+.mapa-real .abas-filtro button {
+  flex-shrink: 0;
+}
+.mapa-real .coluna-etapa {
+  min-height: 200px;
+}
+.conferencia .ponto-etapa {
+  background: #8276b7;
+}
+.mapa-real .linha-veiculo small {
+  overflow-wrap: anywhere;
+}
+.mapa-real .barra-mapa {
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .mapa-real .quadro {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+  .mapa-real .coluna-etapa {
+    min-height: 0;
+  }
+  .mapa-real .mapa-atualizacao {
+    align-items: flex-start;
+  }
+  .mapa-real .abas-filtro {
+    max-width: 100%;
+  }
+}

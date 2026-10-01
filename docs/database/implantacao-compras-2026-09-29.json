@@ -1,0 +1,20 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migracao": "20260929000600_fornecedores_compras_pagamentos_os.sql",
+  "sha256": "b03e76f67a2b63d55ad835485263f5e6d509f54beef99fa3e348f660bdfa35a5",
+  "aplicada_em": "2026-09-29T20:09:19.647Z",
+  "resultado_editor": "Success. No rows returned",
+  "verificacao_remota": {
+    "papel": "authenticated",
+    "fornecedores": "consulta bem-sucedida, sem registros",
+    "compras": "consulta bem-sucedida, sem registros",
+    "financeiro": "consulta bem-sucedida, totais zerados"
+  },
+  "testes_locais": {
+    "compras": 36,
+    "financeiro": 37,
+    "estoque": 27,
+    "gestao": 22
+  },
+  "dados_ficticios": "somente no banco local de validação e na demonstração do navegador"
+}

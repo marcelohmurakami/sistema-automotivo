@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {lerCatalogoDemo,salvarCatalogoDemo,filtrarCatalogo} from '../../src/lib/catalogo.ts';
+const armazenamento=new Map();globalThis.localStorage={getItem:k=>armazenamento.get(k)??null,setItem:(k,v)=>armazenamento.set(k,String(v)),removeItem:k=>armazenamento.delete(k)};
+let n=0;const ok=(v,msg)=>{assert.ok(v,msg);n++;console.log('PASS',msg)};
+const produto={id:'p1',descricao:'Filtro de óleo',unidade:'un',preco_padrao_centavos:3500,arquivado_em:null,revisao:3,saldo:2,minimo:1,custo_centavos:2000,codigo:'F1',localizacao:'A1',fornecedor:'Fornecedor'};
+localStorage.setItem('patio_estoque_v1',JSON.stringify({produtos:[produto],movimentos:[]}));
+let p=lerCatalogoDemo().find(i=>i.id==='p1');ok(p.preco_padrao_centavos===3500,'catálogo usa produto real do estoque');
+salvarCatalogoDemo({...p,preco_padrao_centavos:4500,favorito:true},false);const e=JSON.parse(localStorage.getItem('patio_estoque_v1')).produtos[0];ok(e.saldo===2&&e.custo_centavos===2000&&e.preco_padrao_centavos===4500,'edição sincroniza preço sem mexer no saldo ou custo');
+assert.throws(()=>salvarCatalogoDemo({...p,descricao:'Antigo'},false));n++;console.log('PASS edição concorrente rejeitada');
+p=lerCatalogoDemo().find(i=>i.id==='p1');assert.throws(()=>salvarCatalogoDemo({...p,arquivado_em:new Date().toISOString()},false));n++;console.log('PASS produto com saldo não arquiva');
+const servico={id:'s1',descricao:'Revisão da suspensão',tipo:'service',unidade:'serv',preco_padrao_centavos:15000,favorito:true,arquivado_em:null,revisao:1};salvarCatalogoDemo(servico,true);
+ok(filtrarCatalogo(lerCatalogoDemo(),'suspensao','service','ativos',true).length===1,'busca sem acentos e filtro favoritos');
+salvarCatalogoDemo({...servico,arquivado_em:new Date().toISOString()},false);ok(!filtrarCatalogo(lerCatalogoDemo(),'suspensao','service','ativos',false).length,'arquivado sai da seleção ativa');
+let s=lerCatalogoDemo().find(i=>i.id==='s1');salvarCatalogoDemo({...s,arquivado_em:null},false);ok(filtrarCatalogo(lerCatalogoDemo(),'suspensao','service','ativos',false).length===1,'restauração retorna serviço à seleção');
+localStorage.setItem('patio_os_v1',JSON.stringify([{situacao:'open',itens:[{item_catalogo_id:'s1'}]}]));s=lerCatalogoDemo().find(i=>i.id==='s1');assert.throws(()=>salvarCatalogoDemo({...s,arquivado_em:new Date().toISOString()},false));n++;console.log('PASS vínculo com OS aberta impede arquivamento');
+salvarCatalogoDemo({...servico,id:'p2',tipo:'part',unidade:'un'},true);ok(JSON.parse(localStorage.getItem('patio_estoque_v1')).produtos.find(p=>p.id==='p2').saldo===null,'novo produto aguarda configuração de estoque');
+console.log(`${n} verificações aprovadas.`);

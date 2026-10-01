@@ -1,0 +1,113 @@
+.equipe-pagina {
+  display: grid;
+  gap: 24px;
+}
+.equipe-perfis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.equipe-perfis article {
+  border: 1px solid var(--borda, #e4e7ec);
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--superficie, #fff);
+}
+.equipe-perfis svg {
+  color: #c26722;
+}
+.equipe-perfis h2 {
+  font-size: 17px;
+  margin: 12px 0 8px;
+}
+.equipe-perfis p,
+.equipe-pessoa p {
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 4px 0;
+  opacity: 0.75;
+}
+.equipe-lista {
+  display: grid;
+  margin-top: 20px;
+}
+.equipe-pessoa {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--borda, #e4e7ec);
+}
+.equipe-pessoa > div {
+  flex: 1;
+  min-width: 0;
+}
+.equipe-pessoa strong {
+  overflow-wrap: anywhere;
+}
+.equipe-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #eaa46120;
+  color: #b85b20;
+  flex-shrink: 0;
+}
+.equipe-vazio {
+  text-align: center;
+  padding: 36px 12px;
+  opacity: 0.7;
+}
+.equipe-resumo {
+  padding: 22px;
+  background: #eaa46112;
+  border: 1px solid #eaa46155;
+  border-radius: 16px;
+}
+.equipe-campos {
+  display: grid;
+  grid-template-columns: 1fr 85px;
+  gap: 12px;
+}
+.equipe-pagina .botao-primario,
+.equipe-pagina .botao-secundario {
+  min-height: 44px;
+}
+.cadastro-oficina {
+  width: min(100%, 560px);
+}
+.cartao-acesso > a {
+  margin-top: 12px;
+}
+.equipe-pagina .os-painel h2 small {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+[data-tema="escuro"] .equipe-perfis article {
+  background: #202724;
+  border-color: #354139;
+}
+@media (max-width: 760px) {
+  .equipe-perfis {
+    grid-template-columns: 1fr;
+  }
+  .equipe-pagina .titulo-pagina {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .equipe-pessoa {
+    flex-wrap: wrap;
+  }
+  .equipe-pessoa > .botao-secundario {
+    width: 100%;
+  }
+  .equipe-perfis article {
+    padding: 18px;
+  }
+  .equipe-pagina {
+    gap: 18px;
+  }
+}

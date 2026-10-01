@@ -1,0 +1,15 @@
+{
+  "politicas_lixeira": 1,
+  "migracao": "20260928000600_clientes_e_acesso_por_plano.sql",
+  "testes_locais_novos": 39,
+  "projeto": "sistema_automotivo",
+  "sha256": "e1c0dd9cda5492bd63d1669d5869a4ac12d2775fa7c8b216d0b8fd5a337fa359",
+  "tabelas_com_rls": 48,
+  "campos_novos": 4,
+  "politicas_plano": 37,
+  "operacoes_novas": 4,
+  "referencia": "hzihxtjirttetnfdujcx",
+  "data": "2026-09-28",
+  "resultado": "Aplicada no SQL Editor; validações remotas confirmadas",
+  "observacao": "Autenticação de usuário real não exercitada; testes de interface usam demonstração."
+}

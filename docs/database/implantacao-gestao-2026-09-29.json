@@ -1,0 +1,18 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "aplicada_em": "2026-09-29",
+  "migracoes": [
+    {
+      "arquivo": "20260929000400_gestao_relatorios.sql",
+      "sha256": "b2ddd9d755d7e2f2df7164bb071ad27199fb5ff757ae9dd117030cdd37dd9701",
+      "resultado": "Success. No rows returned"
+    },
+    {
+      "arquivo": "20260929000500_busca_historico_portugues.sql",
+      "sha256": "24f8f80b7ecec3736b12cc1d66b62992f841a1e74c8e1e1aa040e1aa88f69a89",
+      "resultado": "Success. No rows returned"
+    }
+  ],
+  "teste_remoto": "Consultas de relatórios, histórico e configurações como authenticated, rollback.",
+  "testes_locais": 22
+}

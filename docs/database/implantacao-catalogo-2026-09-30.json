@@ -1,0 +1,14 @@
+{
+  "resultado": "Success. No rows returned",
+  "aplicado_em": "2026-09-30",
+  "sha256": "C356A0BA1D6AF6C8702A51BF70CF96ABBD218B6FADF715ECE87522B1564CC203",
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migracao": "20260930000100_catalogo_completo.sql",
+  "verificacao": {
+    "gravacao_validada_com_rollback": true,
+    "itens_visiveis": 12,
+    "revisoes_validas": true
+  },
+  "canal": "SQL Editor",
+  "historico_cli_conciliado": false
+}

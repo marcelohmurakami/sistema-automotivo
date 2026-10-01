@@ -1,0 +1,12 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "aplicada_em": "2026-09-29",
+  "migracao": "20260929000200_estoque_integrado_os.sql",
+  "sha256": "c104f8f5675c89a0a4f0f1be8b30b5b718f06458f9fc1ea971c80a9a21228b1c",
+  "resultado": "Success. No rows returned",
+  "consulta_remota_authenticated": {
+    "pecas_do_catalogo": 6,
+    "produtos_controlados": 0
+  },
+  "testes_locais": 27
+}

@@ -1,0 +1,13 @@
+{
+  "projeto": "hzihxtjirttetnfdujcx",
+  "aplicada_em": "2026-09-29",
+  "migracao": "20260929000300_financeiro.sql",
+  "sha256": "0e6aba8dc1aaee6163a3b6d2924f48706d15b90c010b0161e4d775deb26d92d9",
+  "resultado": "Success. No rows returned",
+  "consulta_remota_authenticated": {
+    "total": 0,
+    "itens": [],
+    "observacao": "Consulta sem alterações, encerrada com rollback."
+  },
+  "testes_locais": 37
+}

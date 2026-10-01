@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-28",
+  "project_ref": "hzihxtjirttetnfdujcx",
+  "method": "Supabase SQL Editor",
+  "foundation": "existing schema verified by catalog fingerprints; not rerun",
+  "cli_history_reconciled": false,
+  "migrations": [
+    {
+      "file": "20260928000100_quote_foundation.sql",
+      "sha256": "60935B32984B83CCCD89D810B5B8469DA0504CF1342BFB135734FB976086EBF0",
+      "action": "existing_baseline_verified"
+    },
+    {
+      "file": "20260928000200_workshop_product.sql",
+      "sha256": "03A151814773143AA1D9F2224119FF8A8CAD31B2012D0F560188AA79921C0D1E",
+      "action": "executed_successfully"
+    },
+    {
+      "file": "20260928000300_product_operations.sql",
+      "sha256": "C5557F008B4BFD360D6B09F354E8A58ADFBDC93F9B787DFCEB31586BC7CCA323",
+      "action": "executed_successfully"
+    },
+    {
+      "file": "20260928000400_storage_and_guards.sql",
+      "sha256": "09C43D7AB509C13090E7CB37DB6615F325F4C0ED409534372B520B62BFD9977B",
+      "action": "executed_successfully"
+    }
+  ],
+  "verified": {
+    "tables": 48,
+    "tables_with_rls": 48,
+    "plans": 3,
+    "product_rpcs": 9,
+    "private_bucket": "workshop-files",
+    "anonymous_accessible_tables": 0
+  }
+}
