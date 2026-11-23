@@ -281,3 +281,188 @@
     flex: 1;
   }
 }
+.os-compartilhar {
+  width: 100%;
+  white-space: normal;
+}
+.os-acao-mobile {
+  display: none;
+}
+.dialogo-compartilhar-os {
+  max-width: 560px;
+}
+.os-compartilhar-conteudo {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.os-compartilhar-conteudo p {
+  margin: 0;
+  line-height: 1.6;
+}
+.os-compartilhar-conteudo > button {
+  white-space: normal;
+  min-height: 48px;
+}
+.os-compartilhar-alternativas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.os-compartilhar-alternativas > * {
+  flex: 1 1 150px;
+  justify-content: center;
+}
+@media (max-width: 700px) {
+  .estrutura-sistema .dialogo-detalhes-os {
+    --os-espaco: 14px;
+    border-radius: 20px 20px 0 0;
+  }
+  .estrutura-sistema .dialogo-detalhes-os > .dialogo-interior > .dialogo-cabecalho {
+    padding: 16px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .estrutura-sistema .dialogo-detalhes-os > .dialogo-interior > .dialogo-cabecalho h2 {
+    font-size: 18px;
+    line-height: 1.5;
+  }
+  .estrutura-sistema .dialogo-detalhes-os > .dialogo-interior {
+    --dialogo-recuo: 12px;
+    padding: 16px 12px 24px;
+    background: var(--ui-fundo);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .dialogo-cabecalho .assistente-contextual {
+    padding: 10px;
+    min-width: 40px;
+    min-height: 40px;
+    flex-shrink: 0;
+  }
+  .estrutura-sistema
+    .dialogo-detalhes-os
+    .dialogo-cabecalho
+    .assistente-contextual
+    span {
+    display: none;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-cabecalho-resumo {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--ui-borda);
+    border-radius: 16px;
+    background: var(--ui-painel);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-identificacao-principal h2 {
+    font-size: 22px;
+    line-height: 1.35;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-cabecalho-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 10px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-impressao-rapida {
+    display: contents;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-impressao-rapida > button {
+    grid-column: 1;
+    grid-row: 1;
+    white-space: normal;
+    width: 100%;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-impressao-rapida > a {
+    grid-column: 1;
+    grid-row: 2;
+    display: grid;
+    place-items: center;
+    min-height: 40px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-compartilhar {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-editar-rapido {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-acao-desktop {
+    display: none;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-acao-mobile {
+    display: inline;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-data-principal {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-data-principal > div {
+    flex-wrap: wrap;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-data-principal time {
+    font-size: 16px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: 14px;
+    gap: 6px;
+    padding: 6px;
+    background: var(--ui-painel);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples button {
+    min-height: 46px;
+    font-size: 13px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples button[aria-current="page"] {
+    background: var(--ui-ativo);
+    border-color: var(--ui-borda);
+    font-weight: 800;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-mais-secoes {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-mais-secoes select {
+    width: 100%;
+    min-height: 46px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-servicos-resumo {
+    background: var(--ui-painel);
+    border-radius: 14px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-servicos-resumo-lista > li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding-block: 16px;
+  }
+  .estrutura-sistema
+    .dialogo-detalhes-os
+    .os-servicos-resumo-lista
+    > li:nth-child(even) {
+    background: var(--ui-fundo);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-servicos-resumo-lista li > span {
+    justify-self: end;
+    font-size: 16px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-servicos-resumo-total {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-bloco {
+    border-radius: 14px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-item {
+    flex-wrap: wrap;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-item select {
+    max-width: 100%;
+    width: 100%;
+    min-height: 44px;
+  }
+}

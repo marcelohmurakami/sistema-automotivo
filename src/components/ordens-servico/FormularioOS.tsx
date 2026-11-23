@@ -1,4 +1,6 @@
 import { EstadoCriacaoOS } from "../EstadoCriacaoOS";
+import { FotosCriacaoOS } from "./FotosCriacaoOS";
+import type { FotoOffline } from "../../lib/atendimentoOffline";
 import {
   CamposPagamentoAtendimento,
   CampoResponsavel,
@@ -36,7 +38,7 @@ export function FormularioOS({
   anterior?: OrdemServico;
   clienteInicial?: string;
   ocupado: boolean;
-  salvar: (d: Record<string, unknown>) => void;
+  salvar: (d: Record<string, unknown>, fotos: FotoOffline[]) => void;
 }) {
   const acessoFormulario = useAcesso();
   const especialidade =
@@ -47,6 +49,10 @@ export function FormularioOS({
     () => anterior?.ficha_especialidade ?? novaFichaEspecialidade(especialidade),
   );
   const [criando, setCriando] = useState(false);
+  const [fotos, setFotos] = useState<FotoOffline[]>([]);
+  const [fotoAssistida, setFotoAssistida] = useState<FotoOffline | null>(null);
+  const [preparandoFotos, setPreparandoFotos] = useState(false);
+  const [preparandoAssistida, setPreparandoAssistida] = useState(false);
   const [itemEmEdicao, setItemEmEdicao] = useState(false);
   const [servicoPronto, setServicoPronto] = useState(false);
   const [dataServico, setDataServico] = useState(() => dataServicoDoCampo(anterior));
@@ -75,7 +81,11 @@ export function FormularioOS({
   );
   function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (itemEmEdicao) return;
+    if (itemEmEdicao || preparandoFotos || preparandoAssistida) return;
+    if (fotos.length + (fotoAssistida ? 1 : 0) > 12) {
+      setErroEntrega("Use até 12 fotos, incluindo a foto da leitura assistida.");
+      return;
+    }
     if (
       !anterior?.orcamento_aguardando_id &&
       itens.some((i) => !quantidadeItemValida(i.quantidade))
@@ -142,7 +152,7 @@ export function FormularioOS({
       return;
     }
     d.prioridade = anterior?.prioridade || "normal";
-    salvar(d);
+    salvar(d, [...fotos, ...(fotoAssistida ? [fotoAssistida] : [])]);
   }
   const campo = (nome: keyof OrdemServico, titulo: string, tipo = "text") => (
     <label>
@@ -280,6 +290,11 @@ export function FormularioOS({
         {!anterior && (
           <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
         )}
+        <FotosCriacaoOS
+          fotos={fotos}
+          alterar={setFotos}
+          processando={setPreparandoFotos}
+        />
         <div className="formulario-opcionais">
           <CampoTipoServico inicial={anterior?.tipo_servico}>
             {ficha.especialidade === "estetica" ? (
@@ -310,6 +325,20 @@ export function FormularioOS({
                 Relato do cliente e preenchimento por voz ou foto (opcional)
               </summary>
               <AtendimentoExpresso
+                aoPrepararFoto={setPreparandoAssistida}
+                aoSelecionarFoto={(imagem) =>
+                  setFotoAssistida(
+                    imagem
+                      ? {
+                          id: crypto.randomUUID(),
+                          imagem,
+                          fase: "before",
+                          legenda: "Foto da leitura assistida na criação da OS",
+                          sincronizada: false,
+                        }
+                      : null,
+                  )
+                }
                 aplicar={(c) => {
                   setRelatoRapido(
                     [
@@ -373,7 +402,7 @@ export function FormularioOS({
         <button
           className="botao-primario acao-salvar-fixa"
           type="submit"
-          disabled={itemEmEdicao}
+          disabled={itemEmEdicao || preparandoFotos || preparandoAssistida}
         >
           {ocupado
             ? "Salvando…"

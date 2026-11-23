@@ -10,9 +10,11 @@ export function AssistenteContextual({ contexto }: { contexto: ContextoAssistent
     <button
       type="button"
       className="botao-secundario assistente-contextual"
+      aria-label="Assistente"
+      title="Assistente"
       onClick={() => abrirAssistente("", contexto)}
     >
-      <Sparkles size={16} /> Assistente
+      <Sparkles size={16} /> <span>Assistente</span>
     </button>
   );
 }

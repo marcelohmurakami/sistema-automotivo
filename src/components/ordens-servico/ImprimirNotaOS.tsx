@@ -29,10 +29,16 @@ export function ImprimirNotaOS({ osId }: { osId: string }) {
       <button
         className="botao-primario"
         disabled={ocupado}
+        aria-label={ocupado ? "Preparando nota…" : "Imprimir nota da OS"}
         onClick={() => void imprimir()}
       >
         <Printer size={19} aria-hidden="true" />
-        {ocupado ? "Preparando nota…" : "Imprimir nota da OS"}
+        <span className="os-acao-desktop">
+          {ocupado ? "Preparando nota…" : "Imprimir nota da OS"}
+        </span>
+        <span className="os-acao-mobile" aria-hidden="true">
+          {ocupado ? "Preparando…" : "Imprimir"}
+        </span>
       </button>
       <Link to={`/documentos?tipo=os&id=${osId}&origem=os`}>Visualizar / PDF</Link>
       {erro && (

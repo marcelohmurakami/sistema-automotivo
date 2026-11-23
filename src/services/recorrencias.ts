@@ -1,5 +1,6 @@
 import { novoId } from "../lib/uuid.ts";
 import { rpc } from "../lib/rpc";
+import { supabase } from "../lib/supabase";
 
 import { dataSaoPaulo, proximoMes, vencimentoMensal } from "../lib/alertas";
 
@@ -28,6 +29,55 @@ export type ContaMensalPendente = {
   titulo_id?: string | null;
 };
 const chavePendentes = "patio_contas_mensais_pendentes_v1";
+/** Busca a competência exata; nunca confunde contas de mesmo nome nem paga outro mês. */
+export async function consultarPagamentoMensal(
+  demo: boolean,
+  oficina: string,
+  recorrencia: string,
+) {
+  const competencia = dataSaoPaulo().slice(0, 7) + "-01";
+  if (demo) {
+    gerarRecorrenciasDemo();
+    const dados = JSON.parse(
+      localStorage.getItem("patio_financeiro_v1") || '{"titulos":[]}',
+    );
+    const titulo = dados.titulos.find(
+      (t: { recorrencia_id?: string; competencia: string; cancelado_em?: string }) =>
+        t.recorrencia_id === recorrencia &&
+        t.competencia === competencia &&
+        !t.cancelado_em,
+    );
+    return {
+      titulo: titulo?.id as string | undefined,
+      pendente: lerPendentes().find(
+        (p) =>
+          p.recorrencia_id === recorrencia &&
+          p.competencia === competencia &&
+          !p.titulo_id,
+      ),
+    };
+  }
+  await rpc("sincronizar_contas_recorrentes", { p_oficina: oficina });
+  const titulo = await supabase!
+    .from("titulos_financeiros")
+    .select("id")
+    .eq("oficina_id", oficina)
+    .eq("recorrencia_id", recorrencia)
+    .eq("competencia", competencia)
+    .is("cancelado_em", null)
+    .maybeSingle();
+  if (titulo.error) throw titulo.error;
+  if (titulo.data) return { titulo: titulo.data.id as string, pendente: null };
+  // A tabela de valores pendentes é privada; use a RPC com as verificações de acesso.
+  for (let pagina = 0; ; pagina++) {
+    const lista = await consultarContasMensaisPendentes(false, oficina, pagina);
+    const pendente = lista.itens.find(
+      (p) => p.recorrencia_id === recorrencia && p.competencia === competencia,
+    );
+    if (pendente) return { titulo: undefined, pendente };
+    if ((pagina + 1) * 30 >= lista.total) return { titulo: undefined, pendente: null };
+  }
+}
 function lerPendentes(): ContaMensalPendente[] {
   return JSON.parse(localStorage.getItem(chavePendentes) || "[]");
 }

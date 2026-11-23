@@ -15,6 +15,7 @@ import {
   salvarRecorrencia,
   consultarContasMensaisPendentes,
   informarValorContaMensal,
+  consultarPagamentoMensal,
   type ContaRecorrente,
   type ContaMensalPendente,
 } from "../services/recorrencias";
@@ -97,6 +98,28 @@ export function ContasRecorrentes() {
       revisao: 0,
       proximo_mes: hoje().slice(0, 7) + "-01",
     });
+  }
+  async function abrirPagamento(r: ContaRecorrente) {
+    if (trava.current) return;
+    trava.current = true;
+    setOcupado(true);
+    setErro("");
+    setAviso("");
+    try {
+      const conta = await consultarPagamentoMensal(a.demo, oficina, r.id);
+      if (conta.titulo)
+        navegar(`/financeiro?aba=recorrencias&titulo=${conta.titulo}&acao=registrar`);
+      else if (conta.pendente) setPendente(conta.pendente);
+      else
+        setAviso(
+          `Não há lançamento disponível de ${r.descricao} neste mês. As contas são geradas a partir de cinco dias antes do vencimento, dentro do período ativo.`,
+        );
+    } catch (e) {
+      setErro(erroPublico(e));
+    } finally {
+      trava.current = false;
+      setOcupado(false);
+    }
   }
   return (
     <section className="os-painel contas-mensais">
@@ -189,31 +212,46 @@ export function ContasRecorrentes() {
       <div className="mensais-lista">
         {q.data?.map((r) => (
           <article className="mensal-linha" key={r.id}>
-            <div className="mensal-dia">
-              <small>Todo dia</small>
-              <strong>{r.dia}</strong>
-            </div>
-            <div className="mensal-nome">
-              <strong>{r.descricao}</strong>
-              <small>
-                {!r.ativa
-                  ? "Pausada"
-                  : r.fim && r.fim < hoje()
-                    ? "Encerrada"
-                    : r.natureza === "pagar"
-                      ? "A pagar"
-                      : "A receber"}{" "}
-                · {r.valor_variavel ? "Valor variável" : "Valor fixo"}
-              </small>
-            </div>
-            <div className="mensal-valor">
-              <strong>
-                {r.valor_centavos ? dinheiro(r.valor_centavos) : "Informar a cada mês"}
-              </strong>
-              {r.valor_variavel && r.valor_centavos > 0 && (
-                <small>Estimativa mensal</small>
-              )}
-            </div>
+            <button
+              className="mensal-abrir-pagamento"
+              disabled={ocupado}
+              onClick={() => void abrirPagamento(r)}
+              aria-label={`Registrar ${r.natureza === "pagar" ? "pagamento" : "recebimento"} de ${r.descricao} neste mês`}
+            >
+              <div className="mensal-dia">
+                <small>Todo dia</small>
+                <strong>{r.dia}</strong>
+              </div>
+              <div className="mensal-nome">
+                <strong>{r.descricao}</strong>
+                <small>
+                  {!r.ativa
+                    ? "Pausada"
+                    : r.fim && r.fim < hoje()
+                      ? "Encerrada"
+                      : r.natureza === "pagar"
+                        ? "A pagar"
+                        : "A receber"}{" "}
+                  · {r.valor_variavel ? "Valor variável" : "Valor fixo"}
+                </small>
+              </div>
+              <div className="mensal-valor">
+                <strong>
+                  {r.valor_centavos
+                    ? dinheiro(r.valor_centavos)
+                    : "Informar a cada mês"}
+                </strong>
+                {r.valor_variavel && r.valor_centavos > 0 && (
+                  <small>Estimativa mensal</small>
+                )}
+              </div>
+              <span className="mensal-atalho">
+                {r.natureza === "pagar"
+                  ? "Registrar pagamento"
+                  : "Registrar recebimento"}{" "}
+                →
+              </span>
+            </button>
             <div className="mensais-acoes">
               <button
                 className="botao-secundario"
@@ -432,7 +470,7 @@ export function ContasRecorrentes() {
                   pendente.id,
                   valor,
                 );
-                navegar(`/financeiro?aba=contas&titulo=${id}`);
+                navegar(`/financeiro?aba=recorrencias&titulo=${id}&acao=registrar`);
               }, "Valor informado. Agora você pode registrar o pagamento.");
             }}
           >
@@ -457,7 +495,7 @@ export function ContasRecorrentes() {
             </p>
             {erro && <p role="alert">{erro}</p>}
             <button className="botao-primario" disabled={ocupado}>
-              {ocupado ? "Salvando…" : "Salvar valor e abrir conta"}
+              {ocupado ? "Salvando…" : "Salvar valor e registrar"}
             </button>
           </form>
         )}

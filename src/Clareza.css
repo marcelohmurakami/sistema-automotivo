@@ -1139,3 +1139,106 @@
     flex-wrap: wrap;
   }
 }
+/* Listagens no celular: cada registro tem limites e ações próprios. */
+@media (max-width: 760px) {
+  .estrutura-sistema
+    :is(.lista-ordens-servico, .lista-propostas, .lista-estoque, .lista-clientes) {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    background: var(--ui-fundo);
+  }
+  .estrutura-sistema
+    :is(
+      .registro-os,
+      .lista-propostas .linha-proposta,
+      .linha-estoque,
+      .linha-cliente,
+      .catalogo-card,
+      .fornecedor-card
+    ) {
+    min-width: 0;
+    margin: 0;
+    border: 1px solid var(--ui-borda);
+    border-radius: 16px;
+    background: var(--ui-painel);
+    box-shadow: 0 2px 6px #00000008;
+    overflow-wrap: anywhere;
+  }
+  .estrutura-sistema .registro-os {
+    padding: 0 16px;
+  }
+  .estrutura-sistema .os-lista-numero {
+    color: var(--ui-suave);
+  }
+  .estrutura-sistema .os-lista-numero strong {
+    color: var(--ui-texto);
+  }
+  .estrutura-sistema .os-lista-identificacao strong {
+    font-size: 16px;
+  }
+  .estrutura-sistema .os-lista-total {
+    font-size: 17px;
+  }
+  .estrutura-sistema .linha-ordem-servico {
+    gap: 14px 8px;
+  }
+  .estrutura-sistema .acoes-linha-os {
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 6px 0;
+  }
+  .estrutura-sistema .lista-propostas .linha-proposta {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 16px 8px;
+    gap: 10px;
+  }
+  .estrutura-sistema .linha-proposta .abrir-proposta {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0 0 6px;
+    gap: 12px;
+  }
+  .estrutura-sistema .linha-proposta .acoes-linha-proposta {
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 100%;
+    border-top: 1px solid var(--ui-borda);
+    padding-top: 8px;
+    gap: 8px;
+  }
+  .estrutura-sistema .linha-proposta .acao-rapida-orcamento {
+    margin-right: auto;
+    max-width: none;
+  }
+  .estrutura-sistema .linha-estoque {
+    padding: 16px;
+    gap: 14px;
+  }
+  .estrutura-sistema :is(.linha-estoque-quantidade, .linha-estoque-valores) {
+    background: var(--ui-fundo);
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .estrutura-sistema .linha-estoque-identidade h2 {
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  .estrutura-sistema .linha-estoque-acoes {
+    border-top: 1px solid var(--ui-borda);
+    padding-top: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .estrutura-sistema .linha-estoque-acoes .linha-estoque-movimentar {
+    flex: 1 1 120px;
+  }
+  .estrutura-sistema .linha-estoque-acoes .estoque-mais span {
+    display: none;
+  }
+  .estrutura-sistema .linha-cliente {
+    padding: 4px 14px;
+  }
+  .estrutura-sistema :is(.catalogo-cards, .fornecedor-grade) {
+    gap: 12px;
+  }
+}

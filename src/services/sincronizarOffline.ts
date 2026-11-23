@@ -21,7 +21,7 @@ export async function sincronizarRascunho(
   if (!navigator.onLine) throw new Error("Reconecte à internet para sincronizar.");
   if (r.documento) return sincronizarDocumento(r, oficina);
   const auto = !r.ramo || r.ramo === "automotivo";
-  if (!r.cliente_id || (auto ? !r.veiculo_id : !r.objeto?.trim()))
+  if (!r.os_id && (!r.cliente_id || (auto ? !r.veiculo_id : !r.objeto?.trim())))
     throw new Error(
       auto
         ? "Selecione cliente e veículo antes de sincronizar."

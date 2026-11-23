@@ -693,3 +693,52 @@
     display: none;
   }
 }
+.mapa-real .cartao-veiculo .mapa-etapa-cartao {
+  display: inline-flex;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--etapa-cor) 60%, var(--ui-borda));
+  background: color-mix(in srgb, var(--etapa-cor) 14%, var(--ui-painel));
+  color: var(--ui-texto);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: normal;
+  text-align: left;
+  border-radius: 8px;
+}
+@media (max-width: 700px) {
+  .mapa-real .coluna-etapa {
+    border: 1px solid var(--ui-borda);
+    border-top: 5px solid var(--etapa-cor);
+    border-radius: 16px;
+  }
+  .mapa-real .coluna-cabecalho {
+    padding: 16px;
+    background: color-mix(in srgb, var(--etapa-cor) 12%, var(--ui-painel));
+    border-bottom: 1px solid var(--ui-borda);
+    border-radius: 10px 10px 0 0;
+  }
+  .mapa-real .coluna-cabecalho h3 {
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  .mapa-real .coluna-cabecalho p {
+    margin: 8px 0 0;
+  }
+  .mapa-real .coluna-cartoes {
+    padding: 10px;
+  }
+  .mapa-real .cartao-veiculo {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  .mapa-real .cartao-veiculo .mapa-movimentacao button {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .mapa-real .etapa-vazia {
+    min-height: 65px;
+    padding: 12px;
+  }
+}

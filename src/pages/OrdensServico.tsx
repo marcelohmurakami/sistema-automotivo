@@ -32,6 +32,8 @@ import { CobrancaDiagnostico } from "../components/CobrancaDiagnostico";
 import { obterProposta } from "../services/orcamentos";
 import { abatimentoDiagnostico } from "../lib/diagnosticoOrcamento";
 import { ImprimirNotaOS } from "../components/ordens-servico/ImprimirNotaOS";
+import { PendenciasFotosOS } from "../components/ordens-servico/PendenciasFotosOS";
+import { CompartilharOS } from "../components/ordens-servico/CompartilharOS";
 import { FerramentasAtendimento } from "../components/FerramentasAtendimento";
 import { ResumoFichaEspecialidade } from "../components/FichaEspecialidade";
 import { dinheiro } from "../lib/formatacao";
@@ -824,7 +826,7 @@ export function OrdensServico() {
             aux={aux.data}
             anterior={edicao}
             ocupado={ocupado}
-            salvar={(d) => {
+            salvar={(d, fotos) => {
               if (emExecucao.current) return;
               const prontoNaCriacao = !edicao && d.servico_pronto === true;
               const podeRegistrarPagamento =
@@ -836,11 +838,56 @@ export function OrdensServico() {
                   : undefined;
               void executar(async () => {
                 let salvo: OrdemServico;
+                let avisoFotos = "";
                 try {
                   salvo = await salvarOS(acesso.demo, oficina, d, chave, edicao);
                 } catch (e) {
                   janela?.close();
                   throw e;
+                }
+                if (fotos.length) {
+                  const { guardarFotosCriacaoOS, enviarFotosCriacaoOS } =
+                    await import("../services/fotosCriacaoOS");
+                  let rascunho;
+                  if (!acesso.demo) {
+                    try {
+                      rascunho = await guardarFotosCriacaoOS(
+                        acesso.usuario!,
+                        oficina,
+                        salvo,
+                        fotos,
+                      );
+                    } catch (e) {
+                      // A OS já existe: uma nova tentativa deve editar a mesma OS.
+                      setEdicao(salvo);
+                      janela?.close();
+                      throw new Error(
+                        `OS #${salvo.numero} salva. Não feche esta tela: não foi possível guardar as fotos no aparelho. ${erroPublico(e)}`,
+                        { cause: e },
+                      );
+                    }
+                  }
+                  try {
+                    salvo = await enviarFotosCriacaoOS(
+                      acesso.demo,
+                      acesso.usuario!,
+                      oficina,
+                      salvo,
+                      fotos,
+                      rascunho,
+                    );
+                  } catch (e) {
+                    if (acesso.demo) {
+                      setEdicao(salvo);
+                      janela?.close();
+                      throw e;
+                    }
+                    avisoFotos =
+                      " Fotos aguardando envio; os arquivos estão guardados neste aparelho. Use Tentar enviar fotos novamente.";
+                  }
+                  void qc.invalidateQueries({
+                    queryKey: ["fotos-os-pendentes", acesso.usuario, oficina, salvo.id],
+                  });
                 }
                 // A RPC já devolve a ficha completa e a revisão confirmada.
                 await qc.cancelQueries({
@@ -857,9 +904,9 @@ export function OrdensServico() {
                 setId(salvo.id);
                 setAba("atendimento");
                 setAviso(
-                  d.servico_pronto
+                  (d.servico_pronto
                     ? "OS salva como pronta para entrega."
-                    : "Atendimento salvo.",
+                    : "Atendimento salvo.") + avisoFotos,
                 );
                 if (prontoNaCriacao) {
                   // A navegação pode terminar depois que o pagamento abrir. Mantenha
@@ -931,6 +978,7 @@ export function OrdensServico() {
           <p>Carregando atendimento…</p>
         ) : (
           <>
+            <PendenciasFotosOS key={o.id} osId={o.id} />
             <div className="os-cabecalho os-cabecalho-resumo">
               <div className="os-identificacao-principal">
                 <span className={"os-status " + o.situacao}>
@@ -965,6 +1013,7 @@ export function OrdensServico() {
               </div>
               <div className="os-cabecalho-acoes">
                 <ImprimirNotaOS key={o.id} osId={o.id} />
+                <CompartilharOS key={`compartilhar-${o.id}`} os={o} />
                 {!encerrada && !o.arquivado_em && (
                   <button
                     className="botao-secundario os-editar-rapido"

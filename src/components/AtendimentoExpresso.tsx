@@ -24,9 +24,13 @@ type Reconhecimento = {
 export function AtendimentoExpresso({
   aplicar,
   compacto = false,
+  aoSelecionarFoto,
+  aoPrepararFoto,
 }: {
   aplicar: (c: CapturaAtendimento) => void;
   compacto?: boolean;
+  aoSelecionarFoto?: (imagem: string | null) => void;
+  aoPrepararFoto?: (preparando: boolean) => void;
 }) {
   const a = useAcesso(),
     [texto, setTexto] = useState(""),
@@ -183,16 +187,21 @@ export function AtendimentoExpresso({
             if (!f) return;
             const versaoFoto = ++fotoAtual.current;
             setPreparandoFoto(true);
+            aoPrepararFoto?.(true);
             setErro("");
             try {
               const reduzida = await reduzirFoto(f);
               if (versaoFoto !== fotoAtual.current) return;
               setFoto(reduzida);
+              aoSelecionarFoto?.(reduzida);
               setCaptura(null);
             } catch (e) {
               if (versaoFoto === fotoAtual.current) setErro(erroPublico(e));
             } finally {
-              if (versaoFoto === fotoAtual.current) setPreparandoFoto(false);
+              if (versaoFoto === fotoAtual.current) {
+                setPreparandoFoto(false);
+                aoPrepararFoto?.(false);
+              }
             }
           }}
         />
@@ -208,11 +217,16 @@ export function AtendimentoExpresso({
               fotoAtual.current++;
               setPreparandoFoto(false);
               setFoto("");
+              aoSelecionarFoto?.(null);
+              aoPrepararFoto?.(false);
               setCaptura(null);
             }}
           >
             Remover foto
           </button>
+          {aoSelecionarFoto && (
+            <small>Esta foto também será anexada à OS ao salvar.</small>
+          )}
         </div>
       )}
       {a.permite("ai") ? (

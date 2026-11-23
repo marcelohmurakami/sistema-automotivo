@@ -1,0 +1,66 @@
+.fotos-criacao-os {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 14px;
+}
+.fotos-criacao-os h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.fotos-criacao-os h3 small {
+  font-weight: 400;
+  color: var(--ui-suave);
+}
+.fotos-criacao-os p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ui-suave);
+}
+.fotos-criacao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.fotos-criacao-acoes label {
+  position: relative;
+  flex: 1;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
+.fotos-criacao-acoes label:focus-within {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 2px;
+}
+.fotos-criacao-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+.fotos-criacao-grade figure {
+  position: relative;
+  margin: 0;
+}
+.fotos-criacao-grade img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.fotos-criacao-grade button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--ui-painel);
+  border: 1px solid var(--ui-borda);
+  min-width: 36px;
+  min-height: 36px;
+}
+.fotos-criacao-grade figcaption {
+  font-size: 12px;
+  margin-top: 4px;
+  color: var(--ui-suave);
+}

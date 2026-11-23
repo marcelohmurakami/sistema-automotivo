@@ -141,3 +141,63 @@
     width: 100%;
   }
 }
+.contas-mensais .mensais-lista {
+  gap: 12px;
+}
+.contas-mensais .mensais-lista .mensal-linha {
+  padding: 0 16px 0 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 14px;
+  background: var(--ui-painel);
+  gap: 12px;
+}
+.mensal-abrir-pagamento {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 16px;
+  min-width: 0;
+  flex: 1;
+  padding: 16px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  text-align: left;
+}
+.mensal-abrir-pagamento:hover {
+  background: var(--ui-hover);
+}
+.mensal-abrir-pagamento:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: -3px;
+}
+.mensal-abrir-pagamento > div {
+  min-width: 0;
+}
+.mensal-atalho {
+  grid-column: 2 / -1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ui-sucesso);
+}
+@media (max-width: 700px) {
+  .contas-mensais .mensais-lista .mensal-linha {
+    display: block;
+    padding: 0;
+  }
+  .mensal-abrir-pagamento {
+    width: 100%;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px 12px;
+    padding: 14px;
+  }
+  .mensal-abrir-pagamento .mensal-valor {
+    grid-column: 2;
+    min-width: 0 !important;
+  }
+  .contas-mensais .mensais-lista .mensais-acoes {
+    padding: 10px 14px;
+    border-top: 1px solid var(--ui-borda);
+  }
+}

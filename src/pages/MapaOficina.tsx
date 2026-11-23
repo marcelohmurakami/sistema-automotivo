@@ -309,6 +309,9 @@ const CartaoVeiculo = memo(function CartaoVeiculo({
         onClick={() => abrir(veiculo)}
         aria-label={`Ver ${veiculo.modelo}, placa ${veiculo.placa}, OS ${veiculo.id}${veiculo.entrada ? `, entrada em ${veiculo.entradaTexto}` : ""}, ${veiculo.prazoEntrega.rotulo}, ${veiculo.prazoEntrega.data}`}
       >
+        <span className={`mapa-etapa-cartao etiqueta-etapa ${veiculo.etapa}`}>
+          {etapas.find((e) => e.id === veiculo.etapa)?.nome}
+        </span>
         <div className="cartao-modelo">
           <div>
             <h3>{veiculo.modelo}</h3>
@@ -426,9 +429,7 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
   };
   const [filtro, setFiltro] = useState("todos"),
     [busca, setBusca] = useState(""),
-    [modo, setModo] = useState<"quadro" | "lista">(() =>
-      window.matchMedia("(max-width: 700px)").matches ? "lista" : "quadro",
-    );
+    [modo, setModo] = useState<"quadro" | "lista">("quadro");
   const contagens = useMemo(() => {
     const presentes = new Set<string>();
     const totais = {
