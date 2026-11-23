@@ -645,7 +645,7 @@ export function Orcamentos() {
           }
         }}
         titulo={detalhe ? `Orçamento #${detalhe.numero}` : "Orçamento"}
-        classe="dialogo-orcamento"
+        classe="dialogo-orcamento dialogo-detalhe-orcamento"
       >
         {detalhe && (
           <div
@@ -665,7 +665,6 @@ export function Orcamentos() {
                   <Pencil size={17} /> Editar orçamento
                 </button>
               )}
-            <AtalhoLocalizacao tipo="orcamento" id={detalhe.id} />
             <Link
               className="botao-secundario"
               to={
@@ -679,31 +678,6 @@ export function Orcamentos() {
               <Printer size={17} />
               <span>Imprimir / PDF</span>
             </Link>
-            {!detalhe.arquivado_em &&
-              !["declined", "cancelled"].includes(detalhe.situacao) &&
-              detalhe.versao.id === detalhe.versao_atual_id && (
-                <DesistenciaAtendimento
-                  tipo="orcamento"
-                  id={detalhe.id}
-                  revisao={detalhe.revisao}
-                  aprovado={detalhe.situacao === "approved"}
-                  osVinculada={!!detalhe.ordem_servico_id}
-                  atualizar={async () => {
-                    setLink("");
-                    await abrir(detalhe.id);
-                  }}
-                />
-              )}
-            <button
-              className="botao-secundario"
-              aria-label="Atualizar situação"
-              title="Atualizar situação"
-              disabled={ocupado}
-              onClick={() => void abrir(detalhe.id)}
-            >
-              <Check size={15} />
-              <span>Atualizar situação</span>
-            </button>
             <button
               className="botao-primario"
               aria-label="Compartilhar PDF"
@@ -729,6 +703,37 @@ export function Orcamentos() {
               <Send size={17} />
               <span>Compartilhar PDF</span>
             </button>
+            <details className="orcamento-mais-acoes">
+              <summary>Mais ações</summary>
+              <div className="orcamento-acoes-secundarias">
+                <AtalhoLocalizacao tipo="orcamento" id={detalhe.id} />
+                {!detalhe.arquivado_em &&
+                  !["declined", "cancelled"].includes(detalhe.situacao) &&
+                  detalhe.versao.id === detalhe.versao_atual_id && (
+                    <DesistenciaAtendimento
+                      tipo="orcamento"
+                      id={detalhe.id}
+                      revisao={detalhe.revisao}
+                      aprovado={detalhe.situacao === "approved"}
+                      osVinculada={!!detalhe.ordem_servico_id}
+                      atualizar={async () => {
+                        setLink("");
+                        await abrir(detalhe.id);
+                      }}
+                    />
+                  )}
+                <button
+                  className="botao-secundario"
+                  aria-label="Atualizar situação"
+                  title="Atualizar situação"
+                  disabled={ocupado}
+                  onClick={() => void abrir(detalhe.id)}
+                >
+                  <Check size={15} />
+                  <span>Atualizar situação</span>
+                </button>
+              </div>
+            </details>
           </div>
         )}
         {detalhe && (

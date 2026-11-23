@@ -4,16 +4,23 @@
 .ficha-cliente {
   display: grid;
   gap: 20px;
-  padding-top: 20px;
+  min-width: 0;
 }
 .ficha-cliente-topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
   gap: 16px;
 }
-.ficha-cliente-topo > div:first-child {
+.ficha-cliente-identidade {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ficha-cliente-identidade > div {
   min-width: 0;
+}
+.ficha-cliente-identidade > button {
+  flex-shrink: 0;
 }
 .ficha-cliente-topo h3 {
   margin: 0;
@@ -27,23 +34,38 @@
   font-size: 12px;
 }
 .ficha-cliente-acoes {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   min-width: 0;
 }
 .ficha-cliente-acoes .botao-secundario,
 .ficha-cliente-acoes .botao-primario {
   font-size: 12px;
+  min-height: 44px;
+  min-width: 0;
+  padding: 10px;
+  white-space: normal;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
+}
+.ficha-cliente-acoes svg {
+  flex-shrink: 0;
+}
+.ficha-cliente-resumo {
+  min-width: 0;
+}
+.ficha-cliente-resumo > .ajuda-contextual {
+  margin: 6px 0 0;
 }
 .ficha-cliente-indicadores {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
   gap: 12px;
 }
 .ficha-cliente-indicadores > div {
+  min-width: 0;
   display: grid;
   gap: 7px;
   padding: 18px;
@@ -69,49 +91,61 @@
   margin: -8px 0 0;
 }
 .ficha-cliente-pagamentos {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 20px;
   border: 1px solid var(--ui-borda);
   padding: 14px 18px;
   border-radius: 12px;
 }
 .ficha-cliente-pagamentos > div {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
   font-size: 13px;
+}
+.ficha-cliente-pagamentos strong {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 .ficha-cliente-pagamentos span,
 .ficha-cliente-pagamentos small {
   color: var(--ui-suave);
 }
 .ficha-cliente-pagamentos small {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   font-size: 11px;
   line-height: 1.6;
 }
 .ficha-cliente-abas {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  border-bottom: 1px solid var(--ui-borda);
+  padding: 5px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-fundo);
 }
 .ficha-cliente-abas button {
   min-height: 44px;
   padding: 10px 14px;
   color: var(--ui-suave);
   font-size: 13px;
-  border-bottom: 2px solid transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  line-height: 1.4;
 }
 .ficha-cliente-abas button[aria-pressed="true"] {
-  border-bottom-color: #88a75f;
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
   color: var(--ui-texto);
   font-weight: 700;
 }
 .ficha-cliente h4 {
   margin: 0;
   font-size: 15px;
+  font-weight: 700;
 }
 .ficha-cliente-filtros {
   display: flex;
@@ -153,6 +187,7 @@
   border: 1px solid var(--ui-borda);
   border-radius: 12px;
   overflow: hidden;
+  background: var(--ui-fundo);
 }
 .ficha-cliente-atendimento > header {
   display: flex;
@@ -249,11 +284,12 @@
   border: 1px solid var(--ui-borda);
   border-radius: 12px;
   padding: 18px;
+  background: var(--ui-fundo);
 }
 .ficha-cliente-bloco dl {
   margin: 20px 0 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
 .ficha-cliente-bloco dt {
@@ -317,20 +353,18 @@
   color: var(--ui-suave);
   font-size: 12px;
 }
-@media (max-width: 650px) {
+@media (max-width: 760px) {
   .dialogo.dialogo-ficha-cliente {
     width: calc(100vw - 16px);
   }
   .ficha-cliente-topo {
-    align-items: start;
-    flex-direction: column;
+    gap: 14px;
   }
   .ficha-cliente-topo h3 {
     font-size: 20px;
   }
   .ficha-cliente-acoes {
-    width: 100%;
-    justify-content: flex-end;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ficha-cliente-indicadores {
     grid-template-columns: 1fr 1fr;
@@ -339,12 +373,12 @@
   .ficha-cliente-indicadores > div {
     padding: 14px 12px;
   }
-  .ficha-cliente-indicadores > div:last-child {
+  .ficha-cliente-indicadores > div:nth-child(3):last-child {
     grid-column: 1 / -1;
     grid-template-columns: 1fr auto;
     align-items: center;
   }
-  .ficha-cliente-indicadores > div:last-child small {
+  .ficha-cliente-indicadores > div:nth-child(3):last-child small {
     grid-column: 1 / -1;
   }
   .ficha-cliente-indicadores strong {
@@ -370,8 +404,61 @@
     padding: 14px;
     align-items: start;
     gap: 10px;
+    flex-wrap: wrap;
+  }
+  .ficha-cliente-atendimento > header > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    flex-shrink: 1;
+  }
+  .ficha-cliente-atendimento .os-status {
+    white-space: normal;
+  }
+  .ficha-cliente-itens li {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ficha-cliente-itens li > span {
+    margin-left: auto;
   }
   .ficha-cliente-bloco dl {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .ficha-cliente-indicadores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ficha-cliente-indicadores > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 12px;
+  }
+  .ficha-cliente-indicadores strong {
+    font-size: 20px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .ficha-cliente-indicadores small {
+    grid-column: 1 / -1;
+  }
+  .ficha-cliente-pagamentos {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 12px;
+  }
+  .ficha-cliente-pagamentos > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .ficha-cliente-pagamentos strong {
+    font-size: 18px;
+    white-space: nowrap;
   }
 }

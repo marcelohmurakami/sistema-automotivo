@@ -208,6 +208,202 @@
   font-size: 12px;
   padding: 8px 12px;
 }
+
+/* Somente a consulta do orçamento: o editor, as OS e a impressão têm layouts próprios. */
+.dialogo-detalhe-orcamento .acoes-detalhe-orcamento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dialogo-detalhe-orcamento .acoes-detalhe-orcamento > .botao-primario {
+  grid-column: auto;
+}
+.orcamento-mais-acoes {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.orcamento-mais-acoes > summary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 10px 2px;
+  color: var(--ui-suave);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.orcamento-mais-acoes > summary:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.orcamento-acoes-secundarias {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-fundo);
+}
+.orcamento-acoes-secundarias > button {
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  justify-content: center;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.orcamento-acoes-secundarias svg {
+  flex-shrink: 0;
+}
+.dialogo-detalhe-orcamento .documento-orcamento {
+  background: var(--ui-fundo);
+  border-color: var(--ui-borda);
+  container-type: inline-size;
+}
+.dialogo-detalhe-orcamento .documento-marca {
+  padding: 18px 20px;
+  background: var(--ui-painel);
+  color: var(--ui-suave);
+  border-bottom: 1px solid var(--ui-borda);
+  gap: 12px;
+}
+.dialogo-detalhe-orcamento .documento-marca > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dialogo-detalhe-orcamento .documento-marca > svg {
+  flex-shrink: 0;
+}
+.dialogo-detalhe-orcamento .documento-marca strong {
+  font-size: 17px;
+  color: var(--ui-texto);
+}
+.dialogo-detalhe-orcamento .resumo-destinatario {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.2fr) repeat(2, minmax(0, 0.8fr));
+  gap: 20px;
+  padding: 20px;
+  background: transparent;
+}
+.dialogo-detalhe-orcamento .resumo-destinatario > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dialogo-detalhe-orcamento .proposta-campo-cliente {
+  order: 1;
+}
+.dialogo-detalhe-orcamento .proposta-campo-veiculo {
+  order: 2;
+}
+.dialogo-detalhe-orcamento .proposta-campo-data {
+  order: 3;
+}
+.dialogo-detalhe-orcamento .proposta-campo-validade {
+  order: 4;
+}
+.dialogo-detalhe-orcamento .resumo-destinatario small {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: var(--ui-suave);
+}
+.dialogo-detalhe-orcamento .resumo-destinatario strong {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.dialogo-detalhe-orcamento .itens-proposta {
+  padding: 0 20px;
+  gap: 10px;
+}
+.dialogo-detalhe-orcamento .item-proposta {
+  background: var(--ui-painel);
+}
+.dialogo-detalhe-orcamento .totais-documento {
+  padding: 20px;
+  gap: 10px;
+  font-size: 13px;
+}
+.dialogo-detalhe-orcamento .total-final {
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-painel);
+  font-size: 14px;
+}
+.dialogo-detalhe-orcamento .total-final strong {
+  font-size: 24px;
+  margin-left: auto;
+}
+.dialogo-detalhe-orcamento .valor-autorizado-proposta {
+  flex-wrap: wrap;
+}
+.dialogo-detalhe-orcamento .dialogo-interior > .acoes-proposta {
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-fundo);
+  align-items: end;
+}
+.dialogo-detalhe-orcamento .acoes-proposta > :is(button, a, label) {
+  min-width: 0;
+  white-space: normal;
+  line-height: 1.4;
+}
+.dialogo-detalhe-orcamento .acoes-proposta select {
+  margin-left: 0;
+}
+@container (max-width: 600px) {
+  .dialogo-detalhe-orcamento .resumo-destinatario {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+  .dialogo-detalhe-orcamento :is(.proposta-campo-cliente, .proposta-campo-veiculo) {
+    grid-column: 1 / -1;
+  }
+  .dialogo-detalhe-orcamento .resumo-destinatario .proposta-campo-data {
+    grid-column: auto;
+  }
+  .dialogo-detalhe-orcamento .itens-proposta {
+    padding-inline: 12px;
+  }
+  .dialogo-detalhe-orcamento .totais-documento {
+    padding: 16px 12px;
+  }
+}
+@media (max-width: 600px) {
+  .dialogo-detalhe-orcamento .acoes-detalhe-orcamento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .dialogo-detalhe-orcamento .acoes-detalhe-orcamento > .botao-primario {
+    grid-column: 1 / -1;
+  }
+  .orcamento-acoes-secundarias {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dialogo-detalhe-orcamento .dialogo-interior > .acoes-proposta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 12px;
+  }
+  .dialogo-detalhe-orcamento .acoes-proposta > :is(button, a) {
+    min-height: 44px;
+    justify-content: center;
+    padding: 10px;
+    font-size: 12px;
+  }
+  .dialogo-detalhe-orcamento .acoes-proposta > :only-child {
+    grid-column: 1 / -1;
+  }
+  .dialogo-detalhe-orcamento .acoes-proposta svg {
+    flex-shrink: 0;
+  }
+}
 @media (max-width: 760px) {
   .acao-rapida-orcamento {
     white-space: normal;

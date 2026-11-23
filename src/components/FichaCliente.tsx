@@ -84,13 +84,24 @@ export function FichaCliente({
   return (
     <div className="ficha-cliente">
       <header className="ficha-cliente-topo">
-        <div>
-          <h3>{cliente.nome}</h3>
-          <p>
-            {cliente.tipo === "pessoa_juridica" ? "Empresa" : "Pessoa física"} · Cliente
-            desde {data(cliente.criado_em)}
-            {cliente.arquivado_em ? " · Na lixeira" : ""}
-          </p>
+        <div className="ficha-cliente-identidade">
+          <div>
+            <h3>{cliente.nome}</h3>
+            <p>
+              {cliente.tipo === "pessoa_juridica" ? "Empresa" : "Pessoa física"} ·
+              Cliente desde {data(cliente.criado_em)}
+              {cliente.arquivado_em ? " · Na lixeira" : ""}
+            </p>
+          </div>
+          <button
+            className="botao-icone"
+            aria-label="Atualizar ficha do cliente"
+            title="Atualizar ficha"
+            disabled={q.isFetching}
+            onClick={() => void q.refetch()}
+          >
+            <RefreshCw size={18} />
+          </button>
         </div>
         <div className="ficha-cliente-acoes">
           {!cliente.arquivado_em && acesso.permite("work_orders") && (
@@ -119,15 +130,6 @@ export function FichaCliente({
                 <FileDown size={17} /> Gerar conta em PDF
               </button>
             )}
-          <button
-            className="botao-icone"
-            aria-label="Atualizar ficha do cliente"
-            title="Atualizar ficha"
-            disabled={q.isFetching}
-            onClick={() => void q.refetch()}
-          >
-            <RefreshCw size={18} />
-          </button>
           {!cliente.arquivado_em && (
             <button className="botao-secundario" onClick={() => editar(cliente)}>
               <Pencil size={16} /> Editar cadastro
@@ -143,45 +145,47 @@ export function FichaCliente({
           fechar={() => setContaAberta(false)}
         />
       )}
-      <div
-        className="ficha-cliente-indicadores"
-        aria-label="Resumo dos atendimentos do cliente"
-      >
-        <div>
-          <span>Total em serviços</span>
-          <strong>{dinheiro(resumo.total_servicos_centavos)}</strong>
-          <small>Atendimentos concluídos</small>
+      <section className="ficha-cliente-resumo" aria-label="Resumo do cliente">
+        <div
+          className="ficha-cliente-indicadores"
+          aria-label="Resumo dos atendimentos do cliente"
+        >
+          <div>
+            <span>Total em serviços</span>
+            <strong>{dinheiro(resumo.total_servicos_centavos)}</strong>
+            <small>Atendimentos concluídos</small>
+          </div>
+          <div>
+            <span>Ticket médio</span>
+            <strong>
+              {resumo.ticket_medio_centavos === null
+                ? "—"
+                : dinheiro(resumo.ticket_medio_centavos)}
+            </strong>
+            <small>Valor médio por atendimento</small>
+          </div>
+          <div>
+            <span>Atendimentos concluídos</span>
+            <strong>{resumo.atendimentos_concluidos}</strong>
+            <small>
+              {resumo.em_andamento
+                ? `${resumo.em_andamento} em andamento`
+                : "Nenhum em andamento"}
+            </small>
+          </div>
         </div>
-        <div>
-          <span>Ticket médio</span>
-          <strong>
-            {resumo.ticket_medio_centavos === null
-              ? "—"
-              : dinheiro(resumo.ticket_medio_centavos)}
-          </strong>
-          <small>Valor médio por atendimento</small>
-        </div>
-        <div>
-          <span>Atendimentos concluídos</span>
-          <strong>{resumo.atendimentos_concluidos}</strong>
-          <small>
-            {resumo.em_andamento
-              ? `${resumo.em_andamento} em andamento`
-              : "Nenhum em andamento"}
-          </small>
-        </div>
-      </div>
-      <AjudaContextual titulo="Como os totais são calculados">
-        <p>
-          {!automotivo
-            ? "Atendimentos concluídos"
-            : recursos.ordens
-              ? "OS entregues e notinhas emitidas"
-              : "Notinhas emitidas"}
-          , incluindo peças e descontos. O total dividido pelos atendimentos concluídos
-          é o ticket médio. Cancelados ficam fora da conta.
-        </p>
-      </AjudaContextual>
+        <AjudaContextual titulo="Como os totais são calculados">
+          <p>
+            {!automotivo
+              ? "Atendimentos concluídos"
+              : recursos.ordens
+                ? "OS entregues e notinhas emitidas"
+                : "Notinhas emitidas"}
+            , incluindo peças e descontos. O total dividido pelos atendimentos
+            concluídos é o ticket médio. Cancelados ficam fora da conta.
+          </p>
+        </AjudaContextual>
+      </section>
       <LucroCliente id={id} />
       {financeiro && (
         <section

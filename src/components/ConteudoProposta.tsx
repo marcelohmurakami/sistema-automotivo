@@ -64,16 +64,16 @@ export function ConteudoProposta({
       </div>
       <div className="resumo-destinatario">
         {q.versao.data_servico && (
-          <div>
+          <div className="proposta-campo-data">
             <small>DATA DO SERVIÇO</small>
             <strong>{dataDocumento(q.versao.data_servico, false)}</strong>
           </div>
         )}
-        <div>
+        <div className="proposta-campo-cliente">
           <small>CLIENTE</small>
           <strong>{q.versao.dados_cliente.nome}</strong>
         </div>
-        <div>
+        <div className="proposta-campo-veiculo">
           <small>VEÍCULO</small>
           <strong>{q.versao.dados_veiculo.modelo}</strong>
           <span>
@@ -82,7 +82,7 @@ export function ConteudoProposta({
               : q.versao.dados_veiculo.placa || "Placa não informada"}
           </span>
         </div>
-        <div>
+        <div className="proposta-campo-validade">
           <small>VALIDADE</small>
           <strong>
             {q.versao.expira_em
