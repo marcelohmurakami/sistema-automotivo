@@ -522,7 +522,6 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
           <h1>
             Mapa da oficina<span>.</span>
           </h1>
-          <p>Veja os carros, os prazos e o que precisa de atenção.</p>
         </div>
         <button className="botao-primario" onClick={abrirNovaOS}>
           <Plus size={20} /> Nova ordem de serviço

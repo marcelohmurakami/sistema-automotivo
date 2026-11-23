@@ -1,3 +1,4 @@
+import { AjudaContextual } from "../components/AjudaContextual";
 import { useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,7 +92,6 @@ export function Equipe() {
           <h1>
             Minha equipe<span>.</span>
           </h1>
-          <p>Convide quem trabalha com você e cuide dos acessos em um só lugar.</p>
         </div>
         <button
           className="botao-primario"
@@ -124,29 +124,31 @@ export function Equipe() {
           {aviso}
         </p>
       )}
-      <section className="equipe-perfis" aria-label="O que cada perfil pode fazer">
-        <article>
-          <ShieldCheck />
-          <h2>Proprietário</h2>
-          <p>Administra equipe e empresa. Acessa os recursos contratados.</p>
-        </article>
-        <article>
-          <Users />
-          <h2>Gerente</h2>
-          <p>
-            Cuida da operação, configurações e financeiro, conforme o plano. Não altera
-            a equipe.
-          </p>
-        </article>
-        <article>
-          <Check />
-          <h2>Funcionário</h2>
-          <p>
-            Atende clientes e trabalha nos módulos operacionais do plano. Não acessa
-            financeiro e relatórios de gestão.
-          </p>
-        </article>
-      </section>
+      <AjudaContextual titulo="Permissões de cada perfil">
+        <section className="equipe-perfis" aria-label="O que cada perfil pode fazer">
+          <article>
+            <ShieldCheck />
+            <h2>Proprietário</h2>
+            <p>Administra equipe e empresa. Acessa os recursos contratados.</p>
+          </article>
+          <article>
+            <Users />
+            <h2>Gerente</h2>
+            <p>
+              Cuida da operação, configurações e financeiro, conforme o plano. Não
+              altera a equipe.
+            </p>
+          </article>
+          <article>
+            <Check />
+            <h2>Funcionário</h2>
+            <p>
+              Atende clientes e trabalha nos módulos operacionais do plano. Não acessa
+              financeiro e relatórios de gestão.
+            </p>
+          </article>
+        </section>
+      </AjudaContextual>
       {!a.demo && q.isPending ? (
         <p role="status">Carregando equipe…</p>
       ) : q.isError && !a.demo ? (

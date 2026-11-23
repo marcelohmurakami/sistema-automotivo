@@ -75,9 +75,7 @@ function FormularioCliente({
   }
   return (
     <form onSubmit={enviar} className="formulario-cliente">
-      <p className="texto-suave">
-        Só o nome é obrigatório. Complete os outros dados quando precisar.
-      </p>
+      <p className="texto-suave">Só o nome é obrigatório.</p>
       <fieldset disabled={salvando}>
         <label>
           Nome ou razão social (obrigatório)
@@ -259,7 +257,6 @@ export function Clientes() {
           <h1>
             Clientes<span>.</span>
           </h1>
-          <p>Um cadastro rápido. Um atendimento mais próximo.</p>
         </div>
         <div className="acoes-titulo">
           <ImportarCadastros tipo="clientes" />
@@ -404,14 +401,21 @@ export function Clientes() {
                     </div>
                   </div>
                   <div className="linha-cliente-contatos">
-                    <span>
-                      <Phone size={15} aria-hidden="true" />
-                      <span>{cliente.telefone_e164 || "Telefone não informado"}</span>
-                    </span>
-                    <span>
-                      <Mail size={15} aria-hidden="true" />
-                      <span>{cliente.email || "E-mail não informado"}</span>
-                    </span>
+                    {cliente.telefone_e164 && (
+                      <span>
+                        <Phone size={15} aria-hidden="true" />
+                        <span>{cliente.telefone_e164}</span>
+                      </span>
+                    )}
+                    {cliente.email && (
+                      <span>
+                        <Mail size={15} aria-hidden="true" />
+                        <span>{cliente.email}</span>
+                      </span>
+                    )}
+                    {!cliente.telefone_e164 && !cliente.email && (
+                      <span>Sem contato cadastrado</span>
+                    )}
                   </div>
                   <ChevronRight
                     size={18}

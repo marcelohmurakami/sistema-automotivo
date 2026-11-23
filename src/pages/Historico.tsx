@@ -59,7 +59,6 @@ export function Historico() {
           <h1>
             Histórico<span>.</span>
           </h1>
-          <p>Clique em uma ocorrência para conferir os detalhes.</p>
         </div>
         <button
           className="botao-secundario"

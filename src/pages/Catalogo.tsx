@@ -195,7 +195,6 @@ export function Catalogo() {
           <h1>
             Serviços<span>.</span>
           </h1>
-          <p>Preços organizados. Seus favoritos sempre à mão.</p>
         </div>
         <div className="acoes-titulo">
           <button className="botao-secundario" onClick={() => setTabelaPrecos(true)}>
@@ -424,8 +423,7 @@ export function Catalogo() {
         )}
       </section>
       <p className="catalogo-nota">
-        O preço do catálogo é uma sugestão para novos atendimentos. Alterações não
-        recalculam orçamentos ou OS já registrados.{" "}
+        Preço sugerido para novos atendimentos. OS e orçamentos existentes não mudam.{" "}
         {a.permite("inventory") && (
           <Link to="/estoque">Controlar quantidades e compras no estoque →</Link>
         )}

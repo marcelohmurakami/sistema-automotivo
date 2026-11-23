@@ -139,10 +139,7 @@ export function Funcionarios() {
           <h1>
             Funcionários<span>.</span>
           </h1>
-          <p>
-            Cadastre quem trabalha na empresa. Este cadastro não cria login nem acesso
-            ao sistema.
-          </p>
+          <p>Cadastro da equipe, sem criar acesso ao sistema.</p>
         </div>
         <button
           className="botao-primario"

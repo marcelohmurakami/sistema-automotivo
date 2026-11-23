@@ -80,9 +80,7 @@ export function DocumentosOffline({
       <header className="offline-secao-cabecalho">
         <div>
           <h2>OS e orçamentos</h2>
-          <p className="offline-ajuda">
-            Preencha e imprima agora. O envio acontece quando houver conexão.
-          </p>
+          <p className="offline-ajuda">Preencha e imprima. Envio ao reconectar.</p>
         </div>
         <div className="offline-registro-acoes">
           <button

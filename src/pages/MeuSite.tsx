@@ -1,3 +1,4 @@
+import { AjudaContextual } from "../components/AjudaContextual";
 import { useBuscaDebounced } from "../lib/useBuscaDebounced";
 import { atualizarCadastro } from "../lib/atualizarCadastro";
 import { dinheiro } from "../lib/formatacao";
@@ -34,10 +35,7 @@ export function MeuSite() {
           <h1>
             Site e área do cliente<span>.</span>
           </h1>
-          <p>
-            Apresente sua empresa, acompanhe pedidos e libere o acompanhamento dos
-            serviços.
-          </p>
+          <p>Site, pedidos e acesso dos clientes.</p>
           <a
             className="botao-secundario"
             href={`/previa-site?ramo=${a.oficina?.ramo || "automotivo"}`}
@@ -139,15 +137,18 @@ function EditorSite({ dados }: { dados: AdministracaoSite }) {
       {erro && <p role="alert">{erro}</p>}
       {aviso && <p role="status">{aviso}</p>}
       <section className="os-painel">
-        <h2>Seu mini site no Plano Completo</h2>
-        <p>
-          1. Personalize a apresentação e salve o site. 2. Habilite a área do cliente.
-          3. Libere o e-mail confirmado de cada cliente abaixo.
-        </p>
-        <p>
-          O logo e a cor são os mesmos cadastrados em Configurações. O cliente acompanha
-          os serviços reais e vê somente as atualizações compartilhadas pela equipe.
-        </p>
+        <h2>Site da empresa</h2>
+        <AjudaContextual titulo="Como configurar o site e o acesso dos clientes">
+          <p>
+            1. Personalize a apresentação e salve o site. 2. Habilite a área do cliente.
+            3. Libere o e-mail confirmado de cada cliente abaixo.
+          </p>
+          <p>
+            O logo e a cor são os mesmos cadastrados em Configurações. O cliente
+            acompanha os serviços reais e vê somente as atualizações compartilhadas pela
+            equipe.
+          </p>
+        </AjudaContextual>
         {dados.site?.publicado && (
           <div className="documentos-form">
             <label>

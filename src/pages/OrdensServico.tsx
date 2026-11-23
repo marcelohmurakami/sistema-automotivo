@@ -402,7 +402,6 @@ export function OrdensServico() {
           <h1>
             Ordens de serviço<span>.</span>
           </h1>
-          <p>Menos papelada. Mais clareza sobre cada carro.</p>
         </div>
         <button
           className="botao-primario"
@@ -435,7 +434,6 @@ export function OrdensServico() {
               Suas ordens{" "}
               <span className="contagem-total">{lista.data?.total ?? "—"}</span>
             </h2>
-            <p>Acompanhe o andamento e a entrega.</p>
           </div>
           <label className="campo-busca">
             <Search size={18} />

@@ -1,3 +1,4 @@
+import { AjudaContextual } from "./AjudaContextual";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -93,9 +94,8 @@ export function LucroServico({ id }: { id: string }) {
         <Linha nome="Lucro: valor final menos custos" valor={d.margem} />
       </dl>
       <small>
-        Lucro considera o valor final vendido, mesmo se ainda houver saldo a receber.
-        Não é o saldo em caixa. Despesas não registradas ou ainda não conferidas podem
-        mudar o resultado.
+        Resultado das vendas, não do caixa. Custos não registrados ou pendentes podem
+        alterar o lucro.
       </small>
       <div className="plano-acoes">
         <button className="botao-secundario" onClick={() => setConferir(true)}>
@@ -104,11 +104,13 @@ export function LucroServico({ id }: { id: string }) {
       </div>
       <section className="lucro-itens">
         <h3>Margem por serviço e {estoque.singular}</h3>
-        <small>
-          O desconto é distribuído proporcionalmente entre os itens. A margem abaixo
-          considera o custo direto; comissões, taxas e custos compartilhados entram no
-          lucro da OS acima.
-        </small>
+        <AjudaContextual titulo="Como a margem é calculada">
+          <p>
+            O desconto é distribuído proporcionalmente entre os itens. A margem abaixo
+            considera o custo direto; comissões, taxas e custos compartilhados entram no
+            lucro da OS acima.
+          </p>
+        </AjudaContextual>
         {d.itens.map((i) => (
           <Item
             key={`${i.id}:${d.revisao}`}

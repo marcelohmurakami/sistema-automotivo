@@ -1,3 +1,4 @@
+import { AjudaContextual } from "./AjudaContextual";
 import { baixarCSV } from "../lib/csv";
 function baixar(titulo: string, colunas: string[], linhas: Celula[][]) {
   baixarCSV([colunas, ...linhas], titulo + ".csv");
@@ -62,7 +63,11 @@ function Tabela({
       </summary>
       <div className="gestao-secao-conteudo">
         <div className="gestao-tabela-topo">
-          <p>{nota}</p>
+          {nota && (
+            <AjudaContextual titulo="Critérios desta análise">
+              <p>{nota}</p>
+            </AjudaContextual>
+          )}
           <button
             type="button"
             className="botao-secundario"

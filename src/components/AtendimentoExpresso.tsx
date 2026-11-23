@@ -127,10 +127,7 @@ export function AtendimentoExpresso({
       className={`agil-detalhes ${compacto ? "atendimento-expresso-compacto" : ""}`}
     >
       <summary>Preencher por voz ou foto</summary>
-      <p>
-        Relate o problema com suas palavras. Para ler placa ou KM, fotografe somente a
-        placa ou o painel.
-      </p>
+      <p>Descreva o problema. Para ler placa ou KM, fotografe a placa ou o painel.</p>
       <label>
         Relato rápido
         <textarea
@@ -170,8 +167,7 @@ export function AtendimentoExpresso({
         </button>
       </div>
       <small>
-        O ditado depende do navegador e pode usar o serviço de voz dele. Você controla
-        quando ouvir e parar.
+        O ditado pode usar o serviço de voz do navegador. Você inicia e para a gravação.
       </small>
       <label>
         <span>
@@ -232,8 +228,7 @@ export function AtendimentoExpresso({
       {a.permite("ai") ? (
         <>
           <small>
-            Ao analisar, o relato e esta foto são enviados ao serviço de IA. Nenhuma
-            informação será aplicada sem sua revisão.
+            A análise envia relato e foto à IA. Você revisa antes de aplicar.
           </small>
           <button
             type="button"

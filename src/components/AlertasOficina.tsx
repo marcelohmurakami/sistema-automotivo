@@ -1,3 +1,4 @@
+import { AjudaContextual } from "./AjudaContextual";
 import { useLembretesFinanceiros } from "./financeiro/contextoLembretes";
 import { destinoLembrete, lembreteAdiado } from "../services/lembretesFinanceiros";
 import { dinheiro } from "../lib/formatacao";
@@ -314,13 +315,15 @@ export function AlertasOficina() {
           titulo={titulo}
           classe="dialogo-alertas"
         >
-          <p className="texto-suave">
-            5 e 1 dia antes, no dia e após 1, 5, 10 e 30 dias. Depois, a cada 30 dias de
-            atraso. Excluir remove só este aviso para você, sem apagar a conta ou o
-            serviço. Novos prazos podem gerar novos alertas.
-            {ordens &&
-              " Clientes para contatar aparecem quando entram na lista, com um aviso por caso."}
-          </p>
+          <AjudaContextual titulo="Sobre os avisos">
+            <p>
+              5 e 1 dia antes, no dia e após 1, 5, 10 e 30 dias. Depois, a cada 30 dias
+              de atraso. Excluir remove só este aviso para você, sem apagar a conta ou o
+              serviço. Novos prazos podem gerar novos alertas.
+              {ordens &&
+                " Clientes para contatar aparecem quando entram na lista, com um aviso por caso."}
+            </p>
+          </AjudaContextual>
           {lembretes?.permitido && (
             <div className="lembrete-acoes">
               <button

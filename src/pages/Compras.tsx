@@ -184,7 +184,6 @@ export function Compras({ integrada = false }: { integrada?: boolean }) {
         <div className="central-compras-recebidas-barra">
           <div>
             <h2>Compras recebidas</h2>
-            <p>Consulte notas, itens e pagamentos dos fornecedores.</p>
           </div>
           <button
             className="botao-primario"
@@ -215,10 +214,7 @@ export function Compras({ integrada = false }: { integrada?: boolean }) {
               <h1>
                 Compras<span>.</span>
               </h1>
-              <p>
-                Registre uma vez. Os itens entram no estoque e o valor vai para o
-                financeiro.
-              </p>
+              <p>Itens no estoque e conta no financeiro.</p>
             </div>
             <button
               className="botao-primario"
@@ -347,8 +343,8 @@ export function Compras({ integrada = false }: { integrada?: boolean }) {
         <form className="formulario-cliente" onSubmit={enviar}>
           <fieldset disabled={ocupado}>
             <p className="aviso-cliente">
-              Use esta tela quando os itens chegarem. A confirmação dá entrada no
-              estoque e gera a conta do fornecedor.
+              Confirme quando os itens chegarem: registra o estoque e a conta do
+              fornecedor.
             </p>
             {!a.demo && (
               <EscolherDeposito
@@ -451,8 +447,8 @@ export function Compras({ integrada = false }: { integrada?: boolean }) {
               </p>
             )}
             <p className="texto-suave">
-              Só aparecem itens com estoque controlado. Cadastre novos itens na tela de
-              estoque.
+              Somente itens com estoque controlado. Novos itens são cadastrados no
+              Estoque.
             </p>
             {itens.map((i, k) => (
               <article className="compra-item" key={i.produto_id}>

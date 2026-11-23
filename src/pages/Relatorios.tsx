@@ -277,7 +277,6 @@ export function Relatorios() {
       <header className="rel-cabecalho">
         <div>
           <h1>Relatórios</h1>
-          <p>Resultado, pendências e ritmo da oficina.</p>
         </div>
         {aba !== "analises" && (
           <div className="rel-acoes">

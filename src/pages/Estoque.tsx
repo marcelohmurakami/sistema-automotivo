@@ -179,7 +179,6 @@ export function Estoque() {
           <h1>
             Estoque<span>.</span>
           </h1>
-          <p>Encontre um item, confira a quantidade e registre entradas ou saídas.</p>
         </div>
         <div className="estoque-titulo-acoes">
           <button className="botao-primario" onClick={() => abrir("produto")}>

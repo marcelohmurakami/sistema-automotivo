@@ -118,10 +118,7 @@ export function CustosOcorrenciaAnalise({
           }
         }}
       >
-        <p>
-          A ocorrência está registrada e vinculada a esta análise. Você pode informar os
-          custos agora ou depois.
-        </p>
+        <p>Ocorrência vinculada. Informe os custos agora ou depois.</p>
         <fieldset disabled={ocupado} className="qa-campos">
           <label>
             {ocorrencia.origem === "os"

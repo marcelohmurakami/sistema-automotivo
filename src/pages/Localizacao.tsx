@@ -49,7 +49,6 @@ export function Localizacao() {
       <header className="loc-cabecalho">
         <div>
           <h1>Localização e etiquetas</h1>
-          <p>Encontre o item, veja onde está e imprima a etiqueta quando precisar.</p>
         </div>
       </header>
       <PainelLocalizacao

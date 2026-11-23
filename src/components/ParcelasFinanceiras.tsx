@@ -48,9 +48,8 @@ export function ParcelasFinanceiras({
         </button>
       </div>
       <p className="texto-suave">
-        Use o valor total e o primeiro vencimento acima. Depois, ajuste as datas e os
-        valores combinados, inclusive entrada e parcelas diferentes. Nenhum pagamento é
-        registrado agora.
+        Divida o total e ajuste datas e valores, incluindo a entrada. Isso não registra
+        pagamentos.
       </p>
       {erro && (
         <p role="alert" className="erro-formulario">

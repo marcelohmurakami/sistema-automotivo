@@ -307,8 +307,7 @@ function Atribuicoes({
             );
           })}
           <p className="texto-suave">
-            Escolha um profissional para cada serviço ou deixe sem comissão. Peças não
-            entram no cálculo. Serviços novos precisam de uma atribuição.
+            Atribua cada serviço ou deixe sem comissão. Peças não entram no cálculo.
           </p>
         </SecaoRecolhivel>
         {erro && (

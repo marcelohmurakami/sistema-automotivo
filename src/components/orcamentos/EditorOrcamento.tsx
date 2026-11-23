@@ -281,8 +281,7 @@ export function EditorOrcamento({
     <form className="formulario-cliente editor-proposta" onSubmit={enviar}>
       {anterior && anterior.situacao !== "draft" && (
         <p className="texto-suave">
-          Ao salvar, será criada uma nova versão para aprovação. A proposta anterior
-          ficará no histórico.
+          Cria uma nova versão para aprovação e preserva a anterior no histórico.
         </p>
       )}
       {(!salvoLocal || !online) && (
@@ -495,9 +494,8 @@ export function EditorOrcamento({
                   }}
                 />
                 <p className="texto-suave">
-                  O relato, o diagnóstico, os códigos e as fotos acompanham a conversão
-                  em OS. Estas informações também ficam visíveis para o cliente no
-                  orçamento.
+                  Relato, diagnóstico, códigos e fotos aparecem para o cliente e
+                  acompanham a OS.
                 </p>
                 <CampoDetalhesServico
                   observacoes={tecnico.detalhes_especialidade}
@@ -546,8 +544,8 @@ export function EditorOrcamento({
                 ) : (
                   <div className="orcamento-fotos-rascunho">
                     <p>
-                      Salve o rascunho e anexe fotos das peças, defeitos e resultados de
-                      testes. Elas serão preservadas nas próximas versões e na OS.
+                      Salve o rascunho para anexar fotos. Elas acompanham as próximas
+                      versões e a OS.
                     </p>
                     <button
                       type="submit"

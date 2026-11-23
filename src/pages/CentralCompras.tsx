@@ -43,7 +43,6 @@ export function CentralCompras() {
           <h1>
             Compras<span>.</span>
           </h1>
-          <p>Do pedido ao recebimento, tudo em um só lugar.</p>
         </div>
         <div className="central-compras-atalhos">
           <Link to="/estoque">Estoque →</Link>

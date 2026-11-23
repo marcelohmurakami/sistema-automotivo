@@ -1,3 +1,4 @@
+import { AjudaContextual } from "./AjudaContextual";
 import { useQuery } from "@tanstack/react-query";
 import { useAcesso } from "../auth/contexto";
 import { dinheiro } from "../lib/formatacao";
@@ -51,14 +52,18 @@ export function LucroCliente({
         </div>
       </div>
       <small>
-        OS concluídas, com descontos, insumos, comissões, taxas e custos apropriados.
-        Orçamentos, cancelamentos e notinhas sem custeio não entram nesta média.{" "}
         {d.pendentes > 0
           ? `${d.pendentes} OS ainda precisam da conferência de custos.`
           : d.quantidade
             ? "Custos conferidos."
             : "Sem OS concluída para calcular a média."}
       </small>
+      <AjudaContextual titulo="O que entra no lucro">
+        <p>
+          OS concluídas, com descontos, insumos, comissões, taxas e custos apropriados.
+          Orçamentos, cancelamentos e notinhas sem custeio não entram nesta média.
+        </p>
+      </AjudaContextual>
     </section>
   );
 }

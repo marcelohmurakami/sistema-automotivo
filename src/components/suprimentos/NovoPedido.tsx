@@ -173,8 +173,8 @@ export function NovoPedido({
                 )}
               </p>
               <p className="supr-aviso">
-                Informe o custo final por unidade, já com frete e impostos. O pedido só
-                movimenta estoque e gera a conta a pagar quando a entrega é recebida.
+                Custo unitário com frete e impostos. Estoque e conta a pagar são gerados
+                no recebimento.
               </p>
             </>
           )}

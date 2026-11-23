@@ -275,7 +275,6 @@ export function QualidadeAvancada() {
     <div className="qa-pagina qa-pagina-servicos">
       <header className="qa-servicos-titulo">
         <h1>Garantias e retrabalhos</h1>
-        <p>Acompanhe retornos, resolva problemas e cuide dos seus clientes.</p>
       </header>
       <nav className="qa-abas" aria-label="Qualidade e garantia">
         {Object.entries(abas).map(([id, titulo]) => (

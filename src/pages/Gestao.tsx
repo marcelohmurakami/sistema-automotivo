@@ -88,7 +88,6 @@ export function Configuracoes() {
           <h1>
             Configurações<span>.</span>
           </h1>
-          <p>Escolha o que deseja ajustar na sua empresa.</p>
         </div>
       </div>
       <div className="configuracoes-layout">

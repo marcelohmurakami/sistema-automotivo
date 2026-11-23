@@ -31,10 +31,7 @@ export function PendenciasFotosOS({ osId }: { osId: string }) {
   return (
     <div className="aviso-cliente" role="status">
       <strong>Fotos aguardando envio</strong>
-      <p>
-        A OS está salva. As fotos estão guardadas neste aparelho até o envio ser
-        confirmado.
-      </p>
+      <p>OS salva. As fotos aguardam neste aparelho até confirmar o envio.</p>
       <button
         className="botao-secundario"
         disabled={enviar.isPending}

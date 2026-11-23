@@ -97,9 +97,6 @@ function PaginaLaudos() {
       <header className="laudos-topo">
         <div>
           <h1>Laudos técnicos</h1>
-          <p>
-            Registre a avaliação, a conclusão e o responsável. Imprima quando precisar.
-          </p>
         </div>
         <button
           className="botao-primario"

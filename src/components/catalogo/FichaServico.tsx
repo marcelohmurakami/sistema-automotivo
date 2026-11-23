@@ -1,3 +1,4 @@
+import { AjudaContextual } from "../AjudaContextual";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
@@ -99,7 +100,7 @@ export function FichaServico({
             </section>
           ) : (
             <p className="texto-suave">
-              Adicione orientações, duração e custos na edição, se precisar.
+              Edite para incluir orientações, duração e custos.
             </p>
           )}
           {!!i.ficha?.custos.length && (
@@ -115,11 +116,13 @@ export function FichaServico({
               </dl>
             </section>
           )}
-          <p className="texto-suave">
-            O custo é aplicado por unidade nos novos serviços da OS e descontado do
-            lucro. Descontos, comissões, taxas e demais despesas aparecem em Lucro e
-            custos da OS. O preço cobrado do cliente não muda.
-          </p>
+          <AjudaContextual titulo="Como o custo entra na OS">
+            <p>
+              O custo é aplicado por unidade nos novos serviços da OS e descontado do
+              lucro. Descontos, comissões, taxas e demais despesas aparecem em Lucro e
+              custos da OS. O preço cobrado do cliente não muda.
+            </p>
+          </AjudaContextual>
           <button className="botao-primario" onClick={() => editar(i)}>
             Editar serviço e custos
           </button>
@@ -325,9 +328,8 @@ export function DetalhesServicoEditor({
             </div>
           </dl>
           <small>
-            Custos internos, aplicados automaticamente nos novos itens da OS. Não repita
-            peças, horas, comissões ou despesas já lançadas separadamente. Para uma OS
-            existente, ajuste em Lucro e custos.
+            Aplicado a novos itens da OS. Não repita peças, horas, comissões ou despesas
+            já lançadas. Ajuste OS existentes em Lucro e custos.
           </small>
         </SecaoRecolhivel>
       )}

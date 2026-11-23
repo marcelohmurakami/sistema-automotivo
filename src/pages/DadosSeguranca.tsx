@@ -69,7 +69,7 @@ export function DadosSeguranca() {
       <header className="titulo-pagina">
         <div>
           <h1>Dados e segurança</h1>
-          <p>Proteja o acesso e cuide das informações da empresa.</p>
+          <p>Acessos, cópias e privacidade.</p>
         </div>
         <Link to="/configuracoes">Voltar às configurações</Link>
       </header>
@@ -135,10 +135,7 @@ export function DadosSeguranca() {
           )}
           <section className="dados-bloco">
             <h2>Trabalhar sem internet</h2>
-            <p>
-              Prepare o aparelho antes de sair. Os envios pendentes ficam guardados até
-              você sincronizar.
-            </p>
+            <p>Prepare antes de sair. Sincronize as pendências ao reconectar.</p>
             <div className="dados-acoes">
               <Link to="/execucao-offline" className="botao-secundario">
                 Abrir área sem internet

@@ -128,8 +128,7 @@ export function CompartilharOS({ os }: { os: OrdemServico }) {
       >
         <div className="formulario-cliente os-compartilhar-conteudo">
           <p>
-            <strong>{os.dados_cliente.nome}</strong> · O PDF contém a nota da OS para o
-            cliente.
+            <strong>{os.dados_cliente.nome}</strong> · PDF da OS
           </p>
           {q.isPending && <p role="status">Preparando PDF…</p>}
           {q.isError && (
@@ -151,14 +150,12 @@ export function CompartilharOS({ os }: { os: OrdemServico }) {
             />
           </label>
           {!q.isPending && !q.data?.telefone && (
-            <small>
-              Informe o número para este envio. Ele não altera o cadastro do cliente.
-            </small>
+            <small>Número usado só neste envio.</small>
           )}
           <p className="texto-suave">
             {nativo
-              ? "Escolha WhatsApp e o contato na tela de compartilhamento do celular. Para localizar o número informado, use Abrir conversa."
-              : "O PDF será baixado e a conversa será aberta no número informado. Anexe o PDF no WhatsApp."}
+              ? "No celular, escolha WhatsApp e o contato. Use Abrir conversa para localizar o número."
+              : "Baixe o PDF e anexe na conversa que será aberta."}
           </p>
           <button
             className="botao-primario"

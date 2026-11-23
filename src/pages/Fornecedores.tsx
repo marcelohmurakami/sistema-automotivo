@@ -67,7 +67,6 @@ export function Fornecedores() {
           <h1>
             Fornecedores<span>.</span>
           </h1>
-          <p>Contatos e informações em um só lugar, prontos para a próxima compra.</p>
         </div>
         <button
           className="botao-primario"
@@ -132,7 +131,7 @@ export function Fornecedores() {
                     ? "Nenhum fornecedor encontrado"
                     : `Cadastre seus fornecedores de ${vocabularioEstoque(a.oficina?.ramo).plural}`}
                 </h3>
-                <p>Nome é obrigatório. Você pode completar os outros dados depois.</p>
+                <p>Só o nome é obrigatório.</p>
               </div>
             )}
             <div className="fornecedor-grade">

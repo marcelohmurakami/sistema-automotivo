@@ -78,10 +78,7 @@ export function ImprimirEtiquetas({
             <option value="termica">Impressora de etiquetas (80 × 50 mm)</option>
           </select>
         </label>
-        <p>
-          Imprima em tamanho real (100%) e cole no item. Leia o QR para encontrá-lo no
-          sistema.
-        </p>
+        <p>Imprima em 100%. Cole no item e leia o QR para localizá-lo.</p>
         {erro && <p role="alert">{erro}</p>}
         <button
           className="botao-primario"
@@ -615,8 +612,7 @@ export function CadastroItemFisico({
                   </div>
                 ))}
                 <small>
-                  Cada item recebe sua própria etiqueta. Registre um conjunto em uma só
-                  etiqueta apenas se ele sempre ficar junto.
+                  Uma etiqueta por item. Agrupe apenas peças que sempre ficam juntas.
                 </small>
               </div>
             )}

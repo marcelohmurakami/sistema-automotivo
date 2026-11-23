@@ -208,7 +208,6 @@ export function RelatoriosServicos({ inicial = "financeiro" }: { inicial?: strin
               ? "Garantias e retrabalhos"
               : "Relatórios da empresa"}
           </h1>
-          <p>Resultados, produtividade e pontos que precisam de atenção.</p>
         </div>
       </header>
       <label className="rr-menu-mobile">

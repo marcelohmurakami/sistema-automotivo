@@ -99,10 +99,7 @@ export function Comissoes({
     return (
       <section className="os-painel">
         <h2>Comissões por serviço</h2>
-        <p>
-          Defina a porcentagem de cada profissional sobre a mão de obra e acompanhe o
-          pagamento pelo financeiro.
-        </p>
+        <p>Percentual por profissional sobre a mão de obra.</p>
         <p className="texto-suave">
           Entre na conta da empresa para configurar regras e registrar comissões reais.
         </p>
@@ -115,7 +112,7 @@ export function Comissoes({
           <h2>
             <BadgePercent size={22} /> Comissões
           </h2>
-          <p>Veja quanto cada profissional tem a receber.</p>
+          <p>Comissões por profissional.</p>
         </div>
         {dono && (
           <button
@@ -158,7 +155,7 @@ export function Comissoes({
                 <div className="comissoes-topo">
                   <div>
                     <h3>Porcentagem de cada profissional</h3>
-                    <p>Cadastre também quem trabalha na empresa sem ter um login.</p>
+                    <p>Inclua também profissionais sem acesso ao sistema.</p>
                   </div>
                   <button
                     className="botao-primario"
@@ -198,8 +195,8 @@ export function Comissoes({
                   ))
                 )}
                 <small>
-                  Alterações valem para novas atribuições. Comissões já atribuídas
-                  mantêm a regra registrada.
+                  Novas regras valem para novas atribuições. Comissões existentes não
+                  mudam.
                 </small>
               </section>
             )}

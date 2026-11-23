@@ -52,7 +52,7 @@ export function FotosCriacaoOS({
         <h3>
           Fotos do atendimento <small>(opcional)</small>
         </h3>
-        <p>As fotos ficam salvas na aba Fotos da OS.</p>
+        <p>Salvas na aba Fotos.</p>
       </div>
       <div className="fotos-criacao-acoes">
         <label className="botao-secundario">

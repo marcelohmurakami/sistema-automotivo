@@ -90,10 +90,7 @@ export default function AnalisesGerenciais({
       <header className="an-topo">
         <div>
           <h2>Análises para decidir</h2>
-          <p>
-            Escolha o que deseja avaliar. Os detalhes ficam disponíveis em cada
-            resultado.
-          </p>
+          <p>Escolha uma análise.</p>
         </div>
         <div className="an-acoes">
           <button

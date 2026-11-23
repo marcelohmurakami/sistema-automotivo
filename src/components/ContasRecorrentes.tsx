@@ -128,15 +128,14 @@ export function ContasRecorrentes() {
           <h2>
             <Repeat size={22} /> Contas mensais
           </h2>
-          <p>Aluguel, água, internet e outras contas que se repetem.</p>
+          <p>Aluguel, água, internet e outras contas mensais.</p>
         </div>
         <button className="botao-primario" onClick={nova} disabled={ocupado}>
           <Plus size={18} /> Nova conta mensal
         </button>
       </header>
       <p className="mensais-lembrete">
-        <Bell size={18} /> O sininho avisa antes e no dia do vencimento. Você confirma o
-        pagamento.
+        <Bell size={18} /> Lembretes no sininho. Você confirma cada pagamento.
       </p>
       {aviso && (
         <p role="status" className="aviso-cliente">
@@ -362,14 +361,14 @@ export function ContasRecorrentes() {
               </label>
               <p className="texto-suave">
                 {edicao.valor_variavel
-                  ? "Pode deixar o valor vazio. No vencimento, o sininho lembra de informar o valor daquele mês."
+                  ? "Valor opcional. O sininho lembra de preenchê-lo no vencimento."
                   : "O valor será repetido todo mês e poderá ser editado depois."}{" "}
                 Em meses curtos, vence no último dia.
               </p>
               {edicao.revisao > 0 && (
                 <p className="aviso-cliente">
-                  Esta edição vale para os próximos lançamentos. Para alterar uma conta
-                  já gerada, abra-a em A pagar e receber.
+                  Vale para os próximos lançamentos. Edite contas já geradas em A pagar
+                  e receber.
                 </p>
               )}
               <SecaoRecolhivel titulo="Categoria e período (opcional)">

@@ -465,11 +465,6 @@ export function Financeiro() {
           <h1>
             Financeiro<span>.</span>
           </h1>
-          <p>
-            {automotivo
-              ? "Saiba o que entrou, o que falta pagar e o que a oficina ganhou."
-              : "Acompanhe receitas, despesas, recebimentos e contas recorrentes da empresa."}
-          </p>
         </div>
         {["contas", "os"].includes(aba) && (
           <div className="fin-acoes">
@@ -673,10 +668,7 @@ export function Financeiro() {
                           Nova conta a pagar
                         </button>
                       </div>
-                      <p>
-                        Cria a conta. O caixa só muda ao registrar o recebimento ou
-                        pagamento.
-                      </p>
+                      <p>O caixa muda ao registrar o pagamento ou recebimento.</p>
                     </div>
                   </header>
                   <section
@@ -718,10 +710,10 @@ export function Financeiro() {
                       <strong>{dinheiro(resultado)}</strong>
                       <small>
                         {!automotivo
-                          ? "Receitas menos despesas e taxas lançadas. Não inclui automaticamente os custos de peças, materiais, horas e comissões dos atendimentos."
+                          ? "Receitas menos despesas e taxas. Custos dos atendimentos não entram automaticamente."
                           : resultado < 0
-                            ? "Os custos e despesas superaram as receitas registradas."
-                            : "O que sobra das receitas após descontar peças, despesas e taxas."}
+                            ? "Custos e despesas acima das receitas."
+                            : "Receitas menos peças, despesas e taxas."}
                       </small>
                       {!automotivo && a.permite("reports") && (
                         <Link className="fin-revisar-lucro" to="/relatorios">
@@ -752,8 +744,8 @@ export function Financeiro() {
                       <strong>{dinheiro(r.receitas)}</strong>
                       <small>
                         {automotivo
-                          ? "Valor das OS entregues e outras vendas do período, mesmo que ainda não tenham sido pagas."
-                          : "Atendimentos faturados e outras receitas registradas no período, mesmo que ainda não tenham sido recebidas."}
+                          ? "OS entregues e outras vendas, inclusive as ainda não recebidas."
+                          : "Atendimentos faturados e outras receitas, inclusive as ainda não recebidas."}
                       </small>
                       <Link
                         className="fin-ver-historico"
@@ -769,8 +761,8 @@ export function Financeiro() {
                       <strong>{dinheiro(custosDespesas)}</strong>
                       <small>
                         {automotivo
-                          ? "Peças consumidas, despesas da empresa e taxas. Esse valor é descontado das receitas para calcular o lucro."
-                          : "Contas a pagar e taxas registradas no financeiro, mesmo que ainda não tenham sido pagas."}
+                          ? "Peças consumidas, despesas e taxas."
+                          : "Contas e taxas registradas, mesmo sem pagamento."}
                       </small>
                       <Link
                         className="fin-ver-historico"
@@ -816,10 +808,7 @@ export function Financeiro() {
                           </button>
                         ))}
                       </div>
-                      <p>
-                        Selecione uma conta para registrar o dinheiro que entrou ou
-                        saiu.
-                      </p>
+                      <p>Escolha a conta para registrar.</p>
                     </div>
                   </div>
                   <section
@@ -840,10 +829,7 @@ export function Financeiro() {
                         {saldo < 0 ? "Saldo negativo hoje" : "Dinheiro disponível hoje"}
                       </span>
                       <strong>{dinheiro(saldo)}</strong>
-                      <small>
-                        Saldo atual do caixa e banco. Acumula os lançamentos de todas as
-                        datas.
-                      </small>
+                      <small>Caixa e banco acumulados, de todas as datas.</small>
                       <SecaoRecolhivel titulo="Ver contas e saldo inicial">
                         <div>
                           {q.data.contas.map((c) => (
@@ -879,10 +865,7 @@ export function Financeiro() {
                       <strong className="fin-entrada-valor">
                         {dinheiro(r.entradas)}
                       </strong>
-                      <small>
-                        Dinheiro efetivamente recebido no período, já descontadas as
-                        taxas de recebimento.
-                      </small>
+                      <small>Recebido no período, após taxas.</small>
                       <Link
                         className="fin-ver-historico"
                         aria-label="Ver histórico: entradas"
@@ -897,10 +880,7 @@ export function Financeiro() {
                         Saiu {mesmoMes ? "no mês" : "no período"}
                       </span>
                       <strong className="fin-saida-valor">{dinheiro(r.saidas)}</strong>
-                      <small>
-                        Dinheiro efetivamente pago no período, incluindo compras de
-                        estoque e retiradas.
-                      </small>
+                      <small>Pago no período, incluindo estoque e retiradas.</small>
                       <Link
                         className="fin-ver-historico"
                         aria-label="Ver histórico: saidas"
@@ -914,10 +894,7 @@ export function Financeiro() {
                 <section className="fin-grupo" aria-label="Contas pendentes">
                   <div className="fin-titulo-caixa">
                     <h2>Contas em aberto · a receber e a pagar</h2>
-                    <p>
-                      Valores que ainda precisam ser recebidos ou pagos, incluindo os
-                      atrasados.
-                    </p>
+                    <p>Inclui contas vencidas.</p>
                   </div>
                   <section
                     className="fin-pendencias"
@@ -1124,8 +1101,7 @@ export function Financeiro() {
                   </p>
                 )}
                 <p className="texto-suave">
-                  Toque em um lançamento para pagar, receber, editar ou consultar o
-                  histórico.
+                  Abra uma conta para registrar ou consultar.
                 </p>
                 {q.isPlaceholderData && <p role="status">Atualizando contas…</p>}
                 {!q.data.itens.length ? (

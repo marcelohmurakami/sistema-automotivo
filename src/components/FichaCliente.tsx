@@ -1,3 +1,4 @@
+import { AjudaContextual } from "./AjudaContextual";
 import { dinheiro } from "../lib/formatacao";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -170,15 +171,17 @@ export function FichaCliente({
           </small>
         </div>
       </div>
-      <p className="ficha-cliente-legenda">
-        {!automotivo
-          ? "Atendimentos concluídos"
-          : recursos.ordens
-            ? "OS entregues e notinhas emitidas"
-            : "Notinhas emitidas"}
-        , incluindo peças e descontos. O total dividido pelos atendimentos concluídos é
-        o ticket médio. Cancelados ficam fora da conta.
-      </p>
+      <AjudaContextual titulo="Como os totais são calculados">
+        <p>
+          {!automotivo
+            ? "Atendimentos concluídos"
+            : recursos.ordens
+              ? "OS entregues e notinhas emitidas"
+              : "Notinhas emitidas"}
+          , incluindo peças e descontos. O total dividido pelos atendimentos concluídos
+          é o ticket médio. Cancelados ficam fora da conta.
+        </p>
+      </AjudaContextual>
       <LucroCliente id={id} />
       {financeiro && (
         <section
@@ -194,8 +197,7 @@ export function FichaCliente({
             <strong>{dinheiro(financeiro.aberto_centavos)}</strong>
           </div>
           <small>
-            Cobranças registradas nas OS, incluindo adiantamentos e descontando
-            estornos. Notinhas não comprovam pagamento.
+            OS com adiantamentos e estornos. Notinhas não comprovam pagamento.
           </small>
         </section>
       )}

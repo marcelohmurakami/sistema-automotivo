@@ -137,8 +137,8 @@ export function CatalogosFornecedores({
       ))}
       {q.data?.total === 0 && (
         <p className="supr-vazio">
-          Importe um catálogo do fornecedor para consultar produtos, preços e
-          aplicações. Nenhum fornecedor está conectado automaticamente.
+          Importe o catálogo para consultar produtos e preços. Sem conexão automática ao
+          fornecedor.
         </p>
       )}
       <Paginacao pagina={pag} total={q.data?.total ?? 0} alterar={setPag} />

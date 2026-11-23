@@ -267,7 +267,6 @@ export function Orcamentos() {
           <h1>
             Orçamentos<span>.</span>
           </h1>
-          <p>Crie, envie e acompanhe a aprovação do cliente.</p>
         </div>
         <button
           className="botao-primario"
@@ -310,7 +309,6 @@ export function Orcamentos() {
               Suas propostas{" "}
               <span className="contagem-total">{lista.data?.total ?? "—"}</span>
             </h2>
-            <p>Acompanhe o que precisa de aprovação.</p>
           </div>
           <label className="campo-busca">
             <Search size={17} />

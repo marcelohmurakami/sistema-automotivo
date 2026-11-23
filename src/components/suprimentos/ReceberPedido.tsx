@@ -144,10 +144,7 @@ export function ReceberPedido({
           </button>
         </div>
         {!devolucao && (
-          <p>
-            Marque somente os produtos que chegaram. As unidades aceitas são calculadas
-            descontando as rejeitadas.
-          </p>
+          <p>Marque o que chegou. Aceitas = recebidas menos rejeitadas.</p>
         )}
         <EscolherDeposito
           valor={deposito}

@@ -280,10 +280,7 @@ export function FormularioOS({
                 </p>
               )}
               {texto("resumo_cliente", "Observações (opcional)")}
-              <p className="texto-suave">
-                Estas observações aparecem na impressão da OS, abaixo dos serviços e
-                peças.
-              </p>
+              <p className="texto-suave">Aparece na nota do cliente.</p>
             </>
           }
         />
@@ -316,8 +313,8 @@ export function FormularioOS({
               <summary>Relação de peças (opcional)</summary>
               {texto("pecas_a_trocar", "Peças trocadas ou a trocar (opcional)")}
               <p className="texto-suave">
-                Informe quantidades, referências e quem fornece as peças. Esta lista é
-                informativa: não soma valores nem movimenta estoque.
+                Informe quantidades, referências e fornecedor. Lista informativa, sem
+                valores ou baixa de estoque.
               </p>
             </details>
             <details className="os-detalhes">

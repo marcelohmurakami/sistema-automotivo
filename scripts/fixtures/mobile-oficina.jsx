@@ -11,6 +11,18 @@ import { Estoque } from "../../src/pages/Estoque";
 import { Clientes } from "../../src/pages/Clientes";
 import { Catalogo } from "../../src/pages/Catalogo";
 import { Financeiro } from "../../src/pages/Financeiro";
+import { Equipe } from "../../src/pages/Equipe";
+import { Relatorios } from "../../src/pages/Relatorios";
+import { Qualidade } from "../../src/pages/Qualidade";
+import { Configuracoes } from "../../src/pages/Gestao";
+import { Fornecedores } from "../../src/pages/Fornecedores";
+import { Localizacao } from "../../src/pages/Localizacao";
+import { CentralCompras } from "../../src/pages/CentralCompras";
+import { Funcionarios } from "../../src/pages/Funcionarios";
+import { Laudos } from "../../src/pages/Laudos";
+import { Historico } from "../../src/pages/Historico";
+import { DadosSeguranca } from "../../src/pages/DadosSeguranca";
+import { MeuSite } from "../../src/pages/MeuSite";
 import { salvarOS } from "../../src/services/ordensServico";
 import { salvarProposta } from "../../src/services/orcamentos";
 import { salvarRecorrencia } from "../../src/services/recorrencias";
@@ -188,6 +200,18 @@ createRoot(document.getElementById("root")).render(
             <Route path="clientes" element={<Clientes />} />
             <Route path="catalogo" element={<Catalogo />} />
             <Route path="financeiro" element={<Financeiro />} />
+            <Route path="equipe" element={<Equipe />} />
+            <Route path="relatorios" element={<Relatorios />} />
+            <Route path="qualidade" element={<Qualidade />} />
+            <Route path="configuracoes" element={<Configuracoes />} />
+            <Route path="fornecedores" element={<Fornecedores />} />
+            <Route path="localizacao" element={<Localizacao />} />
+            <Route path="compras" element={<CentralCompras />} />
+            <Route path="funcionarios" element={<Funcionarios />} />
+            <Route path="laudos" element={<Laudos />} />
+            <Route path="historico" element={<Historico />} />
+            <Route path="dados-seguranca" element={<DadosSeguranca />} />
+            <Route path="meu-site" element={<MeuSite />} />
           </Route>
         </Routes>
       </MemoryRouter>

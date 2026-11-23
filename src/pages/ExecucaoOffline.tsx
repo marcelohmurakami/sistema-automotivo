@@ -298,7 +298,7 @@ function AreaExecucao() {
             ← Voltar ao sistema
           </Link>
           <h1>Trabalhar sem internet</h1>
-          <p>Crie OS e orçamentos, imprima e continue os atendimentos sem conexão.</p>
+          <p>OS, orçamentos e impressão sem conexão.</p>
         </div>
         <span className={"offline-conexao" + (!online ? " sem-rede" : "")}>
           {online ? <Wifi size={18} /> : <WifiOff size={18} />}
@@ -353,8 +353,7 @@ function AreaExecucao() {
           </section>
           {!online && (
             <p className="offline-ajuda">
-              Você pode continuar os registros salvos. O envio será liberado quando a
-              conexão voltar.
+              Continue os registros salvos. Envio ao reconectar.
             </p>
           )}
           {aviso && (
@@ -480,8 +479,8 @@ function AreaExecucao() {
               Preparar aparelho
             </summary>
             <p>
-              Com internet, baixe clientes, serviços, preços e as OS/visitas da agenda.
-              O trabalho pendente será preservado.
+              Baixe cadastros e agenda com internet. O trabalho pendente será
+              preservado.
             </p>
             <div className="plano-campos">
               <label>

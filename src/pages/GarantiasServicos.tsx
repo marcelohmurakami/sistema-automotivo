@@ -107,7 +107,6 @@ export function GarantiasServicos() {
       <header className="qserv-cabecalho">
         <div>
           <h2>Ocorrências</h2>
-          <p>Registre o problema, acompanhe a solução e confira o custo.</p>
         </div>
         <button
           className="botao-primario"

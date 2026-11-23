@@ -153,8 +153,7 @@ export function FormularioBaixaFinanceira({
                 }
               />
               <small>
-                Desconto do banco ou cartão. A prévia abaixo já desconta essa taxa. A
-                taxa deve ser menor que o valor recebido.
+                Taxa já descontada na prévia. Deve ser menor que o valor recebido.
               </small>
             </label>
           </details>

@@ -80,8 +80,8 @@ export function PainelLembretesFinanceiros({
       {tela === "pendencias" && dados && (
         <>
           <p>
-            Contas vencidas ou que vencem hoje. Confira se o dinheiro já entrou ou saiu
-            antes de registrar.
+            Vencidas ou vencendo hoje. Confirme o dinheiro recebido ou pago antes de
+            registrar.
           </p>
           <div className="lembrete-acoes">
             <Link
@@ -162,8 +162,8 @@ export function PainelLembretesFinanceiros({
             </nav>
           )}
           <p className="texto-suave">
-            Contas quitadas ou canceladas saem desta lista. Adiar um aviso não altera o
-            vencimento.
+            Adiar o aviso não muda o vencimento. Contas quitadas ou canceladas saem da
+            lista.
           </p>
         </>
       )}

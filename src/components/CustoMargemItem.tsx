@@ -51,9 +51,9 @@ export function CustoMargemItem({
       </label>
       <small>
         {estoque
-          ? "Referência para a peça. Na OS, o consumo real do estoque é calculado pelas movimentações; um ajuste específico pode ser feito em Lucro e custos."
-          : "Some os insumos e a execução próprios deste item. Não repita valores já registrados em materiais separados, horas, comissões ou despesas da OS."}{" "}
-        Deixe vazio se ainda não souber; zero significa sem custo direto.
+          ? "Referência da peça. Na OS, vale o custo do consumo; ajuste em Lucro e custos."
+          : "Insumos e execução deste item. Não repita materiais, horas, comissões ou despesas já lançados."}{" "}
+        Vazio: não informado. Zero: sem custo direto.
       </small>
       <dl className="lucro-valores">
         <div>
@@ -83,10 +83,7 @@ export function CustoMargemItem({
           </dd>
         </div>
       </dl>
-      <small>
-        Comissões, taxas e demais despesas são descontadas no demonstrativo de lucro da
-        OS. Estes valores são internos.
-      </small>
+      <small>Custos internos. Comissões, taxas e despesas entram no lucro da OS.</small>
     </SecaoRecolhivel>
   );
 }
