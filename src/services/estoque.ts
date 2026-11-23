@@ -1,4 +1,6 @@
-import { rpc } from "./orcamentos";
+import { novoId } from "../lib/uuid.ts";
+import { rpc } from "../lib/rpc";
+
 export type ProdutoEstoque = {
   id: string;
   descricao: string;
@@ -12,8 +14,16 @@ export type ProdutoEstoque = {
   minimo: number;
   custo_centavos: number;
   revisao: number | null;
+  reservado?: number;
+  disponivel?: number;
+  rastreado?: boolean;
+  prazo_reposicao_dias?: number;
+  cobertura_dias?: number;
+  seguranca?: number;
+  fornecedor_id?: string | null;
 };
 export type MovimentoEstoque = {
+  atendimento_id?: string | null;
   compra_id?: string | null;
   id: string;
   item_catalogo_id: string;
@@ -43,9 +53,7 @@ export type DadosEstoque = {
 };
 const chave = "patio_estoque_v1";
 export function lerEstoqueDemo(): DadosEstoque {
-  return JSON.parse(
-    localStorage.getItem(chave) || '{"produtos":[],"movimentos":[]}',
-  );
+  return JSON.parse(localStorage.getItem(chave) || '{"produtos":[],"movimentos":[]}');
 }
 function gravar(d: DadosEstoque) {
   localStorage.setItem(chave, JSON.stringify(d));
@@ -56,33 +64,44 @@ export async function listarEstoque(
   busca = "",
   filtro = "",
   pagina = 0,
+  signal?: AbortSignal,
 ) {
   if (!demo)
     return rpc<{
       itens: ProdutoEstoque[];
       total: number;
-      resumo: { produtos: number; baixos: number; valor_centavos: number };
-    }>("listar_estoque", {
-      p_oficina: oficina,
-      p_busca: busca,
-      p_filtro: filtro,
-      p_pagina: pagina,
-    });
+      resumo: {
+        produtos: number;
+        baixos: number;
+        zerados: number;
+        valor_centavos: number;
+      };
+    }>(
+      "listar_estoque",
+      {
+        p_oficina: oficina,
+        p_busca: busca,
+        p_filtro: filtro,
+        p_pagina: pagina,
+      },
+      signal,
+    );
   const d = lerEstoqueDemo();
   const ativos = d.produtos.filter((p) => !p.arquivado_em);
   const lista = d.produtos.filter(
     (p) =>
       (filtro === "arquivados" ? !!p.arquivado_em : !p.arquivado_em) &&
       (filtro !== "baixo" || (p.saldo ?? 0) <= p.minimo) &&
-      `${p.descricao} ${p.codigo ?? ""}`
-        .toLowerCase()
-        .includes(busca.toLowerCase()),
+      (filtro !== "zerado" || p.saldo === 0) &&
+      (filtro !== "controlados" || p.saldo !== null) &&
+      `${p.descricao} ${p.codigo ?? ""}`.toLowerCase().includes(busca.toLowerCase()),
   );
   return {
     itens: lista.slice(pagina * 24, pagina * 24 + 24),
     total: lista.length,
     resumo: {
       produtos: ativos.length,
+      zerados: ativos.filter((p) => p.saldo === 0).length,
       baixos: ativos.filter((p) => (p.saldo ?? 0) <= p.minimo).length,
       valor_centavos: ativos.reduce(
         (v, p) => v + Math.round((p.saldo ?? 0) * p.custo_centavos),
@@ -91,11 +110,7 @@ export async function listarEstoque(
     },
   };
 }
-export async function salvarProduto(
-  demo: boolean,
-  oficina: string,
-  p: ProdutoEstoque,
-) {
+export async function salvarProduto(demo: boolean, oficina: string, p: ProdutoEstoque) {
   if (!demo)
     return rpc<string>("salvar_produto_estoque", {
       p_oficina: oficina,
@@ -150,7 +165,7 @@ export async function movimentar(
   produto.saldo = Math.round(((produto.saldo ?? 0) + delta) * 1000) / 1000;
   produto.revisao = (produto.revisao ?? 0) + 1;
   d.movimentos.unshift({
-    id: crypto.randomUUID(),
+    id: novoId(),
     item_catalogo_id: p.id,
     tipo,
     quantidade: delta,
@@ -171,13 +186,18 @@ export async function historicoEstoque(
   oficina: string,
   produto: string,
   pagina: number,
+  signal?: AbortSignal,
 ) {
   if (!demo)
-    return rpc<MovimentoEstoque[]>("consultar_movimentacoes_estoque", {
-      p_oficina: oficina,
-      p_produto: produto,
-      p_pagina: pagina,
-    });
+    return rpc<MovimentoEstoque[]>(
+      "consultar_movimentacoes_estoque",
+      {
+        p_oficina: oficina,
+        p_produto: produto,
+        p_pagina: pagina,
+      },
+      signal,
+    );
   return lerEstoqueDemo()
     .movimentos.filter((m) => m.item_catalogo_id === produto)
     .slice(pagina * 30, pagina * 30 + 30);
@@ -199,9 +219,7 @@ export async function estornarEstoque(
     p = d.produtos.find((x) => x.id === m.item_catalogo_id)!;
   if (original.estornado) return;
   if (original.compra_id)
-    throw new Error(
-      "Cancele a compra para reverter estoque e financeiro juntos.",
-    );
+    throw new Error("Cancele a compra para reverter estoque e financeiro juntos.");
   if ((p.saldo ?? 0) - m.quantidade < 0)
     throw new Error("O estorno deixaria o estoque negativo.");
   p.saldo = Math.round(((p.saldo ?? 0) - m.quantidade) * 1000) / 1000;
@@ -209,7 +227,7 @@ export async function estornarEstoque(
   original.estornado = true;
   d.movimentos.unshift({
     ...m,
-    id: crypto.randomUUID(),
+    id: novoId(),
     tipo: "estorno",
     quantidade: -m.quantidade,
     saldo_apos: p.saldo,
@@ -231,8 +249,7 @@ export async function arquivarProduto(
       p_produto: p.id,
       p_arquivar: !p.arquivado_em,
     });
-  if (!p.arquivado_em && p.saldo)
-    throw new Error("Zere o saldo antes de arquivar.");
+  if (!p.arquivado_em && p.saldo) throw new Error("Zere o saldo antes de arquivar.");
   const d = lerEstoqueDemo();
   d.produtos = d.produtos.map((x) =>
     x.id === p.id
@@ -274,16 +291,15 @@ export function baixarEstoqueDemo(
       continue;
     if (d.movimentos.some((m) => m.chave === `os:${os.id}:${i.id}`)) continue;
     const p = d.produtos.find(
-      (p) => p.id === (i.produto_estoque_id ?? i.item_catalogo_id),
+      (p) => p.id === (i.produto_estoque_id ?? i.item_catalogo_id) && p.saldo !== null,
     );
-    if (!p)
-      throw new Error(`Defina a origem de ${i.descricao} antes de entregar.`);
+    if (!p) throw new Error(`Defina a origem de ${i.descricao} antes de entregar.`);
     if ((p.saldo ?? 0) < i.quantidade)
       throw new Error(`Saldo insuficiente para ${i.descricao}.`);
     p.saldo = Math.round(((p.saldo ?? 0) - i.quantidade) * 1000) / 1000;
     p.revisao = (p.revisao ?? 0) + 1;
     d.movimentos.unshift({
-      id: crypto.randomUUID(),
+      id: novoId(),
       item_catalogo_id: p.id,
       tipo: "consumo_os",
       quantidade: -i.quantidade,

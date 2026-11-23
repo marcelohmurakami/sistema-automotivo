@@ -1,0 +1,302 @@
+.dialogo.detalhes-servico {
+  width: min(1080px, 96vw);
+  max-width: 1080px;
+}
+.detalhes-servico button:not(.botao-icone) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 13px;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  background: var(--superficie);
+  color: var(--grafite);
+  font-weight: 650;
+}
+.detalhes-servico button.botao-primario {
+  background: var(--lima);
+  color: #252c24;
+  border-color: var(--lima);
+}
+.atendimento-form input,
+.atendimento-form select,
+.atendimento-form textarea {
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+  color: var(--grafite);
+}
+.atendimento-cabecalho,
+.atendimento-resumo,
+.atendimento-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.atendimento-cabecalho h3 {
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+.atendimento-cabecalho > div:first-child {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.atendimento-cabecalho p {
+  margin: 0;
+  color: var(--muted);
+}
+.atendimento-abas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  padding: 22px 0 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--borda);
+}
+.atendimento-abas button {
+  white-space: normal;
+  padding: 9px 13px;
+}
+.atendimento-abas select {
+  min-width: 0;
+  width: 100%;
+  padding: 9px 13px;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  color: var(--grafite);
+  background: var(--superficie);
+}
+.atendimento-servicos-resumo {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.atendimento-servicos-resumo h3 {
+  padding: 14px;
+  margin: 0;
+}
+.atendimento-servicos-resumo > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--borda);
+}
+.atendimento-servicos-resumo span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.atendimento-servicos-resumo strong {
+  white-space: nowrap;
+}
+.atendimento-servicos-resumo p {
+  padding: 0 14px 14px;
+}
+.atendimento-historico button {
+  width: 100%;
+  flex-wrap: wrap;
+  text-align: left;
+  justify-content: flex-start !important;
+}
+@media (max-width: 420px) {
+  .atendimento-abas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .atendimento-abas select {
+    grid-column: 1 / -1;
+  }
+}
+.atendimento-abas button[aria-pressed="true"] {
+  background: var(--lima);
+  color: #252c24;
+}
+.atendimento-resumo {
+  padding: 20px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+.atendimento-resumo > strong {
+  font-size: 28px;
+}
+.atendimento-resumo h3 {
+  margin: 8px 0;
+}
+.atendimento-resumo p {
+  margin: 0;
+}
+.atendimento-acoes {
+  justify-content: flex-start;
+  margin: 14px 0;
+}
+.atendimento-acoes button,
+.atendimento-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+}
+.atendimento-form {
+  display: grid;
+  gap: 16px;
+}
+.atendimento-form fieldset {
+  display: grid;
+  gap: 16px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.atendimento-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.atendimento-form input,
+.atendimento-form select,
+.atendimento-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  box-sizing: border-box;
+}
+.atendimento-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+.atendimento-item {
+  display: grid;
+  gap: 12px;
+  padding: 17px;
+  border: 1px solid var(--borda);
+  border-radius: 13px;
+}
+.atendimento-item p {
+  margin: 0;
+  line-height: 1.6;
+}
+.atendimento-quantidade {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.atendimento-quantidade input {
+  text-align: center;
+  appearance: textfield;
+}
+.atendimento-quantidade input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.atendimento-quantidade button {
+  padding: 9px;
+}
+.atendimento-resultado {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+}
+.atendimento-resultado summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.atendimento-resultado dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+.atendimento-resultado p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.atendimento-historico {
+  display: grid;
+  gap: 15px;
+  padding-left: 20px;
+}
+.atendimento-historico li time {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.atendimento-historico li small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .atendimento-cabecalho {
+    align-items: stretch;
+  }
+  .atendimento-cabecalho > button {
+    width: 100%;
+    justify-content: center;
+  }
+  .atendimento-cabecalho h3 {
+    font-size: 21px;
+  }
+  .atendimento-campos {
+    grid-template-columns: 1fr;
+  }
+  .atendimento-resumo {
+    padding: 14px;
+  }
+  .atendimento-abas {
+    margin-inline: -5px;
+  }
+  .atendimento-item {
+    padding: 12px;
+  }
+}
+
+.atendimento-form .atendimento-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.atendimento-check input {
+  width: 18px;
+  height: 18px;
+}
+.atendimento-retirada {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  margin: 20px 0;
+  border: 1px solid var(--ui-borda);
+  border-left: 4px solid #88a75f;
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.atendimento-retirada p {
+  margin: 6px 0 0;
+  color: var(--ui-suave);
+  font-size: 13px;
+}
+.atendimento-retirada form {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+}
+.atendimento-acoes-documento {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}

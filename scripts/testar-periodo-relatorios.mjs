@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+const fonte = await readFile('src/lib/periodoRelatorios.ts','utf8');
+const js = ts.transpile(fonte,{ target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022 });
+const {periodoRapido:p,periodoRelatorioValido:v}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+assert.deepEqual(p('mes','2026-11-09'),{inicio:'2026-11-01',fim:'2026-11-09'});
+assert.deepEqual(p('anterior','2026-01-02'),{inicio:'2025-12-01',fim:'2025-12-31'});
+assert.deepEqual(p('anterior','2024-03-10'),{inicio:'2024-02-01',fim:'2024-02-29'});
+assert.deepEqual(p('30dias','2026-03-01'),{inicio:'2026-01-31',fim:'2026-03-01'});
+assert.deepEqual(p('hoje','2026-11-09'),{inicio:'2026-11-09',fim:'2026-11-09'});
+for(const [inicio,fim] of [['',''],['2026-02-30','2026-03-02'],['2026-11-10','2026-11-09'],['2026-01-01','2027-01-03'],['x','y'],['2026-11-09T00:00:00Z','2026-11-10'],['2026-2-1','2026-02-10']]) assert.equal(v(inicio,fim),false);
+assert.equal(v('2024-02-29','2024-03-01'),true);
+assert.equal(v('2026-01-01','2027-01-02'),true);
+console.log('PASS 14 verificações de período, limites e virada de mês/ano');

@@ -1,0 +1,12 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+let src=await readFile('scripts/conferir-pintura-picos-20261119.mjs','utf8');
+const trocar=(a,b)=>{assert(src.includes(a),a);src=src.replace(a,b)};
+trocar("resolve(root, 'controle-pintura')","resolve(root, 'experimento-layout')");
+trocar(".comparacoes.filter(p=>p.deltaS>0)",".comparacoes.filter(p=>p.deltaS>0&&contas.some(c=>c.especialidade===p.perfil))");
+trocar("assert.equal(casosOriginais.length,51);","if(!process.env.QA_AMOSTRA)assert.equal(casosOriginais.length,51);");
+trocar("resolve(root, 'build-' + fase)","resolve(root, fase==='antes'?'build-depois':'build-candidato')");
+trocar("...(fase === 'antes' ? { agent: false } : {}),", "// Ambas as versões usam o mesmo pool: isola somente a carga do layout.");
+trocar("nome==='Garantia' && !auto && fase==='depois'", "nome==='Garantia' && !auto");
+trocar("metodo: 'Controle adicional:","metodo: 'Experimento de carga do layout: antes=correções de transporte/consulta; depois=mesmas correções e layout sob demanda. Ambas usam pool. Controle adicional:");
+await writeFile('scripts/medir-experimento-layout-picos-20261119.mjs',src);

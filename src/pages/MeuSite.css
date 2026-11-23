@@ -1,0 +1,75 @@
+.meu-site .documentos-form label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 32px;
+}
+.meu-site > [role="alert"],
+.meu-site > [role="status"] {
+  position: sticky;
+  top: 76px;
+  z-index: 10;
+  padding: 14px 18px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--superficie);
+  box-shadow: 0 4px 16px #0002;
+}
+.meu-site .documentos-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex: 0 0 18px;
+  padding: 0;
+}
+.meu-site .site-busca {
+  display: grid;
+  gap: 8px;
+  margin: 20px 0;
+}
+.meu-site .site-busca input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: inherit;
+}
+.meu-site .site-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--borda);
+}
+.meu-site .site-linha > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.meu-site .site-linha small {
+  display: block;
+  margin-top: 6px;
+  color: var(--texto-secundario);
+}
+.meu-site .site-pedido {
+  padding: 22px 0;
+  display: grid;
+  gap: 12px;
+  border-bottom: 1px solid var(--borda);
+}
+.meu-site .site-pedido select {
+  min-height: 44px;
+  margin-left: 12px;
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  .meu-site .site-linha {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .meu-site .site-linha .acoes-proposta {
+    flex-wrap: wrap;
+  }
+}

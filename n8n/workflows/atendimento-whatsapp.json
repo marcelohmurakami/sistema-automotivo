@@ -1,0 +1,222 @@
+{
+  "name": "Automotivo - Atendimento WhatsApp de testes",
+  "nodes": [
+    {
+      "id": "8849d5ac-62c9-48af-9a2c-f0549c94378f",
+      "name": "Receber WhatsApp",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evolution-whatsapp/:secret",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "webhookId": "dd2dc3b5-f49d-4365-b468-ae2a42cbdf83"
+    },
+    {
+      "id": "27f96f05-cb0f-4820-bbfb-640185ade7f3",
+      "name": "Validar mensagem e remetente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function normalizarEntrada(envelope, configuracao, agora = Date.now()) {\n  const esperado = String(configuracao.EVOLUTION_WEBHOOK_SECRET || '');\n  const recebido = String(envelope.params?.secret || envelope.headers?.['x-webhook-secret'] || '');\n  if (!esperado || recebido !== esperado) return [];\n  if (configuracao.EVOLUTION_INSTANCE !== 'estudos-whatsapp') throw new Error('A instância autorizada é estudos-whatsapp.');\n  const corpo = envelope.body || {};\n  if ((corpo.instance || corpo.instanceName) !== 'estudos-whatsapp') return [];\n  if (!['MESSAGES_UPSERT', 'MESSAGE_UPSERT'].includes(String(corpo.event || '').toUpperCase().replace(/[.-]/g,'_'))) return [];\n  const vistos = new Set();\n  return (Array.isArray(corpo.data) ? corpo.data : [corpo.data]).flatMap(entrada => {\n    if (!entrada || typeof entrada !== 'object') return [];\n    const chave = entrada.key || {};\n    if (chave.fromMe === true || String(chave.fromMe).toLowerCase() === 'true') return [];\n    const candidatos = [chave.remoteJidAlt, chave.remoteJid].filter(v => typeof v === 'string');\n    if (candidatos.some(v => /@(g\\.us|broadcast|newsletter)$/.test(v))) return [];\n    const destino = candidatos.find(v => /^\\d{10,15}@s\\.whatsapp\\.net$/.test(v));\n    if (!destino) return [];\n    const id = String(chave.id || '');\n    if (id.length < 4 || id.length > 200 || vistos.has(id)) return [];\n    const timestamp = Number(entrada.messageTimestamp);\n    if (Number.isFinite(timestamp) && timestamp > 0 && (timestamp * 1000 < agora - 10 * 60000 || timestamp * 1000 > agora + 60000)) return [];\n    let mensagem = entrada.message || {};\n    for (let i=0;i<3;i++) {\n      const interna = mensagem.ephemeralMessage?.message || mensagem.viewOnceMessage?.message || mensagem.viewOnceMessageV2?.message;\n      if (!interna) break;\n      mensagem = interna;\n    }\n    const texto = String(mensagem.conversation || mensagem.extendedTextMessage?.text || mensagem.imageMessage?.caption || mensagem.videoMessage?.caption || mensagem.buttonsResponseMessage?.selectedDisplayText || mensagem.listResponseMessage?.singleSelectReply?.selectedRowId || '').trim().slice(0,4000);\n    const midia = mensagem.audioMessage ? 'audio' : mensagem.imageMessage ? 'imagem' : mensagem.videoMessage ? 'video' : mensagem.documentMessage ? 'documento' : mensagem.stickerMessage ? 'figurinha' : '';\n    if (!texto && !midia) return [];\n    vistos.add(id);\n    return [{ id: `estudos-whatsapp:${destino}:${id}`, numero: destino.split('@')[0], texto, midia }];\n  });\n}\n\nfunction prepararResposta(entrada) {\n  const texto = entrada.texto.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();\n  const inicio = '*Oficina do Marcelo · atendimento automático*\\n\\n';\n  let resposta;\n  if (/^(oi|ola|opa|bom dia|boa tarde|boa noite|menu|inicio|0)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Olá! Como podemos ajudar?\\n\\n1 — Pedir orçamento\\n2 — Consultar andamento do serviço\\n3 — Solicitar agendamento\\n4 — Falar com a oficina\\n\\nResponda com o número ou descreva o que precisa.';\n  } else if (/^(1)$/.test(texto) || /orcamento|quanto custa|preco|valor|revisao|freio|oleo|funilaria|pintura|alinhamento|motor/.test(texto)) {\n    resposta = 'Para a oficina preparar seu orçamento, envie em uma mensagem:\\n• Seu nome\\n• Modelo e ano do veículo\\n• Serviço desejado ou o que está acontecendo\\n\\nSe ajudar, anexe uma foto. O valor e o prazo serão confirmados pela oficina após avaliar o pedido.';\n  } else if (texto === '2' || /andamento|ficou pronto|esta pronto|minha os|ordem de servico/.test(texto)) {\n    resposta = 'Envie seu nome e o número da OS ou a placa do veículo. A oficina irá conferir o andamento nesta conversa.\\n\\nSe já recebeu um link de acompanhamento, você também pode consultá-lo. Não informamos dados de outros clientes por aqui.';\n  } else if (texto === '3' || /agendar|agendamento|marcar horario|horario|amanha/.test(texto)) {\n    resposta = 'Para solicitar um horário, envie seu nome, modelo do veículo, serviço e o dia/período de preferência.\\n\\nA solicitação não é uma reserva: aguarde a confirmação de disponibilidade pela oficina.';\n  } else if (texto === '4' || /atendente|humano|falar com|reclamacao/.test(texto)) {\n    resposta = 'Pode deixar sua dúvida ou solicitação nesta conversa para a equipe da oficina responder. O retorno humano depende da disponibilidade da equipe.\\n\\nNão envie senhas ou dados de cartão.';\n  } else if (entrada.midia === 'audio') {\n    resposta = 'Recebemos seu áudio nesta conversa. Este atendimento automático não transcreve áudio. Para adiantar, escreva o modelo do veículo e o que precisa, ou digite 4 para solicitar atendimento da oficina.';\n  } else if (entrada.midia) {\n    resposta = 'Recebemos seu anexo nesta conversa. Para a oficina avaliar, informe por texto seu nome, modelo do veículo e o problema. A imagem, sozinha, não confirma diagnóstico nem orçamento.';\n  } else if (/^(obrigad[oa]|valeu|ok|certo|entendi|sim)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Por nada! As informações ficam nesta conversa para a oficina conferir. Digite *menu* se precisar de outra opção.';\n  } else if (/^(sair|parar|cancelar|pare|stop)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Tudo bem. Este atendimento responde apenas quando você nos escreve. Para cancelar um serviço ou horário já combinado, informe isso à equipe nesta conversa.';\n  } else {\n    resposta = 'Recebemos sua mensagem nesta conversa. Para adiantar o atendimento, informe seu nome, modelo/ano do veículo e o serviço ou problema. A oficina precisa confirmar orçamento, prazo e disponibilidade.\\n\\nDigite *menu* para ver as opções ou *4* para solicitar atendimento da equipe.';\n  }\n  return {numero: entrada.numero, texto: inicio + resposta};\n}\n\nreturn normalizarEntrada($input.first().json, $env).map(json=>({json}));"
+      }
+    },
+    {
+      "id": "0e82312f-680f-4746-9f4d-055ccbdcdb9c",
+      "name": "Impedir resposta duplicada",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.id }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "43f88d1f-b1bd-4912-b575-ac117d00db96",
+      "name": "Atendimento automotivo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "jsCode": "function normalizarEntrada(envelope, configuracao, agora = Date.now()) {\n  const esperado = String(configuracao.EVOLUTION_WEBHOOK_SECRET || '');\n  const recebido = String(envelope.params?.secret || envelope.headers?.['x-webhook-secret'] || '');\n  if (!esperado || recebido !== esperado) return [];\n  if (configuracao.EVOLUTION_INSTANCE !== 'estudos-whatsapp') throw new Error('A instância autorizada é estudos-whatsapp.');\n  const corpo = envelope.body || {};\n  if ((corpo.instance || corpo.instanceName) !== 'estudos-whatsapp') return [];\n  if (!['MESSAGES_UPSERT', 'MESSAGE_UPSERT'].includes(String(corpo.event || '').toUpperCase().replace(/[.-]/g,'_'))) return [];\n  const vistos = new Set();\n  return (Array.isArray(corpo.data) ? corpo.data : [corpo.data]).flatMap(entrada => {\n    if (!entrada || typeof entrada !== 'object') return [];\n    const chave = entrada.key || {};\n    if (chave.fromMe === true || String(chave.fromMe).toLowerCase() === 'true') return [];\n    const candidatos = [chave.remoteJidAlt, chave.remoteJid].filter(v => typeof v === 'string');\n    if (candidatos.some(v => /@(g\\.us|broadcast|newsletter)$/.test(v))) return [];\n    const destino = candidatos.find(v => /^\\d{10,15}@s\\.whatsapp\\.net$/.test(v));\n    if (!destino) return [];\n    const id = String(chave.id || '');\n    if (id.length < 4 || id.length > 200 || vistos.has(id)) return [];\n    const timestamp = Number(entrada.messageTimestamp);\n    if (Number.isFinite(timestamp) && timestamp > 0 && (timestamp * 1000 < agora - 10 * 60000 || timestamp * 1000 > agora + 60000)) return [];\n    let mensagem = entrada.message || {};\n    for (let i=0;i<3;i++) {\n      const interna = mensagem.ephemeralMessage?.message || mensagem.viewOnceMessage?.message || mensagem.viewOnceMessageV2?.message;\n      if (!interna) break;\n      mensagem = interna;\n    }\n    const texto = String(mensagem.conversation || mensagem.extendedTextMessage?.text || mensagem.imageMessage?.caption || mensagem.videoMessage?.caption || mensagem.buttonsResponseMessage?.selectedDisplayText || mensagem.listResponseMessage?.singleSelectReply?.selectedRowId || '').trim().slice(0,4000);\n    const midia = mensagem.audioMessage ? 'audio' : mensagem.imageMessage ? 'imagem' : mensagem.videoMessage ? 'video' : mensagem.documentMessage ? 'documento' : mensagem.stickerMessage ? 'figurinha' : '';\n    if (!texto && !midia) return [];\n    vistos.add(id);\n    return [{ id: `estudos-whatsapp:${destino}:${id}`, numero: destino.split('@')[0], texto, midia }];\n  });\n}\n\nfunction prepararResposta(entrada) {\n  const texto = entrada.texto.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();\n  const inicio = '*Oficina do Marcelo · atendimento automático*\\n\\n';\n  let resposta;\n  if (/^(oi|ola|opa|bom dia|boa tarde|boa noite|menu|inicio|0)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Olá! Como podemos ajudar?\\n\\n1 — Pedir orçamento\\n2 — Consultar andamento do serviço\\n3 — Solicitar agendamento\\n4 — Falar com a oficina\\n\\nResponda com o número ou descreva o que precisa.';\n  } else if (/^(1)$/.test(texto) || /orcamento|quanto custa|preco|valor|revisao|freio|oleo|funilaria|pintura|alinhamento|motor/.test(texto)) {\n    resposta = 'Para a oficina preparar seu orçamento, envie em uma mensagem:\\n• Seu nome\\n• Modelo e ano do veículo\\n• Serviço desejado ou o que está acontecendo\\n\\nSe ajudar, anexe uma foto. O valor e o prazo serão confirmados pela oficina após avaliar o pedido.';\n  } else if (texto === '2' || /andamento|ficou pronto|esta pronto|minha os|ordem de servico/.test(texto)) {\n    resposta = 'Envie seu nome e o número da OS ou a placa do veículo. A oficina irá conferir o andamento nesta conversa.\\n\\nSe já recebeu um link de acompanhamento, você também pode consultá-lo. Não informamos dados de outros clientes por aqui.';\n  } else if (texto === '3' || /agendar|agendamento|marcar horario|horario|amanha/.test(texto)) {\n    resposta = 'Para solicitar um horário, envie seu nome, modelo do veículo, serviço e o dia/período de preferência.\\n\\nA solicitação não é uma reserva: aguarde a confirmação de disponibilidade pela oficina.';\n  } else if (texto === '4' || /atendente|humano|falar com|reclamacao/.test(texto)) {\n    resposta = 'Pode deixar sua dúvida ou solicitação nesta conversa para a equipe da oficina responder. O retorno humano depende da disponibilidade da equipe.\\n\\nNão envie senhas ou dados de cartão.';\n  } else if (entrada.midia === 'audio') {\n    resposta = 'Recebemos seu áudio nesta conversa. Este atendimento automático não transcreve áudio. Para adiantar, escreva o modelo do veículo e o que precisa, ou digite 4 para solicitar atendimento da oficina.';\n  } else if (entrada.midia) {\n    resposta = 'Recebemos seu anexo nesta conversa. Para a oficina avaliar, informe por texto seu nome, modelo do veículo e o problema. A imagem, sozinha, não confirma diagnóstico nem orçamento.';\n  } else if (/^(obrigad[oa]|valeu|ok|certo|entendi|sim)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Por nada! As informações ficam nesta conversa para a oficina conferir. Digite *menu* se precisar de outra opção.';\n  } else if (/^(sair|parar|cancelar|pare|stop)[!.,\\s]*$/.test(texto)) {\n    resposta = 'Tudo bem. Este atendimento responde apenas quando você nos escreve. Para cancelar um serviço ou horário já combinado, informe isso à equipe nesta conversa.';\n  } else {\n    resposta = 'Recebemos sua mensagem nesta conversa. Para adiantar o atendimento, informe seu nome, modelo/ano do veículo e o serviço ou problema. A oficina precisa confirmar orçamento, prazo e disponibilidade.\\n\\nDigite *menu* para ver as opções ou *4* para solicitar atendimento da equipe.';\n  }\n  return {numero: entrada.numero, texto: inicio + resposta};\n}\n\nreturn $input.all().map(item=>({json:prepararResposta(item.json)}));"
+      }
+    },
+    {
+      "id": "eef95951-7fde-4705-b804-cbcab3dc2071",
+      "name": "Responder pelo numero de testes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1040,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://evolution.murakamitech.tech/message/sendText/estudos-whatsapp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ number: $json.numero, text: $json.texto, delay: 800, linkPreview: false }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "a4e31784-6666-4bf5-90b6-8a7bbb0b191c",
+      "name": "Verificar conexao sem enviar",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "ca9f6d1f-cf38-443c-a6fb-19696f3dd00c",
+      "name": "Conferir configuracao",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "jsCode": "if ($env.EVOLUTION_INSTANCE !== 'estudos-whatsapp' || !$env.EVOLUTION_WEBHOOK_SECRET || !$env.EVOLUTION_API_KEY) throw new Error('Configuração incompleta'); const esperado='https://n8n.murakamitech.tech/webhook/dd2dc3b5-f49d-4365-b468-ae2a42cbdf83/evolution-whatsapp/'+$env.EVOLUTION_WEBHOOK_SECRET; const r=await this.helpers.httpRequest({method:'GET',url:'https://evolution.murakamitech.tech/webhook/find/estudos-whatsapp',headers:{apikey:$env.EVOLUTION_API_KEY},json:true}); const w=r.webhook||r; if (!w.enabled || w.url!==esperado || w.webhookByEvents || !w.events?.includes('MESSAGES_UPSERT')) throw new Error('Webhook de entrada divergente. Conferir URL de produção completa, evento e habilitação.'); const p=await this.helpers.httpRequest({method:'POST',url:esperado,body:{event:'diagnostico.sem_envio',instance:'estudos-whatsapp',data:{}},json:true,returnFullResponse:true,timeout:10000}); return [{json:{habilitado:w.enabled,urlCorreta:w.url===esperado,eventos:w.events,porEvento:!!w.webhookByEvents,entradaHttp:p.statusCode,diagnostico:'Evento sem mensagem: nenhum WhatsApp enviado'}}];\n"
+      }
+    },
+    {
+      "id": "0c460e83-53a6-4999-b386-2e6aed8b2b31",
+      "name": "Estado da instancia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "url": "https://evolution.murakamitech.tech/instance/connectionState/estudos-whatsapp",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.EVOLUTION_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Receber WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Validar mensagem e remetente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar mensagem e remetente": {
+      "main": [
+        [
+          {
+            "node": "Impedir resposta duplicada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impedir resposta duplicada": {
+      "main": [
+        [
+          {
+            "node": "Atendimento automotivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atendimento automotivo": {
+      "main": [
+        [
+          {
+            "node": "Responder pelo numero de testes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar conexao sem enviar": {
+      "main": [
+        [
+          {
+            "node": "Conferir configuracao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conferir configuracao": {
+      "main": [
+        [
+          {
+            "node": "Estado da instancia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveExecutionProgress": false
+  },
+  "tags": []
+}

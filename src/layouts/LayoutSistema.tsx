@@ -1,95 +1,40 @@
+import { FaixaLembretesFinanceiros } from "../components/financeiro/FaixaLembretesFinanceiros";
+import { MarcaEmpresa } from "../components/MarcaEmpresa";
+import { useAcesso } from "../auth/contexto";
+import { termosBuscaCompras } from "../lib/navegacaoCompras";
+import { AcessoRapido } from "../components/AcessoRapido";
 import { useEffect, useRef, useState } from "react";
-import {
-  Link,
-  NavLink,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { CarregamentoPagina } from "../components/CarregamentoPagina";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Wallet,
   BarChart3,
   History,
   Moon,
   Sun,
-  ArrowDownLeft,
   ArrowUpRight,
-  Bell,
-  BookOpen,
-  CarFront,
   Check,
   ChevronDown,
-  ChevronRight,
-  CircleHelp,
   ClipboardList,
   FileText,
   LayoutGrid,
   LockKeyhole,
-  LogOut,
   ShieldCheck,
   Menu,
   Package,
+  MapPin,
   Plus,
   Search,
   Settings2,
-  Sparkles,
   Users,
-  Wrench,
-  X,
 } from "lucide-react";
 import { useTema, definirTema } from "../lib/tema";
 import { Dialogo } from "../components/Dialogo";
-import { NovoOrcamento } from "../components/NovoOrcamento";
-import {
-  etapas,
-  moeda,
-  orcamentosIniciais,
-  veiculosIniciais,
-} from "../data/demonstracao";
-import type { Orcamento, Veiculo } from "../data/demonstracao";
-import { useAcesso } from "../auth/contexto";
-import type { ContextoOficina } from "./contexto";
-
+import { PerfilConta } from "../components/PerfilConta";
+import { AlertasOficina } from "../components/AlertasOficina";
+import { ProvedorPagamentoAposRegistro } from "../components/ProvedorPagamentoAposRegistro";
 const navegacao = [
-  {
-    rota: "/automacoes",
-    nome: "Assistente e automações",
-    icone: Sparkles,
-    recurso: "automations",
-  },
-  {
-    rota: "/meu-site",
-    nome: "Site e clientes online",
-    icone: LayoutGrid,
-    recurso: "website",
-  },
-  {
-    rota: "/notinhas",
-    nome: "Notinhas",
-    icone: FileText,
-    recurso: "simple_notes",
-  },
-  {
-    rota: "/fornecedores",
-    nome: "Fornecedores",
-    icone: Users,
-    recurso: "inventory",
-  },
-  { rota: "/compras", nome: "Compras", icone: Package, recurso: "inventory" },
-  {
-    rota: "/relatorios",
-    nome: "Relatórios",
-    icone: BarChart3,
-    recurso: "reports",
-  },
-  { rota: "/historico", nome: "Histórico", icone: History, recurso: "reports" },
-  {
-    rota: "/financeiro",
-    nome: "Financeiro",
-    icone: Wallet,
-    recurso: "finance",
-  },
-  { rota: "/estoque", nome: "Estoque", icone: Package, recurso: "inventory" },
+  { rota: "/laudos", nome: "Laudos técnicos", icone: FileText, recurso: "work_orders" },
   {
     rota: "/",
     nome: "Mapa da oficina",
@@ -111,50 +56,102 @@ const navegacao = [
   { rota: "/clientes", nome: "Clientes", icone: Users, recurso: "customers" },
   {
     rota: "/catalogo",
-    nome: "Peças e serviços",
+    nome: "Serviços",
     icone: Package,
     recurso: "catalog",
   },
+  { rota: "/funcionarios", nome: "Funcionários", icone: Users, recurso: "" },
+  {
+    rota: "/produtividade",
+    nome: "Agenda e revisões",
+    icone: ClipboardList,
+    recurso: "work_orders",
+  },
+  {
+    rota: "/oportunidades",
+    nome: "Clientes para contatar",
+    icone: ArrowUpRight,
+    recurso: "quotes",
+  },
+  { rota: "/estoque", nome: "Estoque", icone: Package, recurso: "inventory" },
+  {
+    rota: "/localizacao",
+    nome: "Localização e etiquetas",
+    icone: MapPin,
+    recurso: "work_orders",
+  },
+  { rota: "/compras", nome: "Compras", icone: Package, recurso: "inventory" },
+  {
+    rota: "/fornecedores",
+    nome: "Fornecedores",
+    icone: Users,
+    recurso: "inventory",
+  },
+  {
+    rota: "/financeiro",
+    nome: "Financeiro",
+    icone: Wallet,
+    recurso: "finance",
+  },
+  {
+    rota: "/relatorios",
+    nome: "Relatórios",
+    icone: BarChart3,
+    recurso: "reports",
+  },
+  {
+    rota: "/garantias",
+    nome: "Qualidade e garantia",
+    icone: ShieldCheck,
+    recurso: "work_orders",
+  },
+  { rota: "/historico", nome: "Histórico", icone: History, recurso: "reports" },
+  {
+    rota: "/meu-site",
+    nome: "Site e clientes online",
+    icone: LayoutGrid,
+    recurso: "website",
+  },
+  {
+    rota: "/execucao-offline",
+    nome: "Trabalhar sem internet",
+    icone: FileText,
+    recurso: "work_orders",
+  },
+  {
+    rota: "/comecar",
+    nome: "Começar por aqui",
+    icone: Check,
+    recurso: "customers",
+  },
 ];
+const paginasAuxiliares: Record<string, string> = {
+  "/equipe": "Minha equipe",
+  "/planos": "Seu plano",
+  "/configuracoes": "Configurações",
+  "/documentos": "Impressão de documentos",
+  "/notinhas": "Notinhas",
+  "/dados-seguranca": "Dados e segurança",
+  "/historico-importado": "Histórico importado",
+};
 export function LayoutSistema() {
   const acesso = useAcesso();
   const tema = useTema();
   const [menuAberto, setMenuAberto] = useState(false);
-  const [modal, setModal] = useState<
-    "orcamento" | "notificacoes" | "ajuda" | null
-  >(null);
-  const [veiculos, setVeiculos] = useState(acesso.demo ? veiculosIniciais : []);
-  const [orcamentos, setOrcamentos] = useState(
-    acesso.demo ? orcamentosIniciais : [],
-  );
-  const [selecionado, setSelecionado] = useState<Veiculo | null>(null);
-  const [nomeOficina, setNomeOficina] = useState(
-    acesso.oficina?.nome ?? "Minha oficina",
-  );
-  const [aviso, setAviso] = useState("");
+  const [buscaMenu, setBuscaMenu] = useState("");
   const local = useLocation(),
     navegar = useNavigate(),
     conteudo = useRef<HTMLElement>(null);
-  const pagina =
-    local.pathname === "/equipe"
-      ? "Minha equipe"
-      : (navegacao.find((n) => n.rota === local.pathname)?.nome ??
-        (local.pathname === "/planos"
-          ? "Seu plano"
-          : local.pathname === "/configuracoes"
-            ? "Configurações"
-            : "Página não encontrada"));
+  const pagina = local.pathname.startsWith("/financeiro/detalhes/")
+    ? "Histórico financeiro"
+    : (navegacao.find((n) => n.rota === local.pathname)?.nome ??
+      paginasAuxiliares[local.pathname] ??
+      "Página não encontrada");
   useEffect(() => {
     document.title = `${pagina} · Pátio`;
     conteudo.current?.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }, [pagina]);
-  useEffect(() => {
-    if (aviso) {
-      const tempo = setTimeout(() => setAviso(""), 6500);
-      return () => clearTimeout(tempo);
-    }
-  }, [aviso]);
   const abrirOrcamento = () => {
     if (!acesso.permite("quotes")) {
       navegar("/planos");
@@ -162,170 +159,180 @@ export function LayoutSistema() {
     }
     navegar("/orcamentos?novo=1");
   };
-  const salvar = (dados: Omit<Orcamento, "id">) => {
-    setOrcamentos((anteriores) => [
-      { ...dados, id: Math.max(...anteriores.map((o) => o.id)) + 1 },
-      ...anteriores,
-    ]);
-    setModal(null);
-    setAviso("Rascunho salvo nesta demonstração.");
-    navegar("/orcamentos");
+  const normalizarMenu = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  const rotasPrincipais = [
+    ...(acesso.permite("production_board") ? ["/"] : []),
+    ...(acesso.permite("quotes") ? ["/orcamentos"] : []),
+    ...(acesso.permite("work_orders") ? ["/ordens-servico"] : ["/catalogo"]),
+    "/clientes",
+    ...(acesso.permite("inventory") ? ["/estoque"] : []),
+    ...(acesso.permite("finance") && acesso.oficina?.perfil !== "staff"
+      ? ["/financeiro"]
+      : []),
+  ];
+  const gruposMenu = [
+    {
+      nome: "Cadastros e compras",
+      rotas: [
+        "/catalogo",
+        "/localizacao",
+        "/funcionarios",
+        "/compras",
+        "/suprimentos",
+        "/fornecedores",
+      ],
+    },
+    {
+      nome: "Gestão e ferramentas",
+      rotas: [
+        "/laudos",
+        "/produtividade",
+        "/oportunidades",
+        "/relatorios",
+        "/garantias",
+        "/historico",
+        "/meu-site",
+        "/execucao-offline",
+      ],
+    },
+  ];
+  const opcoesBusca = [
+    ...navegacao,
+    {
+      rota: "/configuracoes",
+      nome: "Configurações",
+      icone: Settings2,
+      recurso: "",
+    },
+    { rota: "/planos", nome: "Meu plano", icone: ShieldCheck, recurso: "" },
+    ...(acesso.oficina?.perfil === "owner"
+      ? [{ rota: "/equipe", nome: "Minha equipe", icone: Users, recurso: "" }]
+      : []),
+  ];
+  const fecharMenu = () => {
+    setMenuAberto(false);
+    setBuscaMenu("");
+  };
+  const itemMenu = ({
+    rota,
+    nome,
+    icone: Icone,
+    recurso,
+  }: (typeof navegacao)[number]) => {
+    const liberado = !recurso || acesso.permite(recurso);
+    return (
+      <NavLink
+        key={rota}
+        to={liberado ? rota : "/planos"}
+        end={rota === "/"}
+        aria-current={liberado ? "page" : false}
+        className={({ isActive }) =>
+          !liberado ? "menu-bloqueado" : isActive ? "active" : undefined
+        }
+        title={!liberado ? "Veja os planos que incluem este recurso" : undefined}
+        onClick={fecharMenu}
+      >
+        <Icone size={18} />
+        <span>{nome}</span>
+        {!liberado && <LockKeyhole size={14} />}
+      </NavLink>
+    );
   };
   const sidebar = (
     <>
-      <Link
-        to="/"
-        className="marca"
-        onClick={() => setMenuAberto(false)}
-        aria-label="Pátio, mapa da oficina"
-      >
-        <span className="simbolo-marca">
-          <Wrench size={21} strokeWidth={2.4} />
-        </span>
-        <span>
-          pátio<span className="ponto-marca">.</span>
-        </span>
-        <small>GESTÃO AUTOMOTIVA</small>
-      </Link>
-      <button
-        className="seletor-oficina"
-        onClick={() => {
-          setMenuAberto(false);
-          navegar("/configuracoes");
-        }}
-      >
-        <span className="avatar-oficina">OM</span>
-        <span>
-          <strong>{acesso.oficina?.nome ?? nomeOficina}</strong>
-          <small>
-            {acesso.demo ? "Franca, SP" : "Sua oficina"}{" "}
-            <span className="bolinha" /> {acesso.oficina?.nome_plano}
-          </small>
-        </span>
-        <ChevronDown size={15} />
-      </button>
-      <div className="rotulo-menu">DIA A DIA</div>
-      <nav aria-label="Navegação principal" className="menu-principal">
-        {navegacao.map(({ rota, nome, icone: Icone, recurso }) => (
-          <NavLink
-            key={rota}
-            to={acesso.permite(recurso) ? rota : "/planos"}
-            className={!acesso.permite(recurso) ? "menu-bloqueado" : undefined}
-            title={
-              !acesso.permite(recurso)
-                ? "Recurso indisponível no plano"
-                : undefined
-            }
-            end={rota === "/"}
-            onClick={() => setMenuAberto(false)}
-          >
-            <Icone size={19} />
-            <span>{nome}</span>
-            {!acesso.permite(recurso) && <LockKeyhole size={14} />}
-            {rota === "/orcamentos" &&
-              acesso.demo &&
-              acesso.permite("quotes") && (
-                <small>
-                  {
-                    orcamentos.filter(
-                      (o) => o.situacao === "Aguardando aprovação",
-                    ).length
-                  }
-                </small>
-              )}
-          </NavLink>
-        ))}
-      </nav>
-      <div className="rotulo-menu gestao-label">SUA OFICINA</div>
-      <nav aria-label="Administração" className="menu-principal">
-        {acesso.oficina?.perfil === "owner" && (
-          <NavLink to="/equipe" onClick={() => setMenuAberto(false)}>
-            <Users size={19} />
-            <span>Minha equipe</span>
-          </NavLink>
-        )}
-        {!acesso.demo && (
-          <NavLink to="/nova-oficina" onClick={() => setMenuAberto(false)}>
-            <Plus size={19} />
-            <span>Cadastrar outra oficina</span>
-          </NavLink>
-        )}
-        <NavLink to="/planos" onClick={() => setMenuAberto(false)}>
-          <ShieldCheck size={19} />
-          <span>Meu plano</span>
-        </NavLink>
-        {acesso.oficinas.length > 1 && (
-          <label className="troca-oficina">
-            Oficina
-            <select
-              aria-label="Selecionar oficina"
-              value={acesso.oficina?.id}
-              onChange={(e) => acesso.selecionarOficina(e.target.value)}
+      <MarcaEmpresa onClick={() => setMenuAberto(false)} />
+      <label className="busca-menu">
+        <Search size={16} aria-hidden="true" />
+        <input
+          aria-label="Encontrar no menu"
+          placeholder="Encontrar no menu…"
+          value={buscaMenu}
+          onChange={(e) => setBuscaMenu(e.target.value)}
+        />
+      </label>
+      {buscaMenu.trim() ? (
+        <nav aria-label="Resultados do menu" className="menu-principal">
+          {opcoesBusca
+            .filter((n) =>
+              normalizarMenu(termosBuscaCompras(n)).includes(normalizarMenu(buscaMenu)),
+            )
+            .map(itemMenu)}
+          {!opcoesBusca.some((n) =>
+            normalizarMenu(termosBuscaCompras(n)).includes(normalizarMenu(buscaMenu)),
+          ) && <p className="menu-sem-resultado">Nenhuma opção encontrada.</p>}
+        </nav>
+      ) : (
+        <>
+          <div className="rotulo-menu">DIA A DIA</div>
+          <nav aria-label="Navegação principal" className="menu-principal">
+            {navegacao.filter((n) => rotasPrincipais.includes(n.rota)).map(itemMenu)}
+          </nav>
+          {gruposMenu.map((grupo) => (
+            <details
+              className="grupo-menu"
+              key={grupo.nome + local.pathname}
+              open={grupo.rotas.includes(local.pathname) || undefined}
             >
-              {acesso.oficinas.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <button
-          onClick={() => {
-            void acesso
-              .sair()
-              .catch(() => setAviso("Não foi possível sair. Tente novamente."));
-          }}
-        >
-          <LogOut size={19} />
-          <span>{acesso.demo ? "Entrar na minha conta" : "Sair da conta"}</span>
-        </button>
-        <NavLink to="/configuracoes" onClick={() => setMenuAberto(false)}>
-          <Settings2 size={19} />
-          <span>Configurações</span>
-        </NavLink>
-        <button
-          onClick={() => {
-            setMenuAberto(false);
-            setModal("ajuda");
-          }}
-        >
-          <CircleHelp size={19} />
-          <span>Central de ajuda</span>
-          <ArrowUpRight size={15} />
-        </button>
-      </nav>
-      <div className="sidebar-rodape">
-        <div className="dica-sidebar">
-          <span>
-            <Sparkles size={17} /> Menos papel. Mais oficina.
-          </span>
-          <p>
-            Um orçamento profissional
-            <br />
-            começa com poucos toques.
-          </p>
-          <button
-            onClick={() => {
-              setMenuAberto(false);
-              abrirOrcamento();
-            }}
-          >
-            Criar meu orçamento
-            <ArrowUpRight size={16} />
-          </button>
-        </div>
-        <div className="assinatura-sidebar">
-          <span className="selo-p">P</span>
-          <span>
-            Feito para quem faz.
-            <small>
-              Pátio ·{" "}
-              {acesso.demo ? "Demonstração" : acesso.oficina?.nome_plano}
-            </small>
-          </span>
-        </div>
-      </div>
+              <summary>
+                {grupo.nome}
+                <ChevronDown size={16} aria-hidden="true" />
+              </summary>
+              <nav className="menu-principal" aria-label={grupo.nome}>
+                {navegacao
+                  .filter(
+                    (n) =>
+                      grupo.rotas.includes(n.rota) && !rotasPrincipais.includes(n.rota),
+                  )
+                  .map(itemMenu)}
+              </nav>
+            </details>
+          ))}
+        </>
+      )}
+      <details
+        className="grupo-menu menu-administracao"
+        key={"conta" + local.pathname}
+        open={
+          [
+            "/configuracoes",
+            "/planos",
+            "/equipe",
+            "/dados-seguranca",
+            "/historico-importado",
+          ].includes(local.pathname) || undefined
+        }
+      >
+        <summary>
+          Minha oficina
+          <ChevronDown size={16} aria-hidden="true" />
+        </summary>
+        <nav aria-label="Administração" className="menu-principal">
+          {["owner", "manager"].includes(acesso.oficina?.perfil || "") && (
+            <NavLink to="/historico-importado" onClick={fecharMenu}>
+              <History size={18} />
+              <span>Histórico importado</span>
+            </NavLink>
+          )}
+          <NavLink to="/configuracoes" onClick={fecharMenu}>
+            <Settings2 size={18} />
+            <span>Configurações</span>
+          </NavLink>
+          {acesso.oficina?.perfil === "owner" && (
+            <NavLink to="/equipe" onClick={fecharMenu}>
+              <Users size={18} />
+              <span>Minha equipe</span>
+            </NavLink>
+          )}
+          <NavLink to="/planos" onClick={fecharMenu}>
+            <ShieldCheck size={18} />
+            <span>Meu plano</span>
+          </NavLink>
+        </nav>
+      </details>
     </>
   );
   return (
@@ -353,11 +360,12 @@ export function LayoutSistema() {
             >
               <Menu size={22} />
             </button>
-            <span className="breadcrumb-pai">Minha oficina</span>
-            <ChevronRight size={14} className="breadcrumb-pai" />
-            <strong>{pagina}</strong>
+            <strong title={pagina}>{pagina}</strong>
           </div>
           <div className="acoes-cabecalho">
+            <AlertasOficina
+              key={`${acesso.demo}:${acesso.oficina?.id}:${acesso.usuario}`}
+            />
             <button
               className="botao-icone"
               aria-label="Alternar tema claro e escuro"
@@ -372,83 +380,26 @@ export function LayoutSistema() {
             >
               {tema === "escuro" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
-            <form
-              className="busca-global"
-              role="search"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const termo = String(
-                  new FormData(e.currentTarget).get("busca") ?? "",
-                );
-                navegar(`/ordens-servico?busca=${encodeURIComponent(termo)}`);
-              }}
-            >
-              <Search size={17} />
-              <input
-                name="busca"
-                aria-label="Buscar por placa ou cliente"
-                placeholder="Buscar placa ou cliente..."
-              />
-              <kbd>↵</kbd>
-            </form>
-            <Link to="/planos" className="selo-demo">
-              {acesso.demo ? "Demonstração" : acesso.oficina?.nome_plano}
-            </Link>
-            <button
-              className="botao-icone notificacao"
-              aria-label="Ver avisos da oficina"
-              onClick={() => setModal("notificacoes")}
-            >
-              <Bell size={20} />
-              <i />
-            </button>
-            <Link
-              className="perfil-cabecalho"
-              to="/configuracoes"
-              aria-label="Configurações da conta"
-            >
-              <span className="avatar-usuario">M</span>
-              <div>
-                <strong>{acesso.demo ? "Marcelo" : "Minha conta"}</strong>
-                <small>
-                  {acesso.oficina?.perfil === "staff"
-                    ? "Colaborador"
-                    : "Administrador"}
-                </small>
-              </div>
-              <ChevronDown size={14} />
-            </Link>
+            <PerfilConta key={local.pathname} />
           </div>
         </header>
-        <main
-          ref={conteudo}
-          id="conteudo"
-          tabIndex={-1}
-          className="conteudo-pagina"
-        >
-          <Outlet
-            context={
-              {
-                veiculos,
-                orcamentos,
-                nomeOficina,
-                abrirOrcamento,
-                abrirVeiculo: setSelecionado,
-                avisar: setAviso,
-                definirOficina: setNomeOficina,
-              } satisfies ContextoOficina
-            }
-          />
+        <AcessoRapido key={`${acesso.usuario}:${acesso.oficina?.id}`} />
+        <main ref={conteudo} id="conteudo" tabIndex={-1} className="conteudo-pagina">
+          <FaixaLembretesFinanceiros />
+          <ProvedorPagamentoAposRegistro key={`${acesso.demo}:${acesso.oficina?.id}`}>
+            <CarregamentoPagina>
+              <Outlet />
+            </CarregamentoPagina>
+          </ProvedorPagamentoAposRegistro>
         </main>
         <footer className="rodape-pagina">
           <span>
-            <span className="ponto-status" /> Seu próximo serviço começa com
-            organização.
+            <span className="ponto-status" /> Pátio · Gestão da oficina
           </span>
           <span>
             {acesso.demo
               ? "Ambiente demonstrativo · Dados fictícios"
-              : "Conectado à sua oficina · Supabase"}
+              : "Dados da sua oficina"}
           </span>
         </footer>
       </div>
@@ -457,20 +408,20 @@ export function LayoutSistema() {
           <LayoutGrid size={21} />
           <span>Oficina</span>
         </NavLink>
-        <NavLink
-          to={acesso.permite("work_orders") ? "/ordens-servico" : "/planos"}
-        >
+        <NavLink to={acesso.permite("work_orders") ? "/ordens-servico" : "/catalogo"}>
           <ClipboardList size={21} />
-          <span>Serviços</span>
+          <span>{acesso.permite("work_orders") ? "Serviços" : "Catálogo"}</span>
         </NavLink>
-        <button
-          className="atalho-novo"
-          onClick={abrirOrcamento}
-          aria-label="Novo orçamento"
-        >
-          <Plus size={23} />
-          <span>Orçamento</span>
-        </button>
+        {acesso.permite("quotes") && (
+          <button
+            className="atalho-novo"
+            onClick={abrirOrcamento}
+            aria-label="Novo orçamento"
+          >
+            <Plus size={23} />
+            <span>Orçamento</span>
+          </button>
+        )}
         <NavLink to="/clientes">
           <Users size={21} />
           <span>Clientes</span>
@@ -480,164 +431,6 @@ export function LayoutSistema() {
           <span>Mais</span>
         </button>
       </nav>
-      <Dialogo
-        aberto={modal === "orcamento"}
-        fechar={() => setModal(null)}
-        titulo="Novo orçamento"
-      >
-        {modal === "orcamento" && <NovoOrcamento salvar={salvar} />}
-      </Dialogo>
-      <Dialogo
-        aberto={modal === "notificacoes"}
-        fechar={() => setModal(null)}
-        titulo="Atenção ao seu dia"
-      >
-        <p className="texto-suave mb-5">Avisos ilustrativos da oficina.</p>
-        {veiculos
-          .filter((v) => v.atrasado)
-          .map((v) => (
-            <button
-              key={v.id}
-              className="linha-notificacao"
-              onClick={() => {
-                setModal(null);
-                setSelecionado(v);
-              }}
-            >
-              <span className="icone-suave laranja">
-                <CarFront size={20} />
-              </span>
-              <span>
-                <strong>{v.modelo}</strong>
-                <small>{v.motivo} · Prazo vencido</small>
-              </span>
-              <ChevronRight size={17} />
-            </button>
-          ))}
-        {!veiculos.some((v) => v.atrasado) && <p>Sem avisos por aqui.</p>}
-      </Dialogo>
-      <Dialogo
-        aberto={modal === "ajuda"}
-        fechar={() => setModal(null)}
-        titulo="Sua oficina, sem complicação"
-      >
-        <div className="ajuda-conteudo">
-          <BookOpen size={32} />
-          <p>
-            Este é o esboço interativo do Pátio. Explore as páginas pelo menu e
-            toque em um veículo para ver os detalhes.
-          </p>
-          <p>
-            Você pode filtrar o mapa, avançar etapas e montar um orçamento de
-            demonstração. As alterações duram até recarregar a página.
-          </p>
-          <div className="aviso-demo">
-            Envio pelo WhatsApp, fotos e conexão com o banco serão integrados
-            nas próximas etapas.
-          </div>
-        </div>
-      </Dialogo>
-      <Dialogo
-        aberto={selecionado !== null}
-        fechar={() => setSelecionado(null)}
-        titulo={`Ordem de serviço #${selecionado?.id ?? ""}`}
-      >
-        {selecionado && (
-          <>
-            <div className="detalhe-veiculo">
-              <span className="icone-veiculo">
-                <CarFront size={34} />
-              </span>
-              <div>
-                <h3>{selecionado.modelo}</h3>
-                <p>{selecionado.versao}</p>
-                <span className="placa">{selecionado.placa}</span>
-              </div>
-            </div>
-            <dl className="detalhes-grade">
-              <div>
-                <dt>Cliente</dt>
-                <dd>{selecionado.cliente}</dd>
-              </div>
-              <div>
-                <dt>Responsável</dt>
-                <dd>{selecionado.tecnico}</dd>
-              </div>
-              <div>
-                <dt>Entrega prevista</dt>
-                <dd>{selecionado.prazo}</dd>
-              </div>
-              <div>
-                <dt>Local na oficina</dt>
-                <dd>{selecionado.local}</dd>
-              </div>
-              <div>
-                <dt>Serviço</dt>
-                <dd>{selecionado.servico}</dd>
-              </div>
-              <div>
-                <dt>Valor do serviço</dt>
-                <dd>{moeda(selecionado.valor)}</dd>
-              </div>
-            </dl>
-            <div className="aviso-demo">
-              <ClipboardList size={18} />
-              <span>
-                Etapa atual:{" "}
-                {etapas.find((e) => e.id === selecionado.etapa)?.nome}. Dados de
-                demonstração.
-              </span>
-            </div>
-            <button
-              className="botao-primario w-full mt-5"
-              disabled={selecionado.etapa === "pronto"}
-              onClick={() => {
-                const novaEtapa =
-                  selecionado.etapa === "recepcao"
-                    ? "execucao"
-                    : selecionado.etapa === "aguardando"
-                      ? "execucao"
-                      : "pronto";
-                setVeiculos((lista) =>
-                  lista.map((v) =>
-                    v.id === selecionado.id
-                      ? { ...v, etapa: novaEtapa, motivo: undefined }
-                      : v,
-                  ),
-                );
-                setSelecionado(null);
-                setAviso("Etapa atualizada nesta demonstração.");
-              }}
-            >
-              {selecionado.etapa === "pronto" ? (
-                <Check size={18} />
-              ) : (
-                <ArrowDownLeft size={18} />
-              )}{" "}
-              {selecionado.etapa === "pronto"
-                ? "Pronto para entregar"
-                : selecionado.etapa === "aguardando"
-                  ? "Retomar execução"
-                  : "Avançar etapa"}
-            </button>
-          </>
-        )}
-      </Dialogo>
-      {aviso && (
-        <div className="toast" role="status">
-          <span className="toast-check">
-            <Check size={17} />
-          </span>
-          {aviso}
-          <button
-            onClick={() => setAviso("")}
-            className="botao-icone"
-            aria-label="Fechar aviso"
-          >
-            <X size={17} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

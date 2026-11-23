@@ -1,0 +1,438 @@
+/* Stock is a list of items. Secondary tools never compete for space in its rows. */
+.estrutura-sistema .estoque-titulo {
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.estoque-titulo > div {
+  min-width: 0;
+}
+.estoque-titulo-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.estoque-titulo-acoes > button {
+  white-space: normal;
+}
+.estoque-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.3fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.estoque-resumo > button,
+.estoque-resumo > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--ui-painel);
+  color: var(--ui-texto);
+  text-align: left;
+  font: inherit;
+}
+.estoque-resumo > button {
+  cursor: pointer;
+}
+.estoque-resumo > button:hover,
+.estoque-resumo > button[aria-pressed="true"] {
+  background: var(--ui-hover);
+  border-color: var(--ui-acento);
+}
+.estoque-resumo > button:focus-visible {
+  outline: 2px solid var(--ui-acento);
+  outline-offset: 3px;
+}
+.estoque-resumo span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.estoque-resumo svg {
+  flex-shrink: 0;
+}
+.estoque-resumo strong {
+  font-size: clamp(20px, 2vw, 28px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.estoque-resumo .estoque-resumo-valor strong {
+  font-size: clamp(18px, 1.7vw, 25px);
+}
+.estrutura-sistema .os-painel.painel-lista-estoque {
+  --estoque-recuo: 20px;
+  padding: var(--estoque-recuo);
+  container-type: inline-size;
+}
+.estoque-filtros {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(175px, 0.3fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.estoque-filtros > label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+}
+.estoque-filtros select {
+  width: 100%;
+}
+.estrutura-sistema .estoque-filtros input,
+.estrutura-sistema .estoque-filtros select {
+  min-height: 48px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-fundo);
+  color: var(--ui-texto);
+  font: inherit;
+}
+.estoque-busca-campo {
+  position: relative;
+  display: block;
+}
+.estoque-busca-campo > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .estoque-busca-campo input {
+  padding-left: 42px;
+  width: 100%;
+}
+.estoque-leitor {
+  min-width: 0;
+}
+.estoque-leitor > button {
+  min-height: 48px;
+  white-space: nowrap;
+}
+.lista-estoque {
+  list-style: none;
+  padding: 0;
+  margin: 20px calc(-1 * var(--estoque-recuo)) 0;
+}
+.linha-estoque {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.3fr) minmax(125px, 0.3fr) 248px;
+  gap: 20px;
+  align-items: center;
+  padding: 18px var(--estoque-recuo);
+  border-top: 1px solid var(--ui-borda);
+  color: var(--ui-texto);
+}
+.linha-estoque:last-child {
+  border-bottom: 1px solid var(--ui-borda);
+}
+.linha-estoque:hover,
+.linha-estoque:focus-within {
+  background: var(--ui-hover);
+}
+.linha-estoque > div {
+  min-width: 0;
+}
+.linha-estoque-identidade h2 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.linha-estoque-identidade h2 button {
+  display: block;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.linha-estoque-identidade h2 button:hover {
+  text-decoration: underline;
+}
+.linha-estoque-identidade p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  color: var(--ui-suave);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.linha-estoque-identidade p > span + span {
+  border-left: 1px solid var(--ui-borda);
+  padding-left: 10px;
+}
+.linha-estoque-quantidade,
+.linha-estoque-valores {
+  display: grid;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.linha-estoque-rotulo,
+.linha-estoque small {
+  color: var(--ui-suave);
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+.linha-estoque strong {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.linha-estoque strong small {
+  margin-left: 4px;
+}
+.linha-estoque-repor {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--tema-texto-9b621d, #9b621d);
+  font-size: 11px;
+}
+.linha-estoque-repor svg {
+  flex-shrink: 0;
+}
+.linha-estoque-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.linha-estoque-acoes .linha-estoque-movimentar {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 12px;
+  gap: 6px;
+}
+.linha-estoque-acoes .estoque-mais,
+.linha-estoque-acoes .estoque-editar {
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+  padding: 10px;
+  justify-content: center;
+}
+.linha-estoque-acoes .estoque-mais span {
+  display: none;
+}
+.linha-estoque button:focus-visible {
+  outline: 2px solid var(--ui-acento);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.estoque-ajuda {
+  border-top: 1px solid var(--ui-borda);
+  margin-top: 16px;
+  padding-top: 16px;
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.estoque-ajuda summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.estoque-ajuda p {
+  max-width: 78ch;
+  line-height: 1.6;
+}
+.dialogo.dialogo-estoque {
+  width: min(680px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
+.dialogo-estoque .dialogo-interior {
+  min-width: 0;
+}
+.dialogo-estoque .formulario-cliente {
+  margin-top: 16px;
+}
+.dialogo-estoque .formulario-cliente fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.dialogo-estoque .formulario-cliente fieldset > p {
+  margin: 0;
+  font-size: 13px;
+}
+.dialogo-estoque .dupla-campos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.dialogo-estoque .secao-recolhivel {
+  margin: 0;
+}
+.estoque-item-resumo {
+  overflow-wrap: anywhere;
+}
+.estoque-item-resumo h3 {
+  font-size: 19px;
+  margin: 20px 0 6px;
+}
+.estoque-item-resumo > p {
+  color: var(--ui-suave);
+  font-size: 13px;
+  margin: 0 0 20px;
+}
+.estoque-item-resumo dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 24px;
+  padding-bottom: 20px;
+  margin: 0;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.estoque-item-resumo dt {
+  color: var(--ui-suave);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.estoque-item-resumo dd {
+  margin: 0;
+  font-weight: 700;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.estoque-opcoes {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+.estoque-opcoes > .botao-secundario {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.estoque-opcoes svg {
+  flex-shrink: 0;
+}
+.estoque-operacoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+}
+.estoque-operacoes button {
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-suave);
+  padding: 10px 6px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.estoque-operacoes button[aria-pressed="true"] {
+  background: var(--ui-hover);
+  border-color: var(--ui-acento);
+  color: var(--ui-texto);
+  font-weight: 700;
+}
+@container (max-width: 720px) {
+  .estoque-filtros {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .estoque-filtros .estoque-busca {
+    grid-column: 1 / -1;
+  }
+  .linha-estoque {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 20px;
+  }
+  .linha-estoque-identidade,
+  .linha-estoque-acoes {
+    grid-column: 1 / -1;
+  }
+  .linha-estoque-acoes {
+    justify-content: flex-start;
+  }
+  .linha-estoque-acoes .estoque-mais {
+    width: auto;
+    flex-shrink: 1;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .linha-estoque-acoes .estoque-mais span {
+    display: inline;
+  }
+}
+@media (max-width: 1100px) {
+  .estoque-resumo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .estrutura-sistema .estoque-titulo {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .estrutura-sistema .os-painel.painel-lista-estoque {
+    --estoque-recuo: 14px;
+  }
+  .estoque-resumo {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .estoque-resumo > button {
+    min-height: 94px;
+  }
+  .estoque-resumo > .estoque-resumo-valor {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .estoque-resumo .estoque-resumo-valor strong {
+    font-size: 18px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .estoque-resumo > button,
+  .estoque-resumo > div {
+    padding: 12px;
+  }
+  .estoque-resumo span {
+    font-size: 11px;
+  }
+  .estoque-resumo svg {
+    display: none;
+  }
+  .estoque-titulo-acoes {
+    width: 100%;
+  }
+  .estoque-titulo-acoes > button {
+    flex: 1;
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  .dialogo-estoque .dupla-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dialogo-estoque .dialogo-interior {
+    padding: 16px;
+  }
+}

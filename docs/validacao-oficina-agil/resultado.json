@@ -1,0 +1,37 @@
+{
+  "data": "2026-10-05T20:20:30.195Z",
+  "bancadaCompleta": 587,
+  "todasEtapasAprovadas": true,
+  "pwa": 4,
+  "pwaFalhas": 0,
+  "remoto": {
+    "migracoes": [
+      "20261005000100",
+      "20261005000200",
+      "20261005000300",
+      "20261005000400",
+      "20261005000500"
+    ],
+    "funcoes": [
+      "pix-os",
+      "webhook-pix",
+      "capturar-atendimento"
+    ],
+    "orcamento": "8345bdde-3b3f-4e09-b591-2cb221d88777",
+    "osParcial": "c48d2179-ff97-461e-a25c-cb3940bf0bb9",
+    "osRascunho": "7048dc55-ce42-45d0-8855-31d79b8124f9",
+    "valorPropostoCentavos": 27000,
+    "valorAutorizadoCentavos": 18000,
+    "fotosSincronizadas": 1,
+    "clientesImportados": 1,
+    "valorCompraXmlCentavos": 3000
+  },
+  "naoHomologados": [
+    "pagamento bancário real",
+    "envio real de WhatsApp",
+    "extração real por IA",
+    "microfone e câmera",
+    "perda física de sinal em celular"
+  ],
+  "frontend": "build local; não publicado nesta entrega"
+}

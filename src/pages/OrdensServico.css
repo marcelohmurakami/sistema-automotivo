@@ -1,0 +1,710 @@
+.lista-ordens-servico {
+  display: flex;
+  flex-direction: column;
+}
+.registro-os {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 8px;
+  padding: 0 20px;
+  border-top: 1px solid var(--ui-borda);
+  background: var(--ui-painel);
+}
+.registro-os:hover {
+  background: var(--tema-fundo-fafbf7, #fafbf7);
+}
+.acoes-linha-os {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.acoes-linha-os .botao-icone {
+  width: 44px;
+  height: 44px;
+}
+.acoes-linha-os .excluir-os {
+  color: var(--tema-texto-c24b46, #c24b46);
+}
+.acoes-linha-os a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.autorizacao-linha-os,
+.autorizacao-detalhe-os {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  font-size: 12px;
+}
+.autorizacao-linha-os {
+  grid-column: 1 / -1;
+  border-top: 1px dashed var(--ui-borda);
+  padding: 10px 0 14px;
+}
+.autorizacao-linha-os > span {
+  color: var(--ui-suave);
+}
+.autorizar-os {
+  font-size: 12px;
+  min-height: 44px;
+}
+.autorizacao-detalhe-os {
+  padding: 16px 18px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.autorizacao-detalhe-os p {
+  margin: 5px 0;
+  color: var(--ui-suave);
+}
+.autorizacao-detalhe-os a {
+  text-decoration: underline;
+}
+.motivo-exclusao-os {
+  grid-column: 1 / -1;
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: var(--ui-suave);
+  overflow-wrap: anywhere;
+}
+
+.linha-ordem-servico {
+  display: grid;
+  grid-template-columns:
+    minmax(58px, max-content) minmax(0, 1fr)
+    110px 160px minmax(104px, max-content) 18px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 20px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.linha-ordem-servico:hover {
+  background: transparent;
+}
+
+.linha-ordem-servico:focus-visible {
+  outline: 2px solid var(--entrega-borda);
+  outline-offset: -3px;
+}
+
+.os-lista-numero {
+  display: grid;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.os-lista-numero small {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ui-suave);
+}
+.os-lista-numero strong {
+  font-size: 14px;
+}
+.os-lista-identificacao {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  align-content: center;
+  gap: 4px 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.os-lista-identificacao > .tipo-servico-selo {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  align-self: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  color: var(--ui-suave);
+  background: var(--ui-fundo);
+}
+.os-lista-identificacao > strong {
+  grid-column: 2;
+  grid-row: 1;
+}
+.os-lista-identificacao > small {
+  grid-column: 2;
+  grid-row: 2;
+}
+.os-lista-identificacao strong {
+  font-size: 17px;
+  line-height: 1.4;
+}
+.os-lista-total {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.os-lista-identificacao small {
+  font-size: 13px;
+  color: var(--ui-suave);
+}
+.os-lista-data-servico {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ui-suave);
+}
+.os-lista-data-servico > svg {
+  flex-shrink: 0;
+}
+.os-lista-data-servico time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ui-texto);
+}
+.os-lista-situacao {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.os-lista-situacao .os-parada {
+  padding: 4px 7px;
+  font-size: 10px;
+}
+.os-lista-entrega {
+  min-width: 0;
+}
+.os-lista-entrega .entrega-indicador {
+  padding: 7px 9px;
+  width: 100%;
+}
+.os-lista-entrega [data-prazo="sem-data"] .entrega-texto > span {
+  display: none;
+}
+.os-lista-total {
+  text-align: right;
+  white-space: nowrap;
+}
+.filtros-listagem-os .legenda-recolhida {
+  margin: 0;
+}
+
+/* Detalhes da OS: o mesmo espaçamento em todas as abas, sem afetar o editor. */
+.estrutura-sistema .dialogo-detalhes-os {
+  --os-espaco: 20px;
+}
+.estrutura-sistema .dialogo-detalhes-os > .dialogo-interior {
+  padding: 24px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-cabecalho {
+  align-items: flex-start;
+  gap: 16px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-cabecalho > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-cabecalho h2 {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 10px 0 4px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-cabecalho p {
+  color: var(--ui-suave);
+  font-size: 13px;
+}
+.estrutura-sistema .dialogo-detalhes-os .aviso-cliente {
+  margin: 0;
+  padding: 14px 16px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-cabecalho + .aviso-cliente {
+  margin-top: 16px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-abas-simples {
+  padding: 6px;
+  gap: 6px;
+  margin: 20px 0;
+  border: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .dialogo-detalhes-os .os-abas button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  min-width: 0;
+  text-align: center;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-mais-secoes select {
+  padding: 10px 14px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-abas :is(button, select):focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: -2px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-conteudo-aba,
+.estrutura-sistema .dialogo-detalhes-os .os-secao {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloco {
+  min-width: 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloco-titulo {
+  padding: 14px var(--os-espaco);
+  margin: 0;
+  border-bottom: 1px solid var(--ui-borda);
+  border-radius: 12px 12px 0 0;
+  background: var(--ui-fundo);
+  font-size: 14px;
+  font-weight: 700;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloco-conteudo {
+  display: grid;
+  gap: 14px;
+  padding: var(--os-espaco);
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloco-conteudo > p {
+  margin: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo-operacao,
+.estrutura-sistema .dialogo-detalhes-os .os-relatos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo-operacao > :only-child {
+  grid-column: 1 / -1;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-proximos {
+  margin: 0;
+  align-items: stretch;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloqueio {
+  text-align: left;
+  gap: 6px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-bloqueio button {
+  justify-self: start;
+  min-height: 44px;
+  margin-top: 6px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-link-pendencia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.estrutura-sistema .dialogo-detalhes-os .entrega-painel {
+  padding: 0 0 var(--os-espaco);
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .dialogo-detalhes-os .entrega-painel > h3 {
+  margin: 0;
+  padding: 14px var(--os-espaco);
+  border-bottom: 1px solid var(--ui-borda);
+  border-radius: 10px 10px 0 0;
+  background: var(--ui-fundo);
+  font-size: 14px;
+}
+.estrutura-sistema .dialogo-detalhes-os .entrega-painel > :not(h3) {
+  margin: 0 var(--os-espaco);
+  min-width: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo {
+  padding: 0;
+  gap: 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo > div {
+  padding: var(--os-espaco);
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo > div + div {
+  border-left: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .dialogo-detalhes-os .os-resumo small {
+  font-size: 11px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .dialogo-detalhes-os .link-pagamento-os {
+  justify-self: start;
+  text-align: left;
+}
+.estrutura-sistema .dialogo-detalhes-os .secao-recolhivel,
+.estrutura-sistema .dialogo-detalhes-os .os-detalhes {
+  margin: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .secao-recolhivel > summary {
+  padding: 14px var(--os-espaco);
+}
+.estrutura-sistema .dialogo-detalhes-os .secao-recolhivel-conteudo {
+  padding: var(--os-espaco);
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-dados-atendimento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 24px;
+  margin: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-dados-atendimento > div {
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .dialogo-detalhes-os .os-dados-atendimento dt {
+  font-size: 12px;
+  color: var(--ui-suave);
+  margin-bottom: 6px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-dados-atendimento dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-acoes-rodape {
+  display: flex;
+  justify-content: flex-end;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-checklist p {
+  padding: 12px 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-checklist p:first-child {
+  padding-top: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-checklist p:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-item {
+  background: var(--ui-fundo);
+  border-color: var(--ui-borda);
+  gap: 12px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-item > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-item select {
+  flex-shrink: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-envio {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-fotos {
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.estrutura-sistema .dialogo-detalhes-os .os-fotos:empty {
+  display: none;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-historico {
+  margin: 0 0 0 6px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-historico li:last-child {
+  padding-bottom: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-historico li + li {
+  padding-top: 16px;
+  border-top: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .dialogo-detalhes-os .os-historico li + li::before {
+  top: 21px;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-historico .os-detalhes {
+  margin-top: 12px;
+}
+
+/* As ferramentas da OS compartilham as mesmas margens e divisórias. */
+.estrutura-sistema
+  .dialogo-detalhes-os
+  .os-conteudo-aba
+  > :is(.pagamento-integrado, .comissoes, .agil-pagina),
+.estrutura-sistema .dialogo-detalhes-os .produtividade > .os-painel {
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  padding: var(--os-espaco);
+  background: var(--ui-painel);
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+}
+.estrutura-sistema
+  .dialogo-detalhes-os
+  :is(
+    .comissoes-topo,
+    .pagamento-integrado > .os-linha,
+    .agil-pagina > .agil-cabecalho,
+    .produtividade > .os-painel > h3
+  ) {
+  border-bottom: 1px solid var(--ui-borda);
+  padding-bottom: 14px;
+  margin: 0;
+}
+.estrutura-sistema
+  .dialogo-detalhes-os
+  :is(
+    .comissoes-topo h3,
+    .pagamento-integrado h3,
+    .agil-cabecalho h2,
+    .produtividade h3
+  ) {
+  font-size: 14px;
+  margin: 0;
+}
+.estrutura-sistema
+  .dialogo-detalhes-os
+  :is(.pagamento-integrado, .comissoes, .agil-pagina, .produtividade)
+  p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.estrutura-sistema .dialogo-detalhes-os :is(.comissoes-topo, .agil-cabecalho) p {
+  margin-top: 6px;
+}
+.estrutura-sistema .dialogo-detalhes-os :is(.pagamento-valores, .prod-resumo) {
+  margin: 0;
+  gap: 12px;
+}
+.estrutura-sistema .dialogo-detalhes-os :is(.pagamento-valores, .prod-resumo) > div {
+  min-width: 0;
+  padding: 16px;
+  background: var(--ui-fundo);
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+.estrutura-sistema .dialogo-detalhes-os :is(.compra-acoes, .comissao-acoes) {
+  padding-top: 14px;
+  border-top: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .dialogo-detalhes-os .comissoes > :is(button, a) {
+  justify-self: start;
+}
+.estrutura-sistema .dialogo-detalhes-os .produtividade {
+  gap: 16px;
+  padding: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .agil-etapa {
+  background: var(--ui-fundo);
+}
+.estrutura-sistema .dialogo-detalhes-os .agil-cabecalho,
+.estrutura-sistema .dialogo-detalhes-os .agil-cabecalho > div {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .dialogo-detalhes-os .agil-acoes > button {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+.estrutura-sistema .dialogo-detalhes-os .produtividade > .os-painel > button {
+  justify-self: start;
+}
+
+@media (max-width: 900px) {
+  .estrutura-sistema .dialogo-detalhes-os .os-resumo-operacao {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .agil-cabecalho {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .estrutura-sistema .dialogo-detalhes-os {
+    --os-espaco: 16px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os > .dialogo-interior {
+    padding: 18px 16px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas button {
+    padding: 10px 8px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-proximos button {
+    flex: 1 1 130px;
+    padding-inline: 12px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .agil-acoes {
+    width: 100%;
+    align-items: stretch;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .agil-acoes > button {
+    flex: 1 1 150px;
+  }
+  .estrutura-sistema
+    .dialogo-detalhes-os
+    :is(.os-relatos, .os-dados-atendimento, .os-fotos) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-resumo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-resumo > div:last-child {
+    grid-column: 1 / -1;
+    border-left: 0;
+    border-top: 1px solid var(--ui-borda);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-acoes-rodape > button {
+    width: 100%;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .pagamento-valores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .linha-ordem-servico {
+    grid-template-columns:
+      max-content minmax(0, 1fr) 110px minmax(104px, max-content)
+      18px;
+    gap: 12px;
+  }
+  .os-lista-numero {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .os-lista-identificacao {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .os-lista-situacao {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .os-lista-total {
+    grid-column: 4;
+    grid-row: 1;
+  }
+  .os-lista-seta {
+    grid-column: 5;
+    grid-row: 1;
+  }
+  .os-lista-entrega {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .registro-os {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 14px;
+  }
+  .acoes-linha-os {
+    flex-direction: row;
+    justify-content: flex-end;
+    border-top: 1px solid var(--ui-borda);
+    padding-block: 4px;
+  }
+  .linha-ordem-servico {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 18px 0;
+    gap: 12px;
+  }
+  .os-lista-numero {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+  }
+  .os-lista-identificacao {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .os-lista-seta {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .os-lista-situacao {
+    grid-column: 1;
+    grid-row: 3;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .os-lista-total {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .os-lista-entrega {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .os-lista-entrega .entrega-indicador {
+    width: auto;
+    max-width: 100%;
+    background: transparent;
+    padding: 0;
+  }
+  .os-lista-entrega .entrega-texto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 8px;
+    align-items: baseline;
+  }
+  .filtros-listagem-os {
+    flex-wrap: wrap;
+  }
+}
+.os-informacoes-adicionais > details {
+  margin: 16px 0 0;
+}
+.dialogo-orcamento .editor-proposta > .acoes-formulario {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  box-shadow: 0 -8px 20px color-mix(in srgb, var(--superficie) 95%, transparent);
+}
+.dialogo-orcamento .editor-proposta > .acoes-formulario {
+  padding: 12px 0;
+  background: var(--superficie);
+  border-top: 1px solid var(--borda);
+}

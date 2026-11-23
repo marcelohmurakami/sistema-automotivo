@@ -1,8 +1,10 @@
+import { rpc } from "../lib/rpc";
+import { SecaoRecolhivel } from "./SecaoRecolhivel";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAcesso } from "../auth/contexto";
 import { supabase, erroPublico } from "../lib/supabase";
-import { rpc } from "../services/orcamentos";
+
 type Foto = {
   id: string;
   arquivo_id: string;
@@ -13,27 +15,38 @@ type Foto = {
 export function FotosOrcamento({
   versao,
   rascunho,
+  aoProcessar,
+  aberta = false,
 }: {
   versao: string;
   rascunho: boolean;
+  aberta?: boolean;
+  aoProcessar?: (ocupado: boolean) => void;
 }) {
   const a = useAcesso(),
     qc = useQueryClient();
   const [erro, setErro] = useState(""),
     [busy, setBusy] = useState(false),
     [legenda, setLegenda] = useState("");
+  const [abertaPeloUsuario, setAbertaPeloUsuario] = useState(false);
   const q = useQuery({
     queryKey: ["fotos-orcamento", a.oficina!.id, versao, a.demo],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       a.demo
         ? []
-        : rpc<Foto[]>("listar_fotos_orcamento", {
-            p_oficina: a.oficina!.id,
-            p_versao: versao,
-          }),
+        : rpc<Foto[]>(
+            "listar_fotos_orcamento",
+            {
+              p_oficina: a.oficina!.id,
+              p_versao: versao,
+            },
+            signal,
+          ),
   });
+  const expandida = aberta || abertaPeloUsuario || !!erro || q.isError;
   async function enviar(file: File) {
     setBusy(true);
+    aoProcessar?.(true);
     setErro("");
     try {
       if (
@@ -41,17 +54,14 @@ export function FotosOrcamento({
         file.size > 10 * 1024 * 1024
       )
         throw new Error("Use JPG, PNG ou WebP de até 10 MB.");
-      const f = await rpc<{ id: string; caminho: string }>(
-        "reservar_foto_orcamento",
-        {
-          p_oficina: a.oficina!.id,
-          p_versao: versao,
-          p_nome: file.name,
-          p_mime: file.type,
-          p_tamanho: file.size,
-          p_legenda: legenda,
-        },
-      );
+      const f = await rpc<{ id: string; caminho: string }>("reservar_foto_orcamento", {
+        p_oficina: a.oficina!.id,
+        p_versao: versao,
+        p_nome: file.name,
+        p_mime: file.type,
+        p_tamanho: file.size,
+        p_legenda: legenda,
+      });
       const { error } = await supabase!.storage
         .from("workshop-files")
         .upload(f.caminho, file, { contentType: file.type, upsert: false });
@@ -66,16 +76,23 @@ export function FotosOrcamento({
     } finally {
       await qc.invalidateQueries({ queryKey: ["fotos-orcamento"] });
       setBusy(false);
+      aoProcessar?.(false);
     }
   }
   return (
-    <section className="os-painel">
-      <h3>Fotos das peças e problemas</h3>
+    <SecaoRecolhivel
+      titulo={"Fotos do orçamento (" + (q.data?.length ?? 0) + ")"}
+      descricao={
+        rascunho
+          ? "Anexar fotos das peças e dos problemas encontrados"
+          : "Consultar as fotos enviadas nesta proposta"
+      }
+      aberta={expandida}
+      aoAlternar={setAbertaPeloUsuario}
+    >
       {rascunho && (
         <>
-          <p>
-            Até 20 fotos por versão. As fotos ficam preservadas após emitir.
-          </p>
+          <p>Até 20 fotos por versão. As fotos ficam preservadas após emitir.</p>
           {a.demo ? (
             <p>Entre na conta real para anexar fotos.</p>
           ) : (
@@ -106,24 +123,24 @@ export function FotosOrcamento({
           )}
         </>
       )}
-      {(erro || q.isError) && (
-        <p role="alert">{erro || erroPublico(q.error)}</p>
-      )}
+      {(erro || q.isError) && <p role="alert">{erro || erroPublico(q.error)}</p>}
       <div className="documentos-grade">
         {q.data?.map((f) => (
           <figure key={f.id}>
             {f.situacao === "ready" ? (
-              <ImagemFoto caminho={f.caminho} legenda={f.legenda} />
+              <ImagemFoto caminho={f.caminho} legenda={f.legenda} ativa={expandida} />
             ) : (
               <p>Envio incompleto. Remova e tente novamente.</p>
             )}
             <figcaption>{f.legenda}</figcaption>
             {rascunho && (
               <button
+                type="button"
                 className="botao-secundario"
                 disabled={busy}
                 onClick={async () => {
                   setBusy(true);
+                  aoProcessar?.(true);
                   setErro("");
                   try {
                     await rpc("remover_foto_orcamento", {
@@ -137,6 +154,7 @@ export function FotosOrcamento({
                     setErro(erroPublico(e));
                   } finally {
                     setBusy(false);
+                    aoProcessar?.(false);
                   }
                 }}
               >
@@ -146,19 +164,22 @@ export function FotosOrcamento({
           </figure>
         ))}
       </div>
-    </section>
+    </SecaoRecolhivel>
   );
 }
 function ImagemFoto({
   caminho,
   legenda,
+  ativa,
 }: {
   caminho: string;
   legenda: string;
+  ativa: boolean;
 }) {
   const a = useAcesso();
   const q = useQuery({
     queryKey: ["foto-orcamento-url", a.usuario, a.oficina!.id, caminho],
+    enabled: ativa,
     queryFn: async () => {
       const { data, error } = await supabase!.storage
         .from("workshop-files")
@@ -171,6 +192,8 @@ function ImagemFoto({
   });
   return q.data ? (
     <img
+      loading="lazy"
+      decoding="async"
       src={q.data}
       alt={legenda || "Foto anexada ao orçamento"}
       style={{
@@ -181,8 +204,6 @@ function ImagemFoto({
       }}
     />
   ) : (
-    <p>
-      {q.isError ? "Não foi possível carregar a foto." : "Carregando foto…"}
-    </p>
+    <p>{q.isError ? "Não foi possível carregar a foto." : "Carregando foto…"}</p>
   );
 }

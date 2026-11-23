@@ -1,4 +1,11 @@
 export type ItemCatalogo = {
+  ficha?: {
+    notas: string;
+    duracao_minutos: number | null;
+    custos: { descricao: string; valor_centavos: number }[];
+  };
+  produto_estoque_id?: string | null;
+  custo_centavos?: number | null;
   id: string;
   tipo: "service" | "part";
   descricao: string;
@@ -31,8 +38,33 @@ const iniciais: ItemCatalogo[] = [
     revisao: 1,
   },
 ];
-function metadados(): ItemCatalogo[] {
-  return JSON.parse(localStorage.getItem(chave) || JSON.stringify(iniciais));
+const exemplosPorEmpresa: Record<string, string[]> = {
+  "demo-assistencia_tecnica": [
+    "Diagnóstico de bancada",
+    "Substituição de componente e testes",
+  ],
+  "demo-manutencao_campo": [
+    "Visita técnica e diagnóstico",
+    "Manutenção preventiva do equipamento",
+  ],
+  "demo-limpeza": ["Limpeza dos ambientes contratados", "Higienização de estofados"],
+};
+const chaveCatalogo = (oficina = "") =>
+  exemplosPorEmpresa[oficina] ? `${chave}:${oficina}` : chave;
+function metadados(oficina = ""): ItemCatalogo[] {
+  const exemplos = exemplosPorEmpresa[oficina]
+    ? iniciais.map((i, n) => ({
+        ...i,
+        id:
+          oficina === "demo-assistencia_tecnica"
+            ? `reparo-demo-${n}`
+            : `${oficina}-${n}`,
+        descricao: exemplosPorEmpresa[oficina][n],
+      }))
+    : iniciais;
+  return JSON.parse(
+    localStorage.getItem(chaveCatalogo(oficina)) || JSON.stringify(exemplos),
+  );
 }
 type ProdutoDemo = Omit<ItemCatalogo, "revisao"> & {
   revisao: number | null;
@@ -45,12 +77,11 @@ type ProdutoDemo = Omit<ItemCatalogo, "revisao"> & {
 };
 function estoque(): { produtos: ProdutoDemo[]; movimentos: unknown[] } {
   return JSON.parse(
-    localStorage.getItem("patio_estoque_v1") ||
-      '{"produtos":[],"movimentos":[]}',
+    localStorage.getItem("patio_estoque_v1") || '{"produtos":[],"movimentos":[]}',
   );
 }
-export function lerCatalogoDemo(): ItemCatalogo[] {
-  const meta = metadados(),
+export function lerCatalogoDemo(oficina = ""): ItemCatalogo[] {
+  const meta = metadados(oficina),
     d = estoque();
   return [
     ...meta.filter((i) => i.tipo === "service"),
@@ -62,6 +93,8 @@ export function lerCatalogoDemo(): ItemCatalogo[] {
         descricao: p.descricao,
         unidade: p.unidade,
         preco_padrao_centavos: p.preco_padrao_centavos,
+        custo_centavos: p.custo_centavos,
+        produto_estoque_id: p.saldo !== null && !p.arquivado_em ? p.id : null,
         favorito: m?.favorito ?? false,
         arquivado_em: p.arquivado_em,
         revisao: (m?.revisao ?? 1) + (p.revisao ?? 0),
@@ -69,14 +102,13 @@ export function lerCatalogoDemo(): ItemCatalogo[] {
     }),
   ];
 }
-export function salvarCatalogoDemo(item: ItemCatalogo, novo: boolean) {
-  const meta = metadados(),
+export function salvarCatalogoDemo(item: ItemCatalogo, novo: boolean, oficina = "") {
+  const meta = metadados(oficina),
     d = estoque(),
-    atual = lerCatalogoDemo().find((i) => i.id === item.id);
+    atual = lerCatalogoDemo(oficina).find((i) => i.id === item.id);
   if (!novo && (!atual || atual.revisao !== item.revisao))
     throw new Error("Cadastro alterado. Atualize antes de salvar.");
-  if (novo && atual)
-    throw new Error("Cadastro já existente. Atualize a lista.");
+  if (novo && atual) throw new Error("Cadastro já existente. Atualize a lista.");
   if (atual && atual.tipo !== item.tipo)
     throw new Error("O tipo do cadastro não pode ser alterado.");
   const p = d.produtos.find((p) => p.id === item.id);
@@ -98,14 +130,10 @@ export function salvarCatalogoDemo(item: ItemCatalogo, novo: boolean) {
       os.some(
         (o) =>
           !["delivered", "cancelled"].includes(o.situacao) &&
-          o.itens.some(
-            (i) => (i.produto_estoque_id || i.item_catalogo_id) === item.id,
-          ),
+          o.itens.some((i) => (i.produto_estoque_id || i.item_catalogo_id) === item.id),
       ))
   )
-    throw new Error(
-      "Zere o saldo e conclua as OS vinculadas antes de arquivar.",
-    );
+    throw new Error("Zere o saldo e conclua as OS vinculadas antes de arquivar.");
   if (item.tipo === "part") {
     d.produtos = [
       {
@@ -118,6 +146,7 @@ export function salvarCatalogoDemo(item: ItemCatalogo, novo: boolean) {
           fornecedor: "",
         }),
         ...item,
+        custo_centavos: item.custo_centavos ?? p?.custo_centavos ?? 0,
         revisao: p?.revisao == null ? null : p.revisao + 1,
       },
       ...d.produtos.filter((p) => p.id !== item.id),
@@ -132,7 +161,7 @@ export function salvarCatalogoDemo(item: ItemCatalogo, novo: boolean) {
     if (item.tipo === "part")
       localStorage.setItem("patio_estoque_v1", JSON.stringify(d));
     localStorage.setItem(
-      chave,
+      chaveCatalogo(oficina),
       JSON.stringify([registro, ...meta.filter((i) => i.id !== item.id)]),
     );
   } catch (e) {

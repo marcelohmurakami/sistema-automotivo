@@ -1,23 +1,26 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { parametroRetorno, retornoPortal } from "../lib/retornoPortal";
 
 export function RecuperarSenha() {
+  const retorno = retornoPortal(useLocation().search);
   const [enviando, setEnviando] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [erro, setErro] = useState("");
   async function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!supabase || enviando) return;
-    const email = String(
-      new FormData(evento.currentTarget).get("email"),
-    ).trim();
+    const email = String(new FormData(evento.currentTarget).get("email")).trim();
     setEnviando(true);
     setErro("");
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: new URL("/definir-senha", window.location.origin).href,
+        redirectTo: new URL(
+          "/definir-senha" + parametroRetorno(retorno),
+          window.location.origin,
+        ).href,
       });
       if (error) throw error;
       setEnviado(true);
@@ -38,14 +41,14 @@ export function RecuperarSenha() {
         <h1>Recupere seu acesso.</h1>
         {enviado ? (
           <p role="status">
-            Se houver uma conta com esse e-mail, você receberá um link para
-            definir uma nova senha. Confira também a caixa de spam.
+            Se houver uma conta com esse e-mail, você receberá um link para definir uma
+            nova senha. Confira também a caixa de spam.
           </p>
         ) : (
           <>
             <p>
-              Informe o e-mail usado na sua conta. Você receberá um link seguro
-              para criar uma nova senha.
+              Informe o e-mail usado na sua conta. Você receberá um link seguro para
+              criar uma nova senha.
             </p>
             <form onSubmit={enviar} className="formulario-cliente">
               <label>
@@ -63,16 +66,15 @@ export function RecuperarSenha() {
                   {erro}
                 </p>
               )}
-              <button
-                className="botao-primario"
-                disabled={enviando || !supabase}
-              >
+              <button className="botao-primario" disabled={enviando || !supabase}>
                 {enviando ? "Enviando…" : "Enviar link de recuperação"}
               </button>
             </form>
           </>
         )}
-        <Link to="/entrar">Voltar para o acesso</Link>
+        <Link to={retorno ? retorno + "#area-cliente" : "/entrar"}>
+          Voltar para o acesso
+        </Link>
       </section>
     </main>
   );

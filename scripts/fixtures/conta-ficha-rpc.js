@@ -1,0 +1,9 @@
+window.fixtureChamadas=[];
+const cliente={id:'cliente-qa',nome:'João da Silva',tipo:'pessoa_fisica',criado_em:'2026-01-15',telefone_e164:'+5516999990000'};
+function ordem(n){const pago=n===1?(window.fixtureMudou?30000:25000):0,total=n===1?100000:50000;return{id:'os-'+n,numero:100+n,cliente_id:cliente.id,chave_cliente:'cliente:'+cliente.id,cliente:cliente.nome,telefone:cliente.telefone_e164,data:'2026-10-'+(14+n),situacao:'delivered',veiculo:window.fixtureAuto?'Fiat Uno':'Equipamento ou local QA',placa:window.fixtureAuto?'ABC1D23':'',servicos:'Serviço específico '+n+' · '+window.fixturePerfil,vencimento:'2026-10-30',total_centavos:total,pago_centavos:pago,aberto_centavos:total-pago,vencido_centavos:total-pago,titulos:[{id:'titulo-'+n,descricao:'OS '+(100+n),vencimento:'2026-10-30',total_centavos:total,pago_centavos:pago,aberto_centavos:total-pago}]};}
+export async function rpc(n,a={}){window.fixtureChamadas.push({n,a});
+ if(n==='consultar_ficha_cliente')return{cliente,resumo:{total_servicos_centavos:150000,ticket_medio_centavos:75000,atendimentos_concluidos:2,em_andamento:0,ultimo_atendimento_em:'2026-10-20'},financeiro:{pago_centavos:25000,aberto_centavos:125000},historico:{total:0,itens:[]},veiculos:[],recursos:{ordens:true,notinhas:true}};
+ if(n==='consultar_lucro_cliente')return{lucro_medio:50000,lucro:100000,quantidade:2,pendentes:0};
+ if(n==='consultar_conta_financeira_cliente'){if(window.fixtureErro)throw Error('Falha de conexão simulada');const list=window.fixtureVazio?[]:[ordem(1),ordem(2),...(window.fixturePaginada?[ordem(3)]:[])];return{consultado_em:'2026-11-05T15:00:00Z',hoje:'2026-11-05',total:list.length,identidade:{nome:'Empresa de teste '+window.fixturePerfil,cor:'#244336',telefone:'+551633334444'},ordens:a.p_ids?list.filter(o=>a.p_ids.includes(o.id)&&!(window.fixtureQuitou&&o.id==='os-1')):a.p_pagina?list.slice(2):list.slice(0,2)};}
+ throw Error('RPC não simulada: '+n);
+}

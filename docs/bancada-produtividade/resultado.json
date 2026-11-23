@@ -1,0 +1,72 @@
+{
+  "executadoEm": "2026-10-05T19:59:11.422Z",
+  "ambiente": "local isolado; sem mensagens ou cobranças externas",
+  "resultados": [
+    {
+      "etapa": "TypeScript",
+      "sucesso": true,
+      "duracaoMs": 35127,
+      "verificacoes": 0
+    },
+    {
+      "etapa": "Lint",
+      "sucesso": true,
+      "duracaoMs": 51144,
+      "verificacoes": 0
+    },
+    {
+      "etapa": "Oficina ágil",
+      "sucesso": true,
+      "duracaoMs": 1365,
+      "verificacoes": 24
+    },
+    {
+      "etapa": "Rascunhos",
+      "sucesso": true,
+      "duracaoMs": 624,
+      "verificacoes": 13
+    },
+    {
+      "etapa": "Entrega prometida",
+      "sucesso": true,
+      "duracaoMs": 502,
+      "verificacoes": 16
+    },
+    {
+      "etapa": "Documentos e impressão",
+      "sucesso": true,
+      "duracaoMs": 1162,
+      "verificacoes": 16
+    },
+    {
+      "etapa": "Mapa da oficina",
+      "sucesso": true,
+      "duracaoMs": 485,
+      "verificacoes": 11
+    },
+    {
+      "etapa": "Banco e integrações",
+      "sucesso": true,
+      "duracaoMs": 68083,
+      "verificacoes": 477
+    },
+    {
+      "etapa": "Webhooks",
+      "sucesso": true,
+      "duracaoMs": 431,
+      "verificacoes": 21
+    },
+    {
+      "etapa": "Backup",
+      "sucesso": true,
+      "duracaoMs": 543,
+      "verificacoes": 9
+    },
+    {
+      "etapa": "Build",
+      "sucesso": true,
+      "duracaoMs": 7021,
+      "verificacoes": 0
+    }
+  ]
+}

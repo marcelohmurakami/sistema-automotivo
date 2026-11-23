@@ -1,0 +1,25 @@
+.ficha-complementar-acoes {
+  width: 100%;
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+}
+.ficha-complementar-acoes p {
+  margin: 12px 0 18px;
+  line-height: 1.6;
+}
+.ficha-complementar-acoes .fin-acoes,
+.ficha-complementar-acoes button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ficha-complementar-acoes .fin-acoes {
+  flex-wrap: wrap;
+}
+@media print {
+  .ficha-complementar-acoes {
+    display: none !important;
+  }
+}

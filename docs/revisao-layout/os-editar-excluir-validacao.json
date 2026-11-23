@@ -1,0 +1,33 @@
+{
+  "data": "2026-10-06",
+  "funcionalidade": "Edição e exclusão na linha da ordem de serviço",
+  "banco": "Migração 20261006000600 aplicada no projeto Supabase do sistema",
+  "verificacoes_automaticas": {
+    "typescript": "passou",
+    "eslint_arquivos_alterados": "passou",
+    "build": "passou",
+    "suites_banco": 22,
+    "cenarios_nova_rotina": 27,
+    "resultado": "Todos passaram"
+  },
+  "verificacoes_navegador": [
+    "Edição pela linha abre o formulário preenchido sem abrir os detalhes por engano",
+    "Alteração de responsável e diagnóstico salva e exibida nos detalhes",
+    "Confirmação de exclusão bloqueada enquanto o motivo está vazio",
+    "OS de teste excluída sai da listagem normal e aparece em Excluídas com o motivo",
+    "Restauração devolve o registro como cancelado, sem reabrir execução",
+    "Botões no celular com área de toque de 44 por 44 pixels",
+    "Sem transbordamento horizontal em viewport de 390 por 844 pixels"
+  ],
+  "registro_ficticio": {
+    "numero": 13,
+    "id": "c20a8a96-7beb-43cf-839d-1b1b1d2b8fbc",
+    "estado_final": "Excluída de forma reversível após testar criação, edição e restauração",
+    "observacao": "Nenhuma OS existente foi alterada ou excluída durante a validação no navegador"
+  },
+  "evidencias": [
+    "os-editar-excluir-desktop.png",
+    "os-editar-excluir-mobile.png",
+    "os-exclusao-motivo.png"
+  ]
+}

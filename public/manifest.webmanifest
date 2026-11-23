@@ -1,0 +1,19 @@
+{
+  "name": "Pátio · Gestão da oficina",
+  "short_name": "Pátio",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f5",
+  "theme_color": "#244336",
+  "icons": [
+    {
+      "src": "/icone-patio.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

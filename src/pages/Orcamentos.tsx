@@ -1,20 +1,51 @@
-import { FotosOrcamento } from "../components/FotosOrcamento";
-import "./Documentos.css";
-import { buscarCatalogo } from "../lib/catalogo";
-import { SelecaoClienteVeiculo } from "../components/SelecaoClienteVeiculo";
-import { ConteudoProposta } from "../components/ConteudoProposta";
-import { useState, type FormEvent } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { componenteSobDemanda } from "../lib/componenteSobDemanda";
+const EditorOrcamento = componenteSobDemanda(async () => ({
+  default: (await import("../components/orcamentos/EditorOrcamento")).EditorOrcamento,
+}));
+const FotosOrcamento = componenteSobDemanda(async () => ({
+  default: (await import("../components/FotosOrcamento")).FotosOrcamento,
+}));
+const ConteudoProposta = componenteSobDemanda(async () => ({
+  default: (await import("../components/ConteudoProposta")).ConteudoProposta,
+}));
+import { novoId } from "../lib/uuid.ts";
 import {
-  ArrowUpRight,
+  ConfirmarAutorizacao,
+  type ManifestacaoEquipe,
+} from "../components/ConfirmarAutorizacao";
+import { CobrancaDiagnostico } from "../components/CobrancaDiagnostico";
+import { abatimentoDiagnostico } from "../lib/diagnosticoOrcamento";
+import { FiltrosSituacao } from "../components/FiltrosSituacao";
+import { AcaoOrcamento } from "../components/AcaoOrcamento";
+
+import { dinheiro } from "../lib/formatacao";
+import { useBuscaDebounced } from "../lib/useBuscaDebounced";
+import { DesistenciaAtendimento } from "../components/DesistenciaAtendimento";
+import { SecaoRecolhivel } from "../components/SecaoRecolhivel";
+import "./OrdensServico.css";
+import { chaveRascunho, limparRascunho } from "../lib/rascunhos";
+import "./Produtividade.css";
+
+import { AtalhoLocalizacao } from "../components/AtalhoLocalizacao";
+import "./Documentos.css";
+import "./Orcamentos.css";
+const ObservacoesProposta = componenteSobDemanda(async () => ({
+  default: (await import("../components/ConteudoProposta")).ObservacoesProposta,
+}));
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
   Check,
   ChevronLeft,
   ChevronRight,
   Copy,
   Download,
+  Printer,
   FileText,
   Plus,
+  Pencil,
+  RotateCcw,
   Search,
   Send,
   Trash2,
@@ -25,8 +56,11 @@ import { Dialogo } from "../components/Dialogo";
 import { erroPublico } from "../lib/supabase";
 import {
   acaoProposta,
+  aprovarPropostaInterna,
+  criarOSParaOrcamento,
+  excluirProposta,
+  restaurarProposta,
   auxiliaresOrcamento,
-  dinheiro,
   emitirProposta,
   linkSomenteLocal,
   listarPropostas,
@@ -34,335 +68,84 @@ import {
   obterProposta,
   rotulosSituacao,
   salvarProposta,
-  type Auxiliares,
-  type DadosProposta,
-  type ItemProposta,
   type Proposta,
+  type ResumoProposta,
 } from "../services/orcamentos";
-import { arquivoPdf, gerarPdf } from "../services/pdfOrcamento";
-function EditorOrcamento({
-  anterior,
-  aux,
-  salvar,
-  cancelar,
-  ocupado,
-  erro,
-}: {
-  anterior?: Proposta;
-  aux: Auxiliares;
-  salvar: (d: DadosProposta) => void;
-  cancelar: () => void;
-  ocupado: boolean;
-  erro: string;
-}) {
-  const acesso = useAcesso();
-  const [cliente, setCliente] = useState(anterior?.cliente_id ?? "");
-  const [veiculo, setVeiculo] = useState(anterior?.veiculo_id ?? "");
-  const [itens, setItens] = useState<ItemProposta[]>(anterior?.itens ?? []);
-  const [desconto, setDesconto] = useState(
-    (anterior?.versao.desconto_centavos ?? 0) / 100,
-  );
-  const [catalogoBusca, setCatalogoBusca] = useState("");
-  const [erroLocal, setErroLocal] = useState("");
-  const [criando, setCriando] = useState(false);
-  const subtotal = itens.reduce(
-    (s, i) => s + Math.round(i.quantidade * i.preco_unitario_centavos),
-    0,
-  );
-  function adicionar(i: Auxiliares["catalogo"][number]) {
-    if (itens.length >= 100) return;
-    setItens([
-      ...itens,
-      {
-        item_catalogo_id: acesso.demo ? null : i.id,
-        tipo: i.tipo,
-        descricao: i.descricao,
-        unidade: i.unidade,
-        quantidade: 1,
-        preco_unitario_centavos: i.preco_padrao_centavos,
-      },
-    ]);
-  }
-  function alterar(n: number, d: Partial<ItemProposta>) {
-    setItens(itens.map((i, j) => (j === n ? { ...i, ...d } : i)));
-  }
-  function enviar(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setErroLocal("");
-    const f = new FormData(e.currentTarget);
-    if (Math.round(desconto * 100) > subtotal) {
-      setErroLocal("O desconto não pode ultrapassar o subtotal.");
-      return;
-    }
-    salvar({
-      cliente_id: cliente,
-      veiculo_id: veiculo,
-      itens,
-      desconto_centavos: Math.round(desconto * 100),
-      observacoes: String(f.get("observacoes")),
-      condicoes: String(f.get("condicoes")),
-    });
-  }
-  return (
-    <form className="formulario-cliente editor-proposta" onSubmit={enviar}>
-      <fieldset disabled={ocupado || criando}>
-        <div className="etapa-formulario">
-          <span>01</span>
-          <div>
-            <h3>Cliente e veículo</h3>
-            <p>Selecione quem será atendido.</p>
-          </div>
-        </div>
-        <SelecaoClienteVeiculo
-          aux={aux}
-          cliente={cliente}
-          veiculo={veiculo}
-          selecionarCliente={setCliente}
-          selecionarVeiculo={setVeiculo}
-          aoProcessar={setCriando}
-        />
-        <div className="etapa-formulario">
-          <span>02</span>
-          <div>
-            <h3>Peças e serviços</h3>
-            <p>Toque nos itens do catálogo ou inclua um item avulso.</p>
-          </div>
-        </div>
-        <label>
-          Buscar no catálogo
-          <input
-            placeholder="Ex.: óleo, freio, alinhamento…"
-            value={catalogoBusca}
-            onChange={(e) => setCatalogoBusca(e.target.value)}
-          />
-        </label>
-        <div className="catalogo-rapido">
-          {aux.catalogo
-            .filter((i) =>
-              buscarCatalogo(i.descricao).includes(
-                buscarCatalogo(catalogoBusca),
-              ),
-            )
-            .slice(0, 8)
-            .map((i) => (
-              <button
-                key={i.id}
-                type="button"
-                disabled={itens.length >= 100}
-                onClick={() => adicionar(i)}
-              >
-                <Plus size={15} />
-                <span>
-                  {i.descricao}
-                  <small>{dinheiro(i.preco_padrao_centavos)}</small>
-                </span>
-              </button>
-            ))}
-        </div>
-        <div className="itens-editor">
-          {itens.map((i, n) => (
-            <div key={n} className="item-editor">
-              <label className="descricao-item">
-                Descrição
-                <input
-                  aria-label={`Descrição do item ${n + 1}`}
-                  required
-                  maxLength={300}
-                  value={i.descricao}
-                  onChange={(e) => alterar(n, { descricao: e.target.value })}
-                />
-              </label>
-              <label>
-                Tipo
-                <select
-                  aria-label={`Tipo do item ${n + 1}`}
-                  value={i.tipo}
-                  onChange={(e) =>
-                    alterar(n, { tipo: e.target.value as ItemProposta["tipo"] })
-                  }
-                >
-                  <option value="service">Serviço</option>
-                  <option value="part">Peça</option>
-                </select>
-              </label>
-              <label>
-                Quantidade
-                <input
-                  aria-label={`Quantidade do item ${n + 1}`}
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  max="100000"
-                  required
-                  value={i.quantidade}
-                  onChange={(e) =>
-                    alterar(n, { quantidade: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                Preço (R$)
-                <input
-                  aria-label={`Preço do item ${n + 1}`}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="1000000"
-                  required
-                  value={i.preco_unitario_centavos / 100}
-                  onChange={(e) =>
-                    alterar(n, {
-                      preco_unitario_centavos: Math.round(
-                        Number(e.target.value) * 100,
-                      ),
-                    })
-                  }
-                />
-              </label>
-              <strong>
-                {dinheiro(Math.round(i.quantidade * i.preco_unitario_centavos))}
-              </strong>
-              <button
-                type="button"
-                className="botao-icone"
-                aria-label={`Remover item ${n + 1}`}
-                onClick={() => setItens(itens.filter((_, j) => j !== n))}
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="botao-secundario"
-          disabled={itens.length >= 100}
-          onClick={() =>
-            setItens([
-              ...itens,
-              {
-                descricao: "",
-                tipo: "service",
-                unidade: "un",
-                quantidade: 1,
-                preco_unitario_centavos: 0,
-              },
-            ])
-          }
-        >
-          <Plus size={17} />
-          Adicionar item avulso
-        </button>
-        <div className="resumo-editor">
-          <label>
-            Desconto total (R$)
-            <input
-              type="number"
-              min="0"
-              max={subtotal / 100}
-              step="0.01"
-              required
-              value={desconto}
-              onChange={(e) => setDesconto(Number(e.target.value))}
-            />
-          </label>
-          <div>
-            <small>TOTAL DO ORÇAMENTO</small>
-            <strong>{dinheiro(subtotal - Math.round(desconto * 100))}</strong>
-          </div>
-        </div>
-        <label>
-          Observações
-          <textarea
-            name="observacoes"
-            rows={3}
-            maxLength={4000}
-            defaultValue={anterior?.versao.observacoes}
-            placeholder="Diagnóstico, escopo e detalhes do serviço"
-          />
-        </label>
-        <label>
-          Condições de pagamento e execução
-          <textarea
-            name="condicoes"
-            rows={3}
-            maxLength={4000}
-            defaultValue={
-              anterior?.versao.condicoes ??
-              "Serviços executados após a aprovação deste orçamento. Qualquer serviço adicional será apresentado para nova aprovação."
-            }
-          />
-        </label>
-      </fieldset>
-      {(erro || erroLocal) && (
-        <p className="erro-formulario" role="alert">
-          {erroLocal || erro}
-        </p>
-      )}
-      <div className="acoes-formulario">
-        <button
-          type="button"
-          className="botao-secundario"
-          disabled={ocupado || criando}
-          onClick={cancelar}
-        >
-          Cancelar
-        </button>
-        <button className="botao-primario" disabled={ocupado || criando}>
-          {ocupado ? "Salvando…" : "Salvar rascunho"}
-        </button>
-      </div>
-    </form>
-  );
-}
+
 export function Orcamentos() {
   const acesso = useAcesso(),
     cache = useQueryClient();
   const oficina = acesso.oficina!.id;
+  const navegar = useNavigate();
+  const [exclusao, setExclusao] = useState<ResumoProposta | null>(null);
+  const [motivoExclusao, setMotivoExclusao] = useState("");
+  const [autorizacao, setAutorizacao] = useState<Proposta | null>(null);
   const [parametros, setParametros] = useSearchParams();
   const [busca, setBusca] = useState(""),
     [situacao, setSituacao] = useState(""),
     [pagina, setPagina] = useState(0);
+  const [buscaConfirmada, setBuscaConfirmada] = useState<string | null>(null);
+  const emExecucao = useRef(false);
+  const [abrirFotos, setAbrirFotos] = useState(false);
+  const [processandoFotos, setProcessandoFotos] = useState(false);
   const [detalhe, setDetalhe] = useState<Proposta | null>(null),
     [edicao, setEdicao] = useState<Proposta | null>(null);
-  const [chaveCriacao, setChaveCriacao] = useState(() => crypto.randomUUID());
+  const [chaveCriacao, setChaveCriacao] = useState(() => novoId());
   const [ocupado, setOcupado] = useState(false),
     [erro, setErro] = useState(""),
     [aviso, setAviso] = useState(""),
     [link, setLink] = useState(""),
     [validade, setValidade] = useState(7),
-    [confirmacao, setConfirmacao] = useState<
-      "cancelar" | "revisar" | "converter" | null
-    >(null);
+    [confirmacao, setConfirmacao] = useState<"cancelar" | "revisar" | null>(null);
+  const idDireto = parametros.get("orcamento");
+  useEffect(() => {
+    if (!idDireto) return;
+    let ativo = true;
+    const controller = new AbortController();
+    obterProposta(acesso.demo, oficina, idDireto, undefined, controller.signal)
+      .then((q) => {
+        if (ativo) setDetalhe(q);
+      })
+      .catch((e) => {
+        if (ativo) setErro(erroPublico(e));
+      });
+    return () => {
+      ativo = false;
+      controller.abort();
+    };
+  }, [idDireto, acesso.demo, oficina]);
   const editorAberto = parametros.get("novo") === "1" || !!edicao;
   const chave = ["orcamentos", acesso.demo ? "demo" : acesso.usuario, oficina];
+  const buscaDebounced = useBuscaDebounced(busca);
+  const buscaConsulta = buscaConfirmada === busca ? busca : buscaDebounced;
   const lista = useQuery({
-    queryKey: [...chave, busca, situacao, pagina],
-    queryFn: () =>
-      listarPropostas(acesso.demo, oficina, busca, situacao, pagina),
+    queryKey: [...chave, buscaConsulta, situacao, pagina],
+    queryFn: ({ signal }) =>
+      listarPropostas(acesso.demo, oficina, buscaConsulta, situacao, pagina, signal),
     retry: false,
-    refetchInterval: 30000,
+    refetchInterval: editorAberto || detalhe ? false : 30000,
   });
   const aux = useQuery({
-    queryKey: [
-      "auxiliares-orcamento",
-      acesso.demo ? "demo" : acesso.usuario,
-      oficina,
-    ],
+    queryKey: ["auxiliares-orcamento", acesso.demo ? "demo" : acesso.usuario, oficina],
     queryFn: () => auxiliaresOrcamento(acesso.demo, oficina),
     enabled: editorAberto,
     retry: false,
   });
-  async function executar(acao: () => Promise<void>) {
-    if (ocupado) return;
+  const [converterRapido, setConverterRapido] = useState<Proposta | null>(null);
+  async function executar(acao: () => Promise<void>, alterou = true) {
+    if (emExecucao.current) return;
+    emExecucao.current = true;
     setOcupado(true);
     setErro("");
+    setAviso("");
     try {
       await acao();
-      await cache.invalidateQueries({ queryKey: chave });
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
+      // A gravação já foi confirmada. Atualizar a lista não bloqueia consultar/editar.
+      if (alterou) void cache.invalidateQueries({ queryKey: chave }).catch(() => {});
+      emExecucao.current = false;
       setOcupado(false);
     }
   }
@@ -376,7 +159,68 @@ export function Orcamentos() {
     await executar(async () => {
       setDetalhe(await obterProposta(acesso.demo, oficina, id, versao));
       setLink("");
-    });
+    }, false);
+  }
+  async function editar(id: string) {
+    await executar(async () => {
+      const q = await obterProposta(acesso.demo, oficina, id);
+      if (q.arquivado_em) throw new Error("Restaure o orçamento antes de editar.");
+      if (q.edicao_bloqueada || q.adicional_aplicado_em)
+        throw new Error(
+          "Este orçamento já autorizou uma OS. Para serviços adicionais, abra a OS e crie um orçamento adicional.",
+        );
+      setParametros({});
+      setDetalhe(null);
+      setEdicao(q);
+    }, false);
+  }
+  async function aprovar(
+    q: Pick<Proposta, "id" | "revisao">,
+    manifestacao?: ManifestacaoEquipe,
+  ) {
+    await executar(async () => {
+      let proposta = await obterProposta(acesso.demo, oficina, q.id);
+      if (proposta.revisao !== q.revisao)
+        throw new Error(
+          "O orçamento mudou. Atualize e confira os valores antes de aprovar.",
+        );
+      if (!manifestacao) {
+        setAutorizacao(proposta);
+        return;
+      }
+      await aprovarPropostaInterna(acesso.demo, oficina, proposta, manifestacao);
+      setAutorizacao(null);
+      proposta = await obterProposta(acesso.demo, oficina, q.id);
+      if (detalhe?.id === proposta.id) setDetalhe(proposta);
+      setAviso(`Orçamento #${proposta.numero} aprovado.`);
+      await atualizarOrdens();
+      if (
+        acesso.permite("work_orders") &&
+        !proposta.ordem_servico_id &&
+        !proposta.adicional_os_id
+      )
+        setConverterRapido(proposta);
+    }, !!manifestacao);
+  }
+  async function prepararConversao(q: Pick<Proposta, "id">) {
+    await executar(async () => {
+      const proposta = await obterProposta(acesso.demo, oficina, q.id);
+      const os = proposta.ordem_servico_id || proposta.adicional_os_id;
+      if (os) {
+        setDetalhe(null);
+        navegar("/ordens-servico?os=" + os);
+      } else if (proposta.situacao === "approved") {
+        setConverterRapido(proposta);
+      } else {
+        throw new Error("Aprove o orçamento antes de transformar em OS.");
+      }
+    }, false);
+  }
+  async function atualizarOrdens() {
+    await Promise.all([
+      cache.invalidateQueries({ queryKey: ["os"] }),
+      cache.invalidateQueries({ queryKey: ["mapa-oficina"] }),
+    ]);
   }
   async function compartilhar() {
     if (!detalhe) return;
@@ -390,6 +234,7 @@ export function Orcamentos() {
         destino = await novoLink(oficina, detalhe);
         setLink(destino);
       }
+      const { arquivoPdf, gerarPdf } = await import("../services/pdfOrcamento");
       const arquivo = arquivoPdf(detalhe, linkSomenteLocal() ? "" : destino);
       if (navigator.canShare?.({ files: [arquivo] })) {
         try {
@@ -400,9 +245,6 @@ export function Orcamentos() {
               ? "Confira o orçamento em PDF."
               : `Confira e responda ao orçamento: ${destino}`,
           });
-          setAviso(
-            "Compartilhamento aberto. Escolha o WhatsApp e o destinatário.",
-          );
           return;
         } catch (e) {
           if (e instanceof DOMException && e.name === "AbortError") return;
@@ -410,9 +252,7 @@ export function Orcamentos() {
       }
       {
         gerarPdf(detalhe, linkSomenteLocal() ? "" : destino).save(arquivo.name);
-        setAviso(
-          "PDF baixado. Use “Abrir WhatsApp” e anexe o arquivo na conversa.",
-        );
+        setAviso("PDF baixado. Use “Abrir WhatsApp” e anexe o arquivo na conversa.");
       }
     });
   }
@@ -427,12 +267,13 @@ export function Orcamentos() {
           <h1>
             Orçamentos<span>.</span>
           </h1>
-          <p>Propostas profissionais, prontas em poucos toques.</p>
+          <p>Crie, envie e acompanhe a aprovação do cliente.</p>
         </div>
         <button
           className="botao-primario"
+          data-preparar-modulo="formularioOrcamento"
           onClick={() => {
-            setChaveCriacao(crypto.randomUUID());
+            setChaveCriacao(novoId());
             setErro("");
             setParametros({ novo: "1" });
           }}
@@ -443,20 +284,25 @@ export function Orcamentos() {
       </div>
       {acesso.demo && (
         <div className="nota-demo">
-          Demonstração · Orçamentos salvos neste navegador. Aprovação por link e
-          conversão em OS usam a conta real.
+          Demonstração · Orçamentos, aprovações e OS salvos somente neste navegador.
         </div>
       )}
-      {aviso && (
+      {aviso && !detalhe && !editorAberto && (
         <div className="aviso-cliente" role="status">
           {aviso}
         </div>
       )}
-      {erro && !editorAberto && (
-        <p role="alert" className="erro-formulario">
-          {erro}
-        </p>
-      )}
+      {erro &&
+        !editorAberto &&
+        !detalhe &&
+        !exclusao &&
+        !autorizacao &&
+        !converterRapido &&
+        !confirmacao && (
+          <p role="alert" className="erro-formulario">
+            {erro}
+          </p>
+        )}
       <section className="painel-registros">
         <div className="registros-cabecalho">
           <div>
@@ -475,30 +321,60 @@ export function Orcamentos() {
               maxLength={200}
               onChange={(e) => {
                 setBusca(e.target.value);
+                setBuscaConfirmada(null);
                 setPagina(0);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  setBuscaConfirmada(busca);
+                }
+              }}
             />
+            {busca && (
+              <button
+                type="button"
+                className="botao-icone"
+                aria-label="Limpar busca de orçamentos"
+                onClick={() => {
+                  setBusca("");
+                  setBuscaConfirmada(null);
+                  setPagina(0);
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
           </label>
         </div>
         <div className="filtros-propostas">
-          <label>
-            Situação{" "}
-            <select
-              value={situacao}
-              onChange={(e) => {
-                setSituacao(e.target.value);
-                setPagina(0);
-              }}
-            >
-              <option value="">Todas as situações</option>
-              {Object.entries(rotulosSituacao).map(([valor, nome]) => (
-                <option key={valor} value={valor}>
-                  {nome}
-                </option>
-              ))}
-            </select>
-          </label>
-          <span>Atualização automática a cada 30 segundos</span>
+          <FiltrosSituacao
+            rotulo="Filtrar orçamentos"
+            valor={situacao}
+            alterar={(valor) => {
+              setSituacao(valor);
+              setPagina(0);
+            }}
+            principais={[
+              { valor: "", nome: "Todos" },
+              { valor: "draft", nome: "Rascunhos" },
+              {
+                valor: "awaiting_approval",
+                nome: "Aguardando aprovação",
+                tom: "atencao",
+              },
+              { valor: "approved", nome: "Aprovados", tom: "concluido" },
+            ]}
+            outras={[
+              ...Object.entries(rotulosSituacao)
+                .filter(
+                  ([valor]) =>
+                    !["draft", "awaiting_approval", "approved"].includes(valor),
+                )
+                .map(([valor, nome]) => ({ valor, nome })),
+              { valor: "excluidos", nome: "Excluídos" },
+            ]}
+          />
         </div>
         {lista.isPending ? (
           <div className="estado-lista" role="status">
@@ -507,10 +383,7 @@ export function Orcamentos() {
         ) : lista.isError ? (
           <div className="estado-lista">
             <p role="alert">{erroPublico(lista.error)}</p>
-            <button
-              className="botao-secundario"
-              onClick={() => void lista.refetch()}
-            >
+            <button className="botao-secundario" onClick={() => void lista.refetch()}>
               Tentar novamente
             </button>
           </div>
@@ -522,37 +395,145 @@ export function Orcamentos() {
                 ? "Nenhum orçamento encontrado"
                 : "Seu próximo serviço começa aqui"}
             </h3>
-            <p>
-              Selecione o cliente, adicione os itens e prepare sua proposta.
-            </p>
+            {busca || situacao ? (
+              <>
+                <p>Tente outro termo ou volte à lista completa.</p>
+                <button
+                  type="button"
+                  className="botao-secundario"
+                  onClick={() => {
+                    setBusca("");
+                    setSituacao("");
+                    setPagina(0);
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              </>
+            ) : (
+              <>
+                <p>Selecione o cliente, adicione os itens e prepare sua proposta.</p>
+                <button
+                  type="button"
+                  className="botao-primario"
+                  onClick={() => {
+                    setChaveCriacao(novoId());
+                    setErro("");
+                    setParametros({ novo: "1" });
+                  }}
+                >
+                  <Plus size={17} />
+                  Criar primeiro orçamento
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="lista-propostas">
             {lista.data.itens.map((q) => (
-              <button
+              <article
                 key={q.id}
                 className="linha-proposta"
-                disabled={ocupado}
-                onClick={() => void abrir(q.id)}
+                aria-label={`Orçamento #${q.numero}`}
               >
-                <span className="icone-proposta">
-                  <FileText size={22} />
-                </span>
-                <div>
-                  <strong>
-                    #{String(q.numero).padStart(4, "0")} · {q.cliente}
-                  </strong>
-                  <small>
-                    {q.veiculo}
-                    {q.placa ? ` · ${q.placa}` : ""} · Versão {q.numero_versao}
-                  </small>
+                <button
+                  className="abrir-proposta"
+                  disabled={ocupado}
+                  onClick={() => void abrir(q.id)}
+                  aria-label={`Abrir orçamento #${q.numero} de ${q.cliente}`}
+                >
+                  <span className="icone-proposta">
+                    <FileText size={22} />
+                  </span>
+                  <div>
+                    <strong>
+                      #{String(q.numero).padStart(4, "0")} · {q.cliente}
+                    </strong>
+                    <small>
+                      {q.veiculo}
+                      {q.placa ? ` · ${q.placa}` : ""} · Versão {q.numero_versao}
+                    </small>
+                  </div>
+                  <span className={`situacao-proposta ${q.situacao}`}>
+                    {q.arquivado_em ? "Excluído" : rotulosSituacao[q.situacao]}
+                  </span>
+                  <div>
+                    <strong>
+                      {dinheiro(q.total_aprovado_centavos ?? q.total_centavos)}
+                    </strong>
+                    {q.total_aprovado_centavos != null &&
+                      q.total_aprovado_centavos !== q.total_centavos && (
+                        <small>
+                          Autorizado · proposta {dinheiro(q.total_centavos)}
+                        </small>
+                      )}
+                  </div>
+                  <ChevronRight size={18} />
+                </button>
+                <div className="acoes-linha-proposta">
+                  <AcaoOrcamento
+                    proposta={q}
+                    permiteOS={acesso.permite("work_orders")}
+                    ocupado={ocupado}
+                    compacta
+                    aprovar={() => void aprovar(q)}
+                    converter={() => void prepararConversao(q)}
+                  />
+                  {q.arquivado_em ? (
+                    <button
+                      className="botao-icone"
+                      title="Restaurar orçamento"
+                      aria-label={`Restaurar orçamento #${q.numero}`}
+                      disabled={ocupado}
+                      onClick={() =>
+                        void executar(async () => {
+                          await restaurarProposta(acesso.demo, oficina, q);
+                          setAviso(
+                            `Orçamento #${q.numero} restaurado. Os links antigos permanecem desativados.`,
+                          );
+                          setPagina(0);
+                        })
+                      }
+                    >
+                      <RotateCcw size={18} />
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        className="botao-icone"
+                        title={
+                          q.edicao_bloqueada
+                            ? "Valores já autorizados na OS. Use um orçamento adicional na OS."
+                            : "Editar orçamento"
+                        }
+                        aria-label={`Editar orçamento #${q.numero}`}
+                        disabled={ocupado || q.edicao_bloqueada}
+                        onClick={() => void editar(q.id)}
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        className="botao-icone excluir-proposta"
+                        title="Excluir orçamento"
+                        aria-label={`Excluir orçamento #${q.numero}`}
+                        disabled={ocupado}
+                        onClick={() => {
+                          setExclusao(q);
+                          setMotivoExclusao("");
+                          setErro("");
+                        }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </>
+                  )}
                 </div>
-                <span className={`situacao-proposta ${q.situacao}`}>
-                  {rotulosSituacao[q.situacao]}
-                </span>
-                <strong>{dinheiro(q.total_centavos)}</strong>
-                <ChevronRight size={18} />
-              </button>
+                {q.arquivado_em && (
+                  <p className="motivo-exclusao-proposta">
+                    Motivo: {q.motivo_exclusao}
+                  </p>
+                )}
+              </article>
             ))}
           </div>
         )}
@@ -583,9 +564,7 @@ export function Orcamentos() {
       <Dialogo
         aberto={editorAberto}
         fechar={fecharEditor}
-        titulo={
-          edicao ? `Editar orçamento #${edicao.numero}` : "Novo orçamento"
-        }
+        titulo={edicao ? `Editar orçamento #${edicao.numero}` : "Novo orçamento"}
         classe="dialogo-orcamento"
       >
         {editorAberto &&
@@ -596,28 +575,59 @@ export function Orcamentos() {
           ) : (
             aux.data && (
               <EditorOrcamento
-                key={edicao?.id ?? chaveCriacao}
+                key={edicao?.id ?? `${chaveCriacao}:${parametros.get("cliente") || ""}`}
+                clienteInicial={parametros.get("cliente") || ""}
                 anterior={edicao ?? undefined}
                 aux={aux.data}
                 ocupado={ocupado}
                 erro={erro}
                 cancelar={fecharEditor}
-                salvar={(dados) =>
+                salvar={(dados, idLocal, fotos) =>
                   void executar(async () => {
                     const q = await salvarProposta(
                       acesso.demo,
                       oficina,
                       dados,
-                      chaveCriacao,
+                      idLocal,
                       edicao ?? undefined,
+                    );
+                    limparRascunho(
+                      chaveRascunho(
+                        acesso.demo ? "demo" : acesso.usuario!,
+                        oficina,
+                        edicao?.id,
+                        parametros.get("cliente") || "",
+                      ),
                     );
                     setParametros({});
                     setEdicao(null);
-                    setChaveCriacao(crypto.randomUUID());
+                    setChaveCriacao(novoId());
                     setDetalhe(q);
+                    setAbrirFotos(!!fotos);
                     setLink("");
+                    // Primeiro preserva o documento salvo. Se a emissão falhar,
+                    // o usuário consegue tentar novamente sem duplicar o orçamento.
+                    if (q.situacao === "draft" && !fotos) {
+                      try {
+                        const emitido = await emitirProposta(
+                          acesso.demo,
+                          oficina,
+                          q,
+                          validade,
+                        );
+                        setDetalhe(emitido.proposta);
+                        setLink(emitido.link);
+                      } catch (e) {
+                        throw new Error(
+                          `O orçamento #${q.numero} foi salvo, mas não foi possível deixá-lo pronto para aprovação. ${erroPublico(e)} Use o botão Aprovar para tentar novamente.`,
+                          { cause: e },
+                        );
+                      }
+                    }
                     setAviso(
-                      "Rascunho salvo. Confira os dados e emita para enviar ao cliente.",
+                      fotos
+                        ? "Adicione as fotos e clique em Concluir orçamento ou Aprovar."
+                        : "Orçamento salvo. Aguardando aprovação do cliente.",
                     );
                   })
                 }
@@ -626,11 +636,13 @@ export function Orcamentos() {
           ))}
       </Dialogo>
       <Dialogo
-        aberto={!!detalhe && !editorAberto}
+        aberto={!!detalhe && !editorAberto && !exclusao}
         fechar={() => {
-          if (!ocupado) {
+          if (!ocupado && !processandoFotos) {
             setDetalhe(null);
+            setParametros({});
             setErro("");
+            setAviso("");
             setLink("");
           }
         }}
@@ -638,66 +650,147 @@ export function Orcamentos() {
         classe="dialogo-orcamento"
       >
         {detalhe && (
+          <div
+            className="acoes-detalhe-orcamento"
+            role="group"
+            aria-label="Ações do orçamento"
+          >
+            {!detalhe.arquivado_em &&
+              !detalhe.edicao_bloqueada &&
+              !detalhe.adicional_aplicado_em &&
+              detalhe.versao.id === detalhe.versao_atual_id && (
+                <button
+                  className="botao-secundario"
+                  disabled={ocupado || processandoFotos}
+                  onClick={() => void editar(detalhe.id)}
+                >
+                  <Pencil size={17} /> Editar orçamento
+                </button>
+              )}
+            <AtalhoLocalizacao tipo="orcamento" id={detalhe.id} />
+            <Link
+              className="botao-secundario"
+              to={
+                "/documentos?tipo=orcamento&id=" +
+                detalhe.id +
+                "&versao=" +
+                detalhe.versao.id
+              }
+              aria-label={"Imprimir orçamento #" + detalhe.numero}
+            >
+              <Printer size={17} />
+              <span>Imprimir / PDF</span>
+            </Link>
+            {!detalhe.arquivado_em &&
+              !["declined", "cancelled"].includes(detalhe.situacao) &&
+              detalhe.versao.id === detalhe.versao_atual_id && (
+                <DesistenciaAtendimento
+                  tipo="orcamento"
+                  id={detalhe.id}
+                  revisao={detalhe.revisao}
+                  aprovado={detalhe.situacao === "approved"}
+                  osVinculada={!!detalhe.ordem_servico_id}
+                  atualizar={async () => {
+                    setLink("");
+                    await abrir(detalhe.id);
+                  }}
+                />
+              )}
+            <button
+              className="botao-secundario"
+              aria-label="Atualizar situação"
+              title="Atualizar situação"
+              disabled={ocupado}
+              onClick={() => void abrir(detalhe.id)}
+            >
+              <Check size={15} />
+              <span>Atualizar situação</span>
+            </button>
+            <button
+              className="botao-primario"
+              aria-label="Compartilhar PDF"
+              disabled={
+                ocupado ||
+                !!detalhe.arquivado_em ||
+                detalhe.versao.id !== detalhe.versao_atual_id ||
+                ["draft", "cancelled"].includes(detalhe.situacao)
+              }
+              title={
+                detalhe.arquivado_em
+                  ? "Restaure o orçamento antes de compartilhar"
+                  : detalhe.versao.id !== detalhe.versao_atual_id
+                    ? "Selecione a versão atual para compartilhar"
+                    : detalhe.situacao === "draft"
+                      ? "Prepare o orçamento para enviar antes de compartilhar"
+                      : detalhe.situacao === "cancelled"
+                        ? "Este orçamento foi cancelado"
+                        : "Compartilhar PDF"
+              }
+              onClick={() => void compartilhar()}
+            >
+              <Send size={17} />
+              <span>Compartilhar PDF</span>
+            </button>
+          </div>
+        )}
+        {detalhe && (
           <>
+            <ConteudoProposta q={detalhe} recolherDetalhes exibirObservacoes={false} />
+            <CobrancaDiagnostico documento={detalhe.id} tipo="automotivo" />
             {aviso && (
               <p className="aviso-cliente" role="status">
                 {aviso}
               </p>
             )}
-            <div className="barra-proposta">
-              <span className={`situacao-proposta ${detalhe.situacao}`}>
-                {rotulosSituacao[detalhe.situacao]}
-              </span>
-              {!acesso.demo && (
-                <label>
-                  Versão
-                  <select
-                    value={detalhe.versao.id}
-                    onChange={(e) => void abrir(detalhe.id, e.target.value)}
-                    disabled={ocupado}
-                  >
-                    {detalhe.historico.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        v{v.numero_versao} ·{" "}
-                        {v.publicado_em ? "Emitida" : "Rascunho"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              <button
-                className="botao-secundario"
-                disabled={ocupado}
-                onClick={() => void abrir(detalhe.id)}
-              >
-                <Check size={15} />
-                Atualizar situação
-              </button>
-            </div>
-            <ConteudoProposta q={detalhe} />
-            {erro && (
-              <p role="alert" className="erro-formulario">
-                {erro}
+            {detalhe.arquivado_em && (
+              <p className="aviso-cliente">
+                Orçamento excluído. Motivo: {detalhe.motivo_exclusao}
               </p>
             )}
-            <FotosOrcamento
-              versao={detalhe.versao.id}
-              rascunho={!detalhe.versao.publicado_em}
-            />
-            {detalhe.versao.id === detalhe.versao_atual_id && (
+            {!detalhe.arquivado_em && detalhe.versao.id === detalhe.versao_atual_id && (
               <div className="acoes-proposta">
+                <AcaoOrcamento
+                  proposta={detalhe}
+                  permiteOS={acesso.permite("work_orders")}
+                  ocupado={ocupado || processandoFotos}
+                  aprovar={() => void aprovar(detalhe)}
+                  converter={() => void prepararConversao(detalhe)}
+                />
                 {detalhe.situacao === "draft" ? (
                   <>
                     <button
                       className="botao-secundario"
                       disabled={ocupado}
-                      onClick={() => {
-                        setEdicao(detalhe);
-                        setErro("");
-                      }}
+                      onClick={() => void editar(detalhe.id)}
                     >
                       Editar rascunho
                     </button>
+                    {acesso.permite("work_orders") &&
+                      !detalhe.ordem_servico_id &&
+                      !detalhe.adicional_os_id && (
+                        <button
+                          className="botao-secundario"
+                          disabled={ocupado}
+                          onClick={() =>
+                            void executar(async () => {
+                              const os = await criarOSParaOrcamento(
+                                acesso.demo,
+                                oficina,
+                                detalhe,
+                              );
+                              await Promise.all([
+                                cache.invalidateQueries({ queryKey: ["os"] }),
+                                cache.invalidateQueries({ queryKey: ["mapa-oficina"] }),
+                              ]);
+                              setDetalhe(null);
+                              navegar("/ordens-servico?os=" + os);
+                            })
+                          }
+                        >
+                          <Plus size={16} />
+                          Abrir OS aguardando aprovação
+                        </button>
+                      )}
                     <label>
                       Validade
                       <select
@@ -714,7 +807,7 @@ export function Orcamentos() {
                     </label>
                     <button
                       className="botao-primario"
-                      disabled={ocupado || !detalhe.itens.length}
+                      disabled={ocupado || processandoFotos || !detalhe.itens.length}
                       onClick={() =>
                         void executar(async () => {
                           const r = await emitirProposta(
@@ -725,103 +818,146 @@ export function Orcamentos() {
                           );
                           setDetalhe(r.proposta);
                           setLink(r.link);
-                          setAviso(
-                            "Proposta emitida. Agora você pode compartilhar o PDF e o link.",
-                          );
+                          setAviso("Orçamento salvo. Aguardando aprovação do cliente.");
                         })
                       }
                     >
                       <Send size={17} />
-                      {ocupado ? "Emitindo…" : "Emitir orçamento"}
+                      {ocupado ? "Salvando…" : "Concluir orçamento"}
                     </button>
                   </>
-                ) : (
-                  <>
-                    {detalhe.situacao !== "cancelled" && (
-                      <button
-                        className="botao-primario"
-                        disabled={ocupado}
-                        onClick={() => void compartilhar()}
-                      >
-                        <Send size={17} />
-                        Compartilhar PDF
-                      </button>
-                    )}
-                    {!detalhe.ordem_servico_id && (
+                ) : null}
+              </div>
+            )}
+            {erro && !confirmacao && !autorizacao && !converterRapido && (
+              <p role="alert" className="erro-formulario">
+                {erro}
+              </p>
+            )}
+            {detalhe.encerramento?.versao_id === detalhe.versao.id && (
+              <p className="aviso-cliente">
+                <strong>
+                  {detalhe.encerramento.decisao === "nao_aprovou"
+                    ? "Cliente não aprovou"
+                    : "Cliente desistiu"}
+                </strong>
+                : {detalhe.encerramento.motivo}
+              </p>
+            )}
+            {(detalhe.versao.pecas_a_trocar ||
+              detalhe.versao.observacoes ||
+              detalhe.versao.condicoes ||
+              detalhe.versao.diagnostico ||
+              detalhe.versao.queixa_cliente ||
+              detalhe.versao.codigos_falha ||
+              detalhe.versao.tipo_servico) && (
+              <SecaoRecolhivel
+                key={detalhe.versao.id}
+                titulo="Observações e condições"
+                classe="observacoes-orcamento"
+              >
+                <ObservacoesProposta q={detalhe} />
+              </SecaoRecolhivel>
+            )}
+            <FotosOrcamento
+              aoProcessar={setProcessandoFotos}
+              aberta={abrirFotos}
+              versao={detalhe.versao.id}
+              rascunho={!detalhe.arquivado_em && !detalhe.versao.publicado_em}
+            />
+            <SecaoRecolhivel titulo="PDF, impressão e outras opções">
+              {!acesso.demo && detalhe.historico.length > 1 && (
+                <div className="acoes-proposta">
+                  <label>
+                    Versão
+                    <select
+                      value={detalhe.versao.id}
+                      onChange={(e) => void abrir(detalhe.id, e.target.value)}
+                      disabled={ocupado}
+                    >
+                      {detalhe.historico.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          v{v.numero_versao} · {v.publicado_em ? "Emitida" : "Rascunho"}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+              <div className="acoes-proposta">
+                <Link
+                  className="botao-secundario"
+                  to={`/documentos?tipo=orcamento&id=${detalhe.id}&versao=${detalhe.versao.id}`}
+                >
+                  <Printer size={17} /> Visualizar e imprimir
+                </Link>
+                <button
+                  className="botao-secundario"
+                  disabled={ocupado}
+                  onClick={() =>
+                    void executar(async () => {
+                      const { gerarPdf } = await import("../services/pdfOrcamento");
+                      gerarPdf(detalhe, linkSomenteLocal() ? "" : link).save(
+                        `orcamento-${detalhe.numero}-v${detalhe.versao.numero_versao}.pdf`,
+                      );
+                    }, false)
+                  }
+                >
+                  <Download size={17} />
+                  Baixar PDF
+                </button>
+                {!acesso.demo &&
+                  !detalhe.arquivado_em &&
+                  detalhe.versao.id === detalhe.versao_atual_id &&
+                  ["awaiting_approval", "approved", "declined"].includes(
+                    detalhe.situacao,
+                  ) && (
+                    <button
+                      className="botao-secundario"
+                      disabled={ocupado}
+                      onClick={() =>
+                        void executar(async () => {
+                          setLink(await novoLink(oficina, detalhe));
+                        })
+                      }
+                    >
+                      <Copy size={17} />
+                      Preparar link de aprovação
+                    </button>
+                  )}
+              </div>
+              {!detalhe.arquivado_em &&
+                detalhe.versao.id === detalhe.versao_atual_id && (
+                  <div className="acoes-proposta">
+                    {detalhe.situacao !== "draft" &&
+                      !detalhe.ordem_servico_id &&
+                      !detalhe.adicional_aplicado_em && (
+                        <button
+                          className="botao-secundario"
+                          disabled={ocupado}
+                          onClick={() => setConfirmacao("revisar")}
+                        >
+                          Criar nova versão
+                        </button>
+                      )}
+                    {!["approved", "cancelled"].includes(detalhe.situacao) && (
                       <button
                         className="botao-secundario"
                         disabled={ocupado}
-                        onClick={() => setConfirmacao("revisar")}
+                        onClick={() => setConfirmacao("cancelar")}
                       >
-                        Criar nova versão
+                        <X size={16} />
+                        Cancelar orçamento
                       </button>
                     )}
-                    {detalhe.situacao === "approved" &&
-                      acesso.permite("work_orders") &&
-                      !detalhe.ordem_servico_id && (
-                        <button
-                          className="botao-primario"
-                          disabled={ocupado}
-                          onClick={() => setConfirmacao("converter")}
-                        >
-                          Transformar em OS
-                          <ArrowUpRight size={17} />
-                        </button>
-                      )}
-                  </>
+                  </div>
                 )}
-                {!["approved", "cancelled"].includes(detalhe.situacao) && (
-                  <button
-                    className="botao-secundario"
-                    disabled={ocupado}
-                    onClick={() => setConfirmacao("cancelar")}
-                  >
-                    <X size={16} />
-                    Cancelar orçamento
-                  </button>
-                )}
-              </div>
-            )}
-            <div className="acoes-proposta">
-              <button
-                className="botao-secundario"
-                onClick={() =>
-                  gerarPdf(detalhe, linkSomenteLocal() ? "" : link).save(
-                    `orcamento-${detalhe.numero}-v${detalhe.versao.numero_versao}.pdf`,
-                  )
-                }
-              >
-                <Download size={17} />
-                Baixar PDF
-              </button>
-              {!acesso.demo &&
-                detalhe.versao.id === detalhe.versao_atual_id &&
-                ["awaiting_approval", "approved", "declined"].includes(
-                  detalhe.situacao,
-                ) && (
-                  <button
-                    className="botao-secundario"
-                    disabled={ocupado}
-                    onClick={() =>
-                      void executar(async () => {
-                        setLink(await novoLink(oficina, detalhe));
-                      })
-                    }
-                  >
-                    <Copy size={17} />
-                    Preparar link de aprovação
-                  </button>
-                )}
-            </div>
+            </SecaoRecolhivel>
             {link && (
               <div className="compartilhar-link">
                 <label>
                   Link desta versão
-                  <input
-                    readOnly
-                    value={link}
-                    onFocus={(e) => e.target.select()}
-                  />
+                  <input readOnly value={link} onFocus={(e) => e.target.select()} />
                 </label>
                 <button
                   className="botao-secundario"
@@ -855,24 +991,141 @@ export function Orcamentos() {
                 }
               </div>
             )}
-            {linkSomenteLocal() && detalhe.versao.publicado_em && (
-              <p className="nota-demo">
-                O PDF já pode ser enviado. O link de aprovação só funciona neste
-                computador enquanto o sistema estiver em localhost; para o
-                cliente abrir pelo celular, publique o sistema e configure sua
-                URL pública.
-              </p>
-            )}
-            {detalhe.ordem_servico_id && (
+            {detalhe.adicional_os_id && (
               <p className="aviso-cliente">
-                <Link to={`/ordens-servico?os=${detalhe.ordem_servico_id}`}>
-                  Abrir ordem de serviço
+                <Link to={`/ordens-servico?os=${detalhe.adicional_os_id}`}>
+                  Voltar à OS original
                 </Link>
-                . Os itens e valores aprovados foram preservados.
+                .{" "}
+                {detalhe.adicional_aplicado_em
+                  ? "Este adicional já foi incorporado."
+                  : "Após a aprovação, abra a OS e escolha Mais opções → Vistoria e ferramentas para incluir os itens."}
               </p>
             )}
           </>
         )}
+      </Dialogo>
+      <Dialogo
+        aberto={!!exclusao}
+        titulo={`Excluir orçamento #${exclusao?.numero ?? ""}?`}
+        fechar={() => {
+          if (!ocupado) {
+            setExclusao(null);
+            setErro("");
+          }
+        }}
+      >
+        <form
+          className="formulario-cliente"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!exclusao) return;
+            void executar(async () => {
+              await excluirProposta(acesso.demo, oficina, exclusao, motivoExclusao);
+              setAviso(
+                `Orçamento #${exclusao.numero} excluído. Você pode restaurá-lo em Mais situações → Excluídos.`,
+              );
+              setExclusao(null);
+              setDetalhe(null);
+              setParametros({});
+              setPagina(0);
+            });
+          }}
+        >
+          <p className="texto-suave">
+            O orçamento sairá da lista e os links serão desativados. O histórico será
+            preservado e você poderá restaurá-lo.
+          </p>
+          <label>
+            Motivo da exclusão
+            <textarea
+              required
+              minLength={3}
+              maxLength={1000}
+              rows={3}
+              value={motivoExclusao}
+              disabled={ocupado}
+              placeholder="Ex.: orçamento duplicado ou cadastro incorreto"
+              onChange={(e) => setMotivoExclusao(e.target.value)}
+            />
+          </label>
+          {erro && (
+            <p className="erro-formulario" role="alert">
+              {erro}
+            </p>
+          )}
+          <div className="acoes-formulario">
+            <button
+              type="button"
+              className="botao-secundario"
+              disabled={ocupado}
+              onClick={() => {
+                setExclusao(null);
+                setErro("");
+              }}
+            >
+              Voltar
+            </button>
+            <button
+              className="botao-perigo"
+              disabled={ocupado || motivoExclusao.trim().length < 3}
+            >
+              {ocupado ? "Excluindo…" : "Excluir orçamento"}
+            </button>
+          </div>
+        </form>
+      </Dialogo>
+      <Dialogo
+        aberto={!!converterRapido}
+        fechar={() => {
+          if (!ocupado) setConverterRapido(null);
+        }}
+        titulo="Transformar orçamento aprovado em OS?"
+      >
+        <p>
+          Orçamento #{converterRapido?.numero} ·{" "}
+          {converterRapido?.versao.dados_cliente.nome}. A OS terá os itens e valores
+          aprovados.
+        </p>
+        {erro && (
+          <p role="alert" className="erro-formulario">
+            {erro}
+          </p>
+        )}
+        <div className="acoes-formulario">
+          <button
+            className="botao-secundario"
+            disabled={ocupado}
+            onClick={() => setConverterRapido(null)}
+          >
+            Agora não
+          </button>
+          <button
+            className="botao-primario"
+            disabled={ocupado}
+            onClick={() =>
+              converterRapido &&
+              void executar(async () => {
+                const os = await acaoProposta(
+                  acesso.demo,
+                  oficina,
+                  converterRapido,
+                  "converter",
+                );
+                if (typeof os !== "string")
+                  throw new Error(
+                    "Não foi possível identificar a OS. Atualize o orçamento e tente novamente.",
+                  );
+                setConverterRapido(null);
+                setDetalhe(null);
+                await atualizarOrdens();
+                navegar("/ordens-servico?os=" + os);
+              })
+            }
+          >
+            {ocupado ? "Criando…" : "Sim, transformar em OS"}
+          </button>
+        </div>
       </Dialogo>
       <Dialogo
         aberto={!!confirmacao}
@@ -880,19 +1133,13 @@ export function Orcamentos() {
           if (!ocupado) setConfirmacao(null);
         }}
         titulo={
-          confirmacao === "cancelar"
-            ? "Cancelar orçamento?"
-            : confirmacao === "converter"
-              ? "Transformar em ordem de serviço?"
-              : "Criar nova versão?"
+          confirmacao === "cancelar" ? "Cancelar orçamento?" : "Criar nova versão?"
         }
       >
         <p className="texto-suave">
           {confirmacao === "cancelar"
             ? "Os links serão revogados. O orçamento e seu histórico serão preservados."
-            : confirmacao === "converter"
-              ? "A OS será criada com os itens e valores aprovados pelo cliente."
-              : "A proposta anterior será preservada no histórico, mas seus links serão desativados. A nova versão precisará ser emitida e aprovada novamente."}
+            : "A proposta anterior será preservada no histórico, mas seus links serão desativados. A nova versão precisará ser emitida e aprovada novamente."}
         </p>
         {erro && (
           <p role="alert" className="erro-formulario">
@@ -916,22 +1163,44 @@ export function Orcamentos() {
               void executar(async () => {
                 const acao = confirmacao;
                 await acaoProposta(acesso.demo, oficina, detalhe, acao);
-                setDetalhe(
-                  await obterProposta(acesso.demo, oficina, detalhe.id),
-                );
+                setDetalhe(await obterProposta(acesso.demo, oficina, detalhe.id));
                 setConfirmacao(null);
                 setLink("");
-                setAviso(
-                  acao === "converter"
-                    ? "Ordem de serviço criada com sucesso."
-                    : "Orçamento atualizado.",
-                );
+                setAviso("Orçamento atualizado.");
               })
             }
           >
             {ocupado ? "Processando…" : "Confirmar"}
           </button>
         </div>
+      </Dialogo>
+      <Dialogo
+        aberto={!!autorizacao}
+        titulo="Registrar autorização do cliente"
+        fechar={() => {
+          if (!ocupado) setAutorizacao(null);
+        }}
+      >
+        {erro && (
+          <p role="alert" className="erro-formulario">
+            {erro}
+          </p>
+        )}
+        {autorizacao && (
+          <ConfirmarAutorizacao
+            key={autorizacao.versao_atual_id}
+            nomeInicial={autorizacao.versao.dados_cliente.nome}
+            total={
+              autorizacao.versao.total_centavos -
+              abatimentoDiagnostico(
+                autorizacao.versao.taxa_diagnostico,
+                autorizacao.versao.total_centavos,
+              )
+            }
+            ocupado={ocupado}
+            confirmar={(m) => void aprovar(autorizacao, m)}
+          />
+        )}
       </Dialogo>
     </>
   );

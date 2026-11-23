@@ -1,0 +1,18 @@
+# Dados locais de operação e auditoria não fazem parte da publicação.
+.env
+.env.*
+!.env.example
+*.local
+backups/
+output/
+/LOGINS-E-SENHAS.local.txt
+tmp/
+docs/validacao-real/
+.openai/
+.git/
+node_modules/
+dist/
+*.dump
+*.dump.partial
+*.tar
+*.tar.gz

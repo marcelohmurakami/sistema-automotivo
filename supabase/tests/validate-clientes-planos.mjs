@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { criarBancoLocal } from './banco-local.mjs';
-const db = await criarBancoLocal('20261001000600');
+const db = await criarBancoLocal('20261013000800');
 let total=0;
 const id=n=>`20000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const esc=v=>`'${String(v).replaceAll("'","''")}'`;
@@ -10,7 +10,7 @@ const falha=async(sql,codigo,msg)=>{await assert.rejects(()=>db.exec(sql),e=>e.c
 const login=async usuario=>db.exec(`reset role;select set_config('request.jwt.claim.sub',${esc(usuario)},false);set role authenticated;`);
 const dados=nome=>esc(JSON.stringify({nome,telefone_e164:'+5516999991234',email:'cliente@example.com',tipo:'pessoa_fisica',endereco:'Rua de teste',observacoes:'Teste local'}))+'::jsonb';
 try {
- await db.exec(`insert into auth.users values('${id(1)}'),('${id(2)}'),('${id(3)}'),('${id(4)}')`);
+ await db.exec(`alter table auth.users add column email text, add column email_confirmed_at timestamptz; insert into auth.users(id,email,email_confirmed_at) values('${id(1)}','owner@example.com',now()),('${id(2)}','other@example.com',now()),('${id(3)}','staff@example.com',now()),('${id(4)}','cliente@example.com',now())`);
  await login(id(1)); const a=await scalar("select public.criar_oficina('Oficina A',null)");
  await login(id(2)); const b=await scalar("select public.criar_oficina('Oficina B',null)");
  await login(id(1)); let acesso=await scalar('select public.consultar_meu_acesso()');
@@ -47,7 +47,7 @@ try {
  ok(await scalar(`select count(*)::int from public.clientes where id='${clienteId}'`)===0,'RLS impede leitura de outra empresa');
  await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='complete' where oficina_id='${a}';`);
  await login(id(1));
- ok((await scalar('select public.consultar_meu_acesso()'))[0].recursos.length===15,'Completo libera quinze recursos');
+ ok((await scalar('select public.consultar_meu_acesso()'))[0].recursos.length===16,'Completo libera dezesseis recursos');
  ok(await scalar(`select count(*)::int from public.etapas_producao where oficina_id='${a}'`)===5,'plano permite leitura das etapas');
  await db.exec(`reset role;insert into public.sites_oficina(oficina_id,identificador_url,titulo,publicado,portal_habilitado) values('${a}','oficina-teste','Oficina teste',true,true);
  insert into public.acessos_portal_cliente(oficina_id,cliente_id,usuario_id,concedido_por) values('${a}','${clienteId}','${id(4)}','${id(1)}');`);

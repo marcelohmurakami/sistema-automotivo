@@ -1,0 +1,16 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {MemoryRouter} from 'react-router-dom';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {Orcamentos} from '../../src/pages/Orcamentos';
+import {gravarDemo} from '../../src/services/orcamentos';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+const p=new URLSearchParams(location.search),n=Number(p.get('n')||12);document.documentElement.dataset.tema=p.get('tema')||'escuro';
+localStorage.clear();const id='00000000-0000-4000-8000-000000000038',versao='00000000-0000-4000-8000-000000000039';
+const itens=Array.from({length:n},(_,i)=>({id:crypto.randomUUID(),tipo:i%2?'part':'service',descricao:'QA serviço '+(i+1),unidade:'un',quantidade:1,preco_unitario_centavos:10000,total_item_centavos:10000,grupo_servico:i%2?'Freios':'Revisão'}));
+gravarDemo({id,numero:38,revisao:1,situacao:'awaiting_approval',cliente_id:'',veiculo_id:'',versao_atual_id:versao,ordem_servico_id:null,aprovacao:null,historico:[{id:versao,numero_versao:1,total_centavos:n*10000,publicado_em:'2026-11-13T12:00:00Z'}],itens,versao:{id:versao,numero_versao:1,dados_oficina:{nome:'Empresa de teste'},dados_cliente:{nome:'Cliente QA'},dados_veiculo:{modelo:'Volkswagen Gol',motor:'AP 1.6',especialidade:'retifica'},observacoes:'',condicoes:'Conforme combinado',subtotal_centavos:n*10000,desconto_centavos:0,total_centavos:n*10000,publicado_em:'2026-11-13T12:00:00Z',expira_em:'2026-12-13T12:00:00Z'}});
+const qc=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}});const invalidar=qc.invalidateQueries.bind(qc);qc.invalidateQueries=async(...a)=>{if(p.has('lento'))await new Promise(r=>setTimeout(r,2000));return invalidar(...a)};
+window.qa={qc,id,versao,falharGravacao:false,gravacoes:0};
+const gravar=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='patio_orcamentos_v2'){if(window.qa.falharGravacao)throw new DOMException('Falha simulada ao gravar','QuotaExceededError');window.qa.gravacoes++;}return gravar.call(this,k,v)};
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={qc}><ContextoAcesso.Provider value={{demo:true,usuario:'qa',oficina:{id:'demo',nome:'Empresa QA',perfil:'owner',ramo:'automotivo',especialidade:'retifica',codigo_plano:'complete'},permite:()=>true}}><MemoryRouter initialEntries={['/orcamentos']}><main className="estrutura-sistema" style={{display:'block',padding:16}}><Orcamentos/></main></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

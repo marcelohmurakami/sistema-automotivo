@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import {resolve} from 'node:path';import {mkdir,writeFile} from 'node:fs/promises';import {randomUUID as uuid} from 'node:crypto';
+process.env.DB_VALIDATION_RUNTIME=resolve('node_modules/@electric-sql/pglite/dist/index.js');process.env.DB_VALIDATION_MIGRATION_LIMIT='99999999999999';
+const{criarCenarioSubsistemas}=await import('./subsistemas-fixture.mjs');
+const{db,registros,ids,login}=await criarCenarioSubsistemas();
+const resultados=[];const one=async(sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
+try{
+assert.equal(Number(await one("select count(*) from pg_policies where schemaname='storage' and tablename='migrations'")),0,'Não altera as tabelas internas do provedor de Storage');
+for(const[perfil,r]of Object.entries(registros)){
+ await login(ids[perfil]);let checks=0;const ok=(v,n)=>{assert(v,n);checks++;};
+ const call=(n,args=[])=>one(`select public.${n}(${args.map((_,i)=>'$'+(i+1)).join(',')})`,args);
+ const pacote={formato:'patio.migracao.v1',origem:'QA Padrao',registros:[{tipo:'cliente',id:'c1',dados:{nome:'Cliente migrado QA'}},{tipo:'catalogo',id:'s1',dados:{descricao:'Diagnóstico importado QA',tipo:'service',unidade:'un',preco_padrao_centavos:15000}},{tipo:'ordem_servico',id:'os1',dados:{data_servico:'2026-01-01',descricao:'Histórico QA',total_centavos:15000}},{tipo:'financeiro',id:'f1',dados:{natureza:'receber',descricao:'Saldo legado QA',valor_centavos:15000,pago_centavos:5000,vencimento:'2026-02-10'}},{tipo:'historico',id:'h1',dados:{descricao:'Concluído no sistema anterior'}}]};
+ const lote=uuid();const p=await call('importar_pacote_empresa',[r.w,lote,pacote,false]);ok(p.novos===5&&!p.confirmado,'Prévia sem gravação');
+ const confirmado=await call('importar_pacote_empresa',[r.w,lote,pacote,true]);ok(confirmado.confirmado,'Confirmação');
+ ok((await call('importar_pacote_empresa',[r.w,lote,pacote,true])).novos===5,'Mesma chave idempotente');
+ ok((await call('importar_pacote_empresa',[r.w,uuid(),pacote,false])).repetidos===5,'Identidade externa evita duplicação');
+ const divergente=structuredClone(pacote);divergente.registros[0].dados.nome='Alterado';await assert.rejects(()=>call('importar_pacote_empresa',[r.w,uuid(),divergente,true]),e=>e.code==='PT409');checks++;
+ const manifesto=await call('exportar_dados_empresa',[r.w]);ok(manifesto.tabelas.length>100,'Manifesto completo de tabelas');
+ const pagina=await call('exportar_dados_empresa',[r.w,'clientes']);ok(pagina.linhas.some(c=>c.nome==='Cliente migrado QA'),'Dados importados no cadastro e exportação');
+ await assert.rejects(()=>call('exportar_dados_empresa',[r.w,'auth.users']),e=>e.code==='22023');checks++;
+ await assert.rejects(()=>call('exportar_dados_empresa',[r.w,'clientes','x;drop']),e=>e.code==='22023');checks++;
+ await db.exec('reset role');const vinculo=await one("select id_interno from public.vinculos_portabilidade where oficina_id=$1 and tipo='financeiro'",[r.w]);
+ const saldo=(await db.query('select baixado_centavos,aberto_centavos from private.financeiro_saldos where id=$1',[vinculo])).rows[0];ok(Number(saldo.aberto_centavos)===10000&&Number(saldo.baixado_centavos)===5000,'Saldo anterior conservado');
+ ok(Number(await one('select count(*) from public.baixas_financeiras where titulo_id=$1',[vinculo]))===0,'Sem caixa fictício');
+ const membro=uuid();await db.query("insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())",[membro,'membro'+membro+'@qa.test']);await db.query("insert into public.membros_oficina(oficina_id,usuario_id,perfil,ativo) values($1,$2,'manager',true)",[r.w,membro]);
+ await login(ids[perfil]);await call('salvar_restricoes_acesso',[r.w,membro,{clientes:'leitura',financeiro:'nenhum'},0]);
+ await login(membro);ok((await call('listar_clientes',[r.w,'',false,0])).itens.length>0,'Consulta permitida');
+ await assert.rejects(()=>call('salvar_cliente',[r.w,{nome:'Não pode'},null,null]),e=>e.code==='42501');checks++;
+ await assert.rejects(()=>call('consultar_lucro_cliente',[r.w,r.cliente]),e=>e.code==='42501');checks++;
+ await assert.rejects(()=>call('exportar_dados_empresa',[r.w]),e=>e.code==='42501');checks++;
+ await login(ids[perfil]);await call('salvar_configuracao_dados',[r.w,{suporte_url:'https://example.com/ajuda',suporte_horarios:'Segunda a sexta, 9h às 18h, Brasília',resposta_horas:'8'},0]);
+ ok((await call('consultar_suporte_empresa',[r.w])).prazo_horas==='8','Suporte configurável');
+ await assert.rejects(()=>call('salvar_configuracao_dados',[r.w,{suporte_url:'javascript:alert(1)'},1]),e=>e.code==='22023');checks++;
+ const sid=uuid();const solic={cliente_id:r.cliente,tipo:'exportacao',solicitante:'Titular QA',prazo:'2026-11-20'};await call('salvar_solicitacao_privacidade',[r.w,sid,solic,null]);
+ await assert.rejects(()=>call('salvar_solicitacao_privacidade',[r.w,sid,{...solic,situacao:'concluida',decisao:'Atendido por exportação'},1]),e=>e.code==='22023');checks++;
+ await call('salvar_solicitacao_privacidade',[r.w,sid,{...solic,situacao:'concluida',identidade:'Conferência presencial',decisao:'Arquivo revisado e entregue ao titular'},1]);ok((await call('consultar_dados_empresa',[r.w])).solicitacoes[0].situacao==='concluida','Privacidade exige identidade e decisão');
+ await assert.rejects(()=>call('exportar_dados_titular',[r.w,uuid()]),e=>e.code==='22023');checks++;
+ const titular=await call('exportar_dados_titular',[r.w,sid]);ok(titular.formato==='patio.titular.v1','Exportação individual identificada');
+ const soCliente=await call('exportar_dados_titular',[r.w,sid,'clientes']);ok(soCliente.linhas.length===1&&soCliente.linhas[0].id===r.cliente,'Cópia individual não inclui outro cliente');
+ await assert.rejects(()=>call('exportar_dados_titular',[r.w,sid,'membros_oficina']),e=>e.code==='22023');checks++;
+ const fid=uuid(),file={origem:'QA Padrao',id_externo:'os1',nome:'comprovante.pdf',tamanho:6,sha256:'a'.repeat(64),tipo:'application/pdf'};
+ const caminho=await call('reservar_anexo_portabilidade',[r.w,fid,file]);ok(caminho===r.w+'/'+fid,'Arquivo isolado por empresa');
+ await assert.rejects(()=>call('confirmar_anexo_portabilidade',[r.w,fid]),e=>e.code==='22023');checks++;
+ await assert.rejects(()=>call('reservar_anexo_portabilidade',[r.w,fid,{...file,sha256:'b'.repeat(64)}]),e=>e.code==='PT409');checks++;
+ await db.exec('reset role');await db.query("insert into storage.objects(bucket_id,name) values('company-portability',$1)",[caminho]);
+ await login(ids[perfil]);await call('confirmar_anexo_portabilidade',[r.w,fid]);ok((await call('listar_anexos_portabilidade',[r.w,'os1',0])).length===1,'Anexo confirmado e pesquisável');
+ await login(membro);ok(Number(await one("select count(*) from storage.objects where bucket_id='company-portability' and name=$1",[caminho]))===0,'Arquivo não vaza para gerente');
+ await login(ids[perfil]);await call('salvar_restricoes_acesso',[r.w,membro,{clientes:'nenhum',financeiro:'nenhum'},1]);
+ await login(membro);ok(Number(await one('select count(*) from public.clientes where oficina_id=$1',[r.w]))===0,'Consulta direta respeita restrição');
+ await login(ids[perfil]);const semPreco=structuredClone(pacote);delete semPreco.registros[1].dados.preco_padrao_centavos;
+ await assert.rejects(()=>call('importar_pacote_empresa',[r.w,uuid(),semPreco,false]),e=>e.code==='22023');checks++;
+ await db.exec('reset role');ok(Number(await one("select count(*) from public.registros_auditoria where entidade_id=$1 and metadados->'depois'->>'situacao'='concluida'",[sid]))===1,'Decisão preservada no histórico');
+ const ramo=await one('select ramo from public.oficinas where id=$1',[r.w]);
+ if(ramo!=='automotivo'){
+  await login(ids[perfil]);const doc=uuid(),obj=uuid(),d={cliente_id:r.cliente,nome:'Local ou equipamento offline',relato:'Anotação sem conexão',data_servico:'2026-11-04'};
+  ok(await call('criar_rascunho_servico_offline',[r.w,doc,obj,d])===doc,'Novo atendimento offline');
+  ok(await call('criar_rascunho_servico_offline',[r.w,doc,obj,d])===doc,'Reenvio sem duplicação');
+  await db.exec('reset role');ok(await one("select dados->>'documento' from public.atendimentos_servicos where id=$1",[doc])==='ordem','Cria OS, não orçamento');
+ }
+ await db.exec('reset role');await db.query("insert into auth.mfa_factors(user_id,status) values($1,'verified')",[ids[perfil]]);
+ await login(ids[perfil]);await one("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:ids[perfil],aal:'aal1'})]);
+ await assert.rejects(()=>call('listar_clientes',[r.w,'',false,0]),e=>e.code==='PT403');checks++;
+ await assert.rejects(()=>call('exportar_dados_empresa',[r.w]),e=>e.code==='PT403');checks++;
+ await assert.rejects(()=>call('verificar_sessao_api'),e=>e.code==='PT403');checks++;
+ ok(Number(await one('select count(*) from public.clientes where oficina_id=$1',[r.w]))===0,'MFA também na RLS');
+ ok(Number(await one("select count(*) from storage.objects where name=$1",[caminho]))===0,'MFA também nos anexos');
+ await one("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:ids[perfil],aal:'aal2'})]);ok((await call('listar_clientes',[r.w,'',false,0])).total>0,'AAL2 libera operação');
+ await db.exec('reset role');await db.query('delete from auth.mfa_factors where user_id=$1',[ids[perfil]]);await one("select set_config('request.jwt.claims','',false)");
+ await login(ids.stranger);await assert.rejects(()=>call('exportar_dados_empresa',[r.w]),e=>e.code==='42501');checks++;
+ resultados.push({perfil,checks,ok:true});console.log('PASS',perfil,checks);
+}
+}catch(e){console.error(e.message,e.code,e.where);process.exitCode=1;}finally{await mkdir('output/dados-seguranca-20261104',{recursive:true});await writeFile('output/dados-seguranca-20261104/banco.json',JSON.stringify({ok:!process.exitCode,resultados,total:resultados.reduce((n,r)=>n+r.checks,0)},null,2));await db.close();}

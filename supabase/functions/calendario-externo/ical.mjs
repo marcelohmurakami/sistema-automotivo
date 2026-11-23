@@ -1,0 +1,9 @@
+/** RFC 5545: valores escapados, UTC e linhas de até 75 octetos UTF-8. */
+export function textoIcal(value) {return String(value??'').replaceAll('\\','\\\\').replace(/\r\n|\r|\n/g,'\\n').replaceAll(';','\\;').replaceAll(',','\\,').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g,'');}
+export function dobrarLinha(line) {const encoder=new TextEncoder();let result='',part='',bytes=0;for(const char of line){const len=encoder.encode(char).length;if(bytes+len>75){result+=part+'\r\n';part=' ';bytes=1;}part+=char;bytes+=len;}return result+part;}
+const date=value=>{const d=new Date(value);if(!Number.isFinite(d.getTime()))throw Error('Data de evento inválida');return d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');};
+export function gerarIcal(feed){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Patio//Agenda//PT-BR','CALSCALE:GREGORIAN','METHOD:PUBLISH',`X-WR-CALNAME:${textoIcal(feed.nome)}`,'REFRESH-INTERVAL;VALUE=DURATION:PT1H'];
+ const event=(e,suffix,start,end,title)=>{if(new Date(end)<=new Date(start))throw Error('Período inválido');lines.push('BEGIN:VEVENT',`UID:${e.id}${suffix}@agenda.patio`, `DTSTAMP:${date(e.atualizado)}`,`LAST-MODIFIED:${date(e.atualizado)}`,`SEQUENCE:${Number.isSafeInteger(e.revisao)?e.revisao:0}`,`DTSTART:${date(start)}`,`DTEND:${date(end)}`,`SUMMARY:${textoIcal(title)}`,`DESCRIPTION:${textoIcal(e.descricao)}`,`LOCATION:${textoIcal(e.local)}`,`STATUS:${['cancelado','faltou'].includes(e.situacao)?'CANCELLED':'CONFIRMED'}`,'TRANSP:OPAQUE','END:VEVENT');};
+ for(const e of feed.eventos){event(e,'',e.inicio,e.fim,e.titulo);if(new Date(e.saida)<new Date(e.inicio))event(e,'-ida',e.saida,e.inicio,'Deslocamento de ida');if(new Date(e.retorno)>new Date(e.fim))event(e,'-volta',e.fim,e.retorno,'Deslocamento de volta');}
+ lines.push('END:VCALENDAR');return lines.map(dobrarLinha).join('\r\n')+'\r\n';
+}

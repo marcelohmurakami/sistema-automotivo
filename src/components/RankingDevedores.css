@@ -1,0 +1,297 @@
+.devedores-painel {
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 28px;
+  background: var(--tema-fundo-fff, #fff);
+  min-width: 0;
+}
+.devedores-topo,
+.devedores-topo h2,
+.devedores-resumo,
+.conta-cliente-selecao,
+.conta-cliente-total,
+.conta-cliente-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.devedores-topo h2 {
+  justify-content: flex-start;
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+.devedores-topo p,
+.devedores-nota,
+.devedores-cliente small,
+.conta-cliente-rodape small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.devedores-topo p {
+  margin: 0;
+}
+.devedores-nota {
+  margin: 14px 0;
+}
+.devedores-filtros {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+.devedores-filtros label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+.devedores-filtros label:first-child {
+  flex: 1;
+  min-width: 220px;
+}
+.devedores-filtros input:not([type="checkbox"]),
+.devedores-filtros select {
+  width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  padding: 10px 12px;
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+  color: var(--grafite);
+  min-height: 42px;
+}
+.devedores-filtros .devedores-check {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+}
+.devedores-check input,
+.conta-cliente-os > input {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--verde, #688348);
+}
+.devedores-resumo {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  font-size: 13px;
+  border-top: 1px solid var(--borda);
+  padding: 18px 0;
+  gap: 12px 30px;
+}
+.devedores-resumo strong {
+  font-size: 16px;
+  margin-left: 4px;
+}
+.devedores-atraso {
+  color: var(--tema-perigo, #c64432) !important;
+}
+:root[data-tema="escuro"] .devedores-atraso {
+  color: #ff9b8c !important;
+}
+.devedores-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+.devedores-cliente {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto 145px;
+  gap: 16px;
+  align-items: center;
+  text-align: left;
+  border: 0;
+  border-top: 1px solid var(--borda);
+  padding: 17px 4px;
+  background: transparent;
+  color: var(--grafite);
+  cursor: pointer;
+  border-radius: 0;
+}
+.devedores-cliente:hover {
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+}
+.devedores-cliente:focus-visible {
+  outline: 2px solid var(--verde, #688348);
+  outline-offset: 2px;
+}
+.devedores-posicao {
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+  border: 1px solid var(--borda);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+}
+.devedores-nome,
+.devedores-valor {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.devedores-nome strong {
+  font-size: 16px;
+}
+.devedores-valor {
+  text-align: right;
+}
+.devedores-valor strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.devedores-acao {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  font-size: 13px;
+}
+.devedores-vazio {
+  padding: 24px 0;
+  color: var(--muted);
+}
+.dialogo.conta-cliente-dialogo {
+  width: min(960px, calc(100vw - 32px));
+  max-width: 960px;
+}
+.conta-cliente-selecao {
+  font-size: 14px;
+  margin: 18px 0;
+  flex-wrap: wrap;
+}
+.conta-cliente-ordens {
+  display: grid;
+  gap: 12px;
+}
+.dialogo.conta-cliente-dialogo .conta-cliente-os {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.dialogo.conta-cliente-dialogo .conta-cliente-os > input[type="checkbox"] {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  flex: 0 0 18px;
+  margin: 0;
+}
+.conta-cliente-os.selecionada {
+  border-color: var(--verde, #688348);
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+}
+.conta-cliente-descricao {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.conta-cliente-descricao > strong {
+  font-size: 16px;
+}
+.conta-cliente-descricao small {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.conta-cliente-saldo {
+  text-align: right;
+  font-size: 18px;
+  white-space: nowrap;
+}
+.conta-cliente-saldo small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.conta-cliente-total {
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 12px;
+  background: var(--tema-fundo-f7f8f5, #f7f8f5);
+  border: 1px solid var(--borda);
+}
+.conta-cliente-total > span {
+  font-size: 13px;
+}
+.conta-cliente-total strong {
+  display: block;
+  font-size: 26px;
+  margin-top: 6px;
+}
+.conta-cliente-total small {
+  font-size: 13px;
+  line-height: 1.8;
+  text-align: right;
+}
+.conta-cliente-rodape {
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.conta-cliente-aviso {
+  font-size: 14px;
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .devedores-painel {
+    padding: 16px;
+  }
+  .devedores-cliente {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .devedores-acao {
+    grid-column: 2/-1;
+    justify-content: flex-start;
+  }
+  .devedores-nome strong {
+    font-size: 14px;
+  }
+  .devedores-valor strong {
+    font-size: 15px;
+  }
+  .devedores-filtros label {
+    width: 100%;
+  }
+  .dialogo.conta-cliente-dialogo .conta-cliente-os {
+    flex-wrap: wrap;
+    padding: 14px;
+    gap: 12px;
+  }
+  .conta-cliente-saldo {
+    width: 100%;
+    text-align: left;
+    margin-left: 30px;
+  }
+  .conta-cliente-total {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .conta-cliente-total small {
+    text-align: left;
+  }
+  .conta-cliente-rodape button {
+    width: 100%;
+  }
+}

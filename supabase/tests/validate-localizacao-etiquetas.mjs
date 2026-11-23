@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { criarCenarioSubsistemas } from './subsistemas-fixture.mjs';
+
+process.env.DB_VALIDATION_MIGRATION_LIMIT ||= '20261026000300';
+const f = await criarCenarioSubsistemas();
+const { db, registros, login, ids } = f;
+const call = async (nome, args) => Object.values((await db.query(`select public.${nome}(${args.map((_, i) => '$' + (i + 1)).join(',')})`, args)).rows[0])[0];
+const recusar = (fn, code) => assert.rejects(fn, e => e.code === code);
+const resultados = [];
+try {
+  for (const [perfil, r] of Object.entries(registros)) {
+    await login(ids[perfil]);
+    const vinculo = { tipo: r.proposta ? 'orcamento' : 'atendimento', id: r.proposta?.id || r.atendimento };
+    const contexto = await call('consultar_vinculo_localizacao', [r.w, vinculo.tipo, vinculo.id]);
+    assert.ok(contexto.descricao); assert.equal(contexto.cliente_id, r.cliente);
+    const local = await call('salvar_local_fisico', [r.w, randomUUID(), 'Entrada / Prateleira A']);
+    const bancada = await call('salvar_local_fisico', [r.w, randomUUID(), 'Bancada 2']);
+    assert.match(local.codigo, /^PTL-[A-F\d]{16}$/);
+    const id = randomUUID(), chaveId = randomUUID(), pecaId = randomUUID();
+    const dados = { descricao: contexto.descricao, categoria: 'equipamento', local_id: local.id, codigo_externo: 'QA-' + perfil, vinculo };
+    const acessorios = [{ id: chaveId, descricao: 'Chave / controle QA', categoria: 'chave' }, { id: pecaId, descricao: 'Peça identificada QA', categoria: 'peca' }];
+    let conjunto = await call('registrar_conjunto_fisico', [r.w, id, dados, acessorios]);
+    assert.equal(conjunto.length, 3); assert.equal(new Set(conjunto.map(i => i.codigo)).size, 3);
+    assert.ok(conjunto.every(i => i.local_id === local.id && i.cliente_nome));
+    assert.equal(conjunto[1].principal_id, id); assert.equal(conjunto[2].principal_id, id);
+    assert.deepEqual(await call('registrar_conjunto_fisico', [r.w, id, dados, acessorios]), conjunto, 'Repetição não duplica entrada nem etiquetas');
+    await recusar(() => call('registrar_conjunto_fisico', [r.w, id, { ...dados, descricao: 'Pedido alterado após repetir' }, acessorios]), '22023');
+    let consulta = await call('consultar_item_fisico', [r.w, conjunto[0].codigo.toLowerCase()]);
+    assert.equal(consulta.relacionados.length, 2);
+    const historico = () => call('historico_item_fisico', [r.w, id]);
+    assert.equal((await historico()).eventos.length, 1);
+    const mover = (itens, acao, destino, quem = '', obs = '', chave = randomUUID()) => call('movimentar_itens_fisicos', [r.w, itens.map(i => ({ id: i.id, revisao: i.revisao })), acao, destino, quem, obs, chave]);
+    const chave = randomUUID();
+    const movidos = await mover(conjunto.slice(0, 2), 'mover', bancada.id, '', '', chave);
+    assert.deepEqual(await mover(conjunto.slice(0, 2), 'mover', bancada.id, '', '', chave), movidos);
+    await recusar(() => mover(conjunto.slice(0, 2), 'mover', local.id, '', '', chave), '22023');
+    assert.equal((await call('consultar_item_fisico', [r.w, conjunto[2].codigo])).local_id, local.id, 'Acessório não selecionado permanece no local');
+    await recusar(() => mover([conjunto[2], conjunto[0]], 'externo', null, 'Técnico QA'), 'PT409');
+    assert.equal((await call('consultar_item_fisico', [r.w, conjunto[2].codigo])).revisao, 1, 'Lote com conflito é inteiramente revertido');
+    await recusar(() => mover(movidos, 'externo', null, ''), '22023');
+    const externos = await mover(movidos, 'externo', null, 'Técnico QA');
+    assert.ok(externos.every(i => i.local_id === null && i.situacao === 'externo'));
+    const voltaram = await mover(externos, 'mover', bancada.id, '', 'Retorno do técnico');
+    const entregue = await mover(voltaram, 'entregar', null, 'Cliente QA');
+    await recusar(() => mover(entregue, 'mover', bancada.id), '22023');
+    await recusar(() => mover(entregue, 'retorno', bancada.id, '', ''), '22023');
+    const retornados = await mover(entregue, 'retorno', bancada.id, '', 'Conferência solicitada');
+    assert.equal(retornados[0].situacao, 'na_empresa');
+    const perdido = await mover([retornados.find(i => i.id === id)], 'nao_localizado', null, '', 'Conferir prateleiras');
+    assert.equal(perdido[0].situacao, 'nao_localizado');
+    await mover(perdido, 'mover', bancada.id, '', 'Localizado na bancada');
+    await recusar(() => call('salvar_local_fisico', [r.w, bancada.id, 'Bancada 2', '', false, 1]), '22023');
+    const vazio = await call('salvar_local_fisico', [r.w, randomUUID(), 'Armário desativado']);
+    await call('salvar_local_fisico', [r.w, vazio.id, vazio.nome, '', false, 1]);
+    await recusar(() => mover([conjunto[2]], 'mover', vazio.id), '42501');
+    const alterada = await call('salvar_local_fisico', [r.w, local.id, 'Prateleira renomeada', '', true, 1]);
+    assert.equal(alterada.revisao, 2);
+    assert.equal((await call('consultar_item_fisico', [r.w, conjunto[2].codigo])).local_nome, 'Prateleira renomeada');
+    assert.equal((await historico()).eventos.at(-1).depois.local_nome, 'Entrada / Prateleira A', 'Histórico preserva nome do local no momento do registro');
+    await recusar(() => call('salvar_local_fisico', [r.w, local.id, 'Edição antiga', '', true, 1]), 'PT409');
+    const stockAntes = await call('listar_estoque', [r.w]);
+    const estoque = await call('registrar_conjunto_fisico', [r.w, randomUUID(), { descricao: 'Caixa reservada QA', categoria: 'peca', local_id: local.id, vinculo: { tipo: 'estoque', id: r.produto } }]);
+    assert.equal(estoque[0].produto_id, r.produto);
+    assert.deepEqual(await call('listar_estoque', [r.w]), stockAntes, 'Controle físico não altera saldos de estoque');
+    assert.equal((await call('listar_itens_fisicos', [r.w, '', '', null, vinculo])).itens.length, 3);
+    assert.equal((await call('listar_itens_fisicos', [r.w, dados.codigo_externo])).itens[0].id, id);
+    const eventos = (await historico()).eventos;
+    assert.equal(eventos.length, 8, `${perfil}: ${eventos.map(h => h.acao).join(', ')}`);
+    assert.ok(eventos.every(h => h.autor_id === ids[perfil] && h.autor_nome));
+    if (r.proposta) {
+      const os = await call('criar_os_aguardando_orcamento', [r.w, r.proposta.id]);
+      assert.equal((await call('listar_itens_fisicos', [r.w, '', '', null, { tipo: 'os', id: os }])).itens.length, 3, 'Etiqueta acompanha a entrada da OS antes da aprovação');
+      const ordem = await call('consultar_ordem_servico', [r.w, os]);
+      const proposta = await call('consultar_orcamento', [r.w, r.proposta.id]);
+      await call('registrar_autorizacao_pela_os', [r.w, os, ordem.revisao, r.proposta.id, proposta.revisao, proposta.versao_atual_id, 'Cliente QA', 'telefone', true]);
+      const l = await call('listar_itens_fisicos', [r.w, '', '', null, { tipo: 'os', id: os }]);
+      assert.equal(l.itens.length, 3, 'Etiqueta permanece após aprovação e conversão');
+      assert.equal(l.itens.find(i => i.id === id).codigo, conjunto[0].codigo);
+      assert.equal(l.itens.find(i => i.id === id).os_vinculada, os);
+    } else {
+      const d = await call('consultar_detalhes_atendimento', [r.w, r.atendimento]);
+      assert.equal(d.atendimento.situacao, 'orcamento', 'Entrega física não encerra o atendimento');
+      assert.equal((await call('consultar_vinculo_localizacao', [r.w, 'objeto', r.objeto])).descricao, contexto.descricao);
+    }
+    await login(ids.stranger);
+    for (const [fn, args] of [
+      ['listar_itens_fisicos', [r.w]], ['listar_locais_fisicos', [r.w]], ['consultar_item_fisico', [r.w, conjunto[0].codigo]], ['historico_item_fisico', [r.w, id]], ['consultar_vinculo_localizacao', [r.w, vinculo.tipo, vinculo.id]], ['salvar_item_fisico', [r.w, randomUUID(), dados]], ['salvar_local_fisico', [r.w, randomUUID(), 'Inválido']], ['movimentar_itens_fisicos', [r.w, [{ id, revisao: 9 }], 'mover', local.id, '', '', randomUUID()]]
+    ]) await recusar(() => call(fn, args), '42501');
+    await login(ids[perfil]);
+    const outro = Object.entries(registros).find(([p]) => p !== perfil)[1];
+    await recusar(() => call('salvar_item_fisico', [r.w, randomUUID(), { ...dados, vinculo: { tipo: outro.proposta ? 'orcamento' : 'atendimento', id: outro.proposta?.id || outro.atendimento } }]), '42501');
+    resultados.push({ perfil, entrada: true, consulta: true, etiqueta: true, acessorios: true, movimentacao: true, externo: true, entregaRetorno: true, historico: true, isolamento: true });
+  }
+  const [perfil, r] = Object.entries(registros)[0]; await login(ids[perfil]);
+  // Paginação real e identificação duplicada do fabricante: nunca presume o item.
+  for (let n = 0; n < 55; n++) await call('salvar_item_fisico', [r.w, randomUUID(), { descricao: 'Paginação ' + n, categoria: 'peca', codigo_externo: 'SERIE-REPETIDA' }]);
+  const p1 = await call('listar_itens_fisicos', [r.w, 'SERIE-REPETIDA']); assert.equal(p1.itens.length, 50); assert.equal(p1.tem_mais, true);
+  const fim = p1.itens.at(-1); const p2 = await call('listar_itens_fisicos', [r.w, 'SERIE-REPETIDA', '', null, {}, fim.criado_em, fim.id]);
+  assert.equal(p2.itens.length, 5); assert.equal(p2.tem_mais, false); assert.equal(new Set([...p1.itens, ...p2.itens].map(i => i.id)).size, 55);
+  assert.equal((await call('listar_itens_fisicos', [r.w, 'SERIE-REPETIDA', 'sem_local'])).itens.length, 50);
+  const invalidos = randomUUID(); const duplo = randomUUID();
+  await recusar(() => call('registrar_conjunto_fisico', [r.w, invalidos, { descricao: 'Não deve persistir', categoria: 'equipamento' }, [{ id: duplo, descricao: 'Controle', categoria: 'acessorio' }, { id: duplo, descricao: 'Controle 2', categoria: 'acessorio' }]]), '22023');
+  assert.equal((await call('listar_itens_fisicos', [r.w, 'Não deve persistir'])).itens.length, 0);
+  const destino = { tipo: 'estoque', id: r.produto }; const selecionado = p2.itens[0]; const vincular = (v, key = randomUUID(), revisao = selecionado.revisao) => call('vincular_itens_fisicos', [r.w, [{ id: selecionado.id, revisao }], v, key]);
+  const chaveVinculo = randomUUID(); const vinculado = await vincular(destino, chaveVinculo);
+  assert.equal(vinculado[0].codigo, selecionado.codigo); assert.equal(vinculado[0].local_id, selecionado.local_id); assert.equal(vinculado[0].produto_id, r.produto);
+  assert.deepEqual(await vincular(destino, chaveVinculo), vinculado);
+  await recusar(() => vincular(destino), 'PT409');
+  const hv = await call('historico_item_fisico', [r.w, selecionado.id]); assert.equal(hv.eventos[0].acao, 'vinculo'); assert.equal(hv.eventos[0].antes.produto_id, null);
+  const rOutro = registros.assistencia_celulares;
+  await recusar(() => vincular({ tipo: 'atendimento', id: rOutro.atendimento }, randomUUID(), vinculado[0].revisao), '42501');
+  await login(ids.stranger); await recusar(() => vincular(destino), '42501'); await login(ids[perfil]);
+  const entregar = await call('movimentar_itens_fisicos', [r.w, [{ id: selecionado.id, revisao: vinculado[0].revisao }], 'entregar', null, 'Cliente QA', '', randomUUID()]);
+  await recusar(() => vincular(destino, randomUUID(), entregar[0].revisao), '22023');
+  for (const tabela of ['itens_fisicos', 'locais_fisicos', 'historico_localizacao', 'operacoes_localizacao']) await recusar(() => db.query(`select * from public.${tabela}`), '42501');
+  await login('', 'anon'); await recusar(() => call('listar_itens_fisicos', [r.w]), '42501');
+  await db.exec('reset role');
+  const staff = randomUUID(); await db.query('insert into auth.users(id,email) values($1,$2)', [staff, 'staff-localizacao@test.invalid']);
+  await db.query("insert into public.membros_oficina(oficina_id,usuario_id,perfil,ativo) values($1,$2,'staff',true)", [r.w, staff]);
+  await login(staff); await call('listar_itens_fisicos', [r.w]);
+  await call('salvar_item_fisico', [r.w, randomUUID(), { descricao: 'Registro pelo técnico', categoria: 'equipamento' }]);
+  await recusar(() => call('salvar_local_fisico', [r.w, randomUUID(), 'Sem permissão']), '42501');
+  await db.exec('reset role');
+  await recusar(() => db.query("update public.historico_localizacao set observacoes='adulterado'"), '23514');
+  await mkdir('output/localizacao-etiquetas-20261026', { recursive: true });
+  await writeFile('output/localizacao-etiquetas-20261026/banco-local.json', JSON.stringify({ data: new Date().toISOString(), resultados, paginacao: true, loteAtomico: true, isolamento: true, acessos: true }, null, 2));
+  console.log(`OK: localização, acessórios, etiquetas, custódia e isolamento nos ${resultados.length} subsetores; paginação e permissões verificadas.`);
+} catch (e) { console.error(e.message, e.code || '', e.where || '', e.stack?.split('\n').slice(1, 3).join('\n')); process.exitCode = 1; }
+finally { await db.close(); }

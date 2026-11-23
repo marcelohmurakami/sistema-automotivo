@@ -1,0 +1,228 @@
+.planejamento-visita,
+.roteiro-visitas {
+  border: 1px solid var(--borda, #435044);
+  border-radius: 12px;
+  padding: 18px;
+  margin-block: 16px;
+  min-width: 0;
+}
+.planejamento-visita fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 0;
+  padding: 14px 0 0;
+  margin: 0;
+  min-width: 0;
+}
+.visita-duracao {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.visita-duracao-atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.visita-duracao-atalhos > button {
+  min-height: 40px;
+  flex: 1 1 100px;
+}
+.visita-duracao-atalhos > button[aria-pressed="true"] {
+  background: var(--lima);
+  color: var(--sobre-destaque, #172018);
+  border-color: var(--lima);
+}
+.visita-duracao > small {
+  color: var(--ui-suave);
+  line-height: 1.5;
+}
+.visita-duracao-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 320px;
+}
+.visita-duracao-termino {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.planejamento-visita .visita-checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 0;
+}
+.visita-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  flex: 0 0 auto;
+}
+.visita-enderecos,
+.visita-tempos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.visita-tempos {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  align-items: end;
+}
+.planejamento-visita label,
+.roteiro-visitas label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+.planejamento-visita input:not([type="checkbox"]):not([type="radio"]),
+.planejamento-visita select,
+.roteiro-visitas input,
+.roteiro-visitas select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.visita-enderecos label > span,
+.visita-atalhos,
+.roteiro-visitas h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.visita-atalhos button {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+.roteiro-visitas input,
+.roteiro-visitas select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  background: var(--superficie);
+  color: inherit;
+  font: inherit;
+}
+.visita-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  border-left: 3px solid var(--acento, #b4cf72);
+  padding: 12px 16px;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+  border-radius: 6px;
+}
+.visita-resumo span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+.visita-resumo strong {
+  font-size: 1rem;
+}
+.visita-confirmar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--borda, #435044);
+  border-radius: 8px;
+}
+.planejamento-visita small,
+.roteiro-visitas small {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.roteiro-visitas header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.roteiro-visitas h3,
+.roteiro-visitas p {
+  margin: 0 0 8px;
+}
+.roteiro-visitas ol {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+}
+.roteiro-visitas li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  border-top: 1px solid var(--borda, #435044);
+}
+.roteiro-horarios {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 0 0 155px;
+}
+.roteiro-detalhe {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 4px;
+  overflow-wrap: anywhere;
+}
+.roteiro-detalhe strong {
+  font-size: 1.05rem;
+}
+.roteiro-detalhe span {
+  font-size: 0.9rem;
+}
+.roteiro-visitas a {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .visita-enderecos {
+    grid-template-columns: 1fr;
+  }
+  .planejamento-visita,
+  .roteiro-visitas {
+    padding: 14px;
+  }
+  .roteiro-visitas li {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .roteiro-horarios {
+    flex: 1 0 100%;
+  }
+  .roteiro-detalhe {
+    flex: 1 0 100%;
+  }
+  .roteiro-visitas li > a {
+    margin-left: auto;
+  }
+  .roteiro-visitas header > .visita-atalhos {
+    width: 100%;
+    align-items: stretch;
+  }
+  .roteiro-visitas header label {
+    flex: 1;
+  }
+}

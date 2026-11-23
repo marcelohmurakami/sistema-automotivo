@@ -1,7 +1,8 @@
+import { documentoDaOS } from "../lib/documentoCliente";
+import { gerarPdfCliente } from "./pdfCliente";
 import { jsPDF } from "jspdf";
-import { dinheiro } from "./orcamentos";
-import type { Identidade, Notinha } from "./documentos";
-import { situacoesOS, type OrdemServico } from "./ordensServico";
+import type { Identidade } from "./documentos";
+import type { OrdemServico } from "./ordensServico";
 export function documentoBase(titulo: string, identidade: Identidade) {
   const pdf = new jsPDF();
   let y = 22;
@@ -25,13 +26,7 @@ export function documentoBase(titulo: string, identidade: Identidade) {
     try {
       const props = pdf.getImageProperties(identidade.logo);
       const scale = Math.min(40 / props.width, 22 / props.height);
-      pdf.addImage(
-        identidade.logo,
-        20,
-        y,
-        props.width * scale,
-        props.height * scale,
-      );
+      pdf.addImage(identidade.logo, 20, y, props.width * scale, props.height * scale);
       y += 26;
     } catch {
       /* Documentos antigos continuam disponíveis se o logo estiver corrompido. */
@@ -63,72 +58,7 @@ export function documentoBase(titulo: string, identidade: Identidade) {
   };
   return { pdf, linha, finalizar };
 }
-export function gerarPdfNotinha(n: Notinha) {
-  const { linha, finalizar } = documentoBase(
-    `NOTA DE ATENDIMENTO #${n.numero}`,
-    n.dados_oficina,
-  );
-  if (n.situacao === "cancelled") linha("CANCELADA", 16, true);
-  linha(`Cliente: ${n.dados_cliente.nome}`, 12, true);
-  linha(`Emissão: ${new Date(n.emitido_em).toLocaleString("pt-BR")}`);
-  for (const i of n.itens) {
-    linha(i.descricao, 11, true);
-    linha(
-      `${i.quantidade} ${i.unidade} x ${dinheiro(i.preco_unitario_centavos)} = ${dinheiro(i.total_item_centavos ?? Math.round(i.quantidade * i.preco_unitario_centavos))}`,
-    );
-  }
-  linha(`Subtotal: ${dinheiro(n.subtotal_centavos)}`);
-  linha(`Desconto: ${dinheiro(n.desconto_centavos)}`);
-  linha(`Total: ${dinheiro(n.total_centavos)}`, 16, true);
-  if (n.observacoes) linha(n.observacoes);
-  return finalizar(
-    "Documento de atendimento · Sem valor fiscal · Não comprova pagamento",
-  );
-}
+export { gerarPdfNotinha } from "./pdfNotinha";
 export function gerarPdfOS(o: OrdemServico, identidade: Identidade) {
-  const { linha, finalizar } = documentoBase(
-    `ORDEM DE SERVIÇO #${o.numero}`,
-    identidade,
-  );
-  linha(`Situação: ${situacoesOS[o.situacao] || o.situacao}`);
-  linha(`Cliente: ${o.dados_cliente.nome}`, 12, true);
-  linha(
-    `Veículo: ${o.dados_veiculo.modelo} · ${o.dados_veiculo.placa || "Sem placa"}`,
-  );
-  if (o.recebido_em)
-    linha(`Entrada: ${new Date(o.recebido_em).toLocaleString("pt-BR")}`);
-  if (o.entrega_prevista_em)
-    linha(
-      `Previsão de entrega: ${new Date(o.entrega_prevista_em).toLocaleString("pt-BR")}`,
-    );
-  if (o.quilometragem_entrada != null)
-    linha(`Quilometragem de entrada: ${o.quilometragem_entrada} km`);
-  if (o.queixa_cliente) {
-    linha("Relato do cliente", 12, true);
-    linha(o.queixa_cliente);
-  }
-  if (o.resumo_cliente) {
-    linha("Serviços e orientações", 12, true);
-    linha(o.resumo_cliente);
-  }
-  for (const i of o.itens) {
-    linha(i.descricao, 11, true);
-    linha(
-      `${i.quantidade} ${i.unidade} x ${dinheiro(i.preco_unitario_centavos)} = ${dinheiro(i.total_item_centavos ?? Math.round(i.quantidade * i.preco_unitario_centavos))}`,
-    );
-  }
-  linha(`Total da OS: ${dinheiro(o.total_centavos)}`, 16, true);
-  if (o.condicoes_garantia) {
-    linha("Garantia", 12, true);
-    linha(o.condicoes_garantia);
-  }
-  if (o.garantia_ate)
-    linha(
-      `Garantia até: ${new Date(o.garantia_ate + "T12:00:00").toLocaleDateString("pt-BR")}`,
-    );
-  linha("Recebimento do veículo: ____/____/________");
-  linha("Assinatura do cliente: __________________________________");
-  return finalizar(
-    "Ordem de serviço · Sem valor fiscal · Consulte os pagamentos com a oficina",
-  );
+  return gerarPdfCliente(documentoDaOS(o, identidade));
 }

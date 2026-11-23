@@ -1,0 +1,84 @@
+.dialogo-funcionario {
+  width: min(900px, calc(100vw - 24px));
+}
+.dialogo-funcionario .formulario-cliente > fieldset {
+  grid-template-columns: minmax(0, 1fr);
+}
+.funcionario-secao {
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  padding: 18px;
+  margin: 18px 0;
+}
+.funcionario-secao summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+.funcionario-campos {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding-top: 20px;
+}
+.funcionario-historico {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid var(--ui-borda);
+  display: grid;
+  gap: 18px;
+}
+.funcionario-historico-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.funcionario-historico-topo > button {
+  max-width: 100%;
+  white-space: normal;
+}
+.funcionario-historico h3,
+.funcionario-historico-topo p {
+  margin: 0 0 8px;
+}
+.funcionario-registro {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.funcionario-registro > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.funcionario-registro span {
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.funcionario-registro p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.funcionario-registro-form {
+  padding: 18px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+}
+.funcionario-historico.funcionario-vales,
+.funcionario-vales {
+  margin: 22px 0;
+  padding: 22px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+@media (max-width: 480px) {
+  .funcionario-secao,
+  .funcionario-historico.funcionario-vales,
+  .funcionario-vales,
+  .funcionario-registro-form {
+    padding: 14px;
+  }
+}

@@ -1,0 +1,66 @@
+.tipo-servico-selo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: inherit;
+}
+.tipo-servico-selo svg {
+  flex-shrink: 0;
+}
+.cartao-modelo > .tipo-servico-selo {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 10px;
+}
+.tipo-servico-campo {
+  border: 1px solid var(--borda) !important;
+  border-radius: 12px;
+  padding: 16px !important;
+  min-width: 0;
+}
+.tipo-servico-campo legend {
+  font-weight: 750;
+  padding: 0 6px;
+}
+.tipo-servico-campo p {
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+.tipos-servico-opcoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.tipos-servico-opcoes label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.tipos-servico-opcoes input {
+  width: 16px !important;
+  min-height: 16px !important;
+  height: 16px;
+  padding: 0 !important;
+  flex-shrink: 0;
+}
+.tipos-servico-opcoes .tipo-servico-selo {
+  flex-direction: column;
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+}
+.tipos-servico-opcoes label.selecionado {
+  border-color: currentColor;
+  background: #8ba65422;
+}
+.tipos-servico-opcoes label:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

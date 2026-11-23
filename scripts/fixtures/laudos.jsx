@@ -1,0 +1,7 @@
+import React from 'react';import {createRoot} from 'react-dom/client';import {QueryClient,QueryClientProvider} from '@tanstack/react-query';import {MemoryRouter} from 'react-router-dom';
+import {ContextoAcesso} from '../../src/auth/contexto';import {Laudos} from '../../src/pages/Laudos';import {especialidades} from '../../src/lib/especialidades';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+const p=new URLSearchParams(location.search),perfil=p.get('perfil')||'retifica',e=especialidades[perfil];document.documentElement.dataset.tema=p.get('tema')||'escuro';
+window.qaImpressoes=[];const abrir=window.open.bind(window);window.open=(...args)=>{if(window.qaBloquearPopup)return null;const j=abrir(...args);if(j)j.print=()=>window.qaImpressoes.push(j.document.body.innerText);return j};
+const set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(window.qaFalhaSalvar&&k.startsWith('patio_laudos'))throw Error('Falha de conexão simulada');return set.call(this,k,v)};
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}})}><ContextoAcesso.Provider value={{demo:true,usuario:'qa',oficina:{id:'demo',nome:'Empresa QA '+e.nome,ramo:e.ramo,especialidade:perfil,perfil:'owner',codigo_plano:'complete'},permite:()=>true}}><MemoryRouter initialEntries={['/laudos']}><main style={{padding:24}}><Laudos/></main></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

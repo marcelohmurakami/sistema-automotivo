@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {resolve, extname, sep} from 'node:path';
+import {createServer} from 'node:http';
+import {build} from './lib/vite-conferencia.mjs';
+import {chromium} from './lib/chrome-conferencia.mjs';
+const out=resolve(process.env.QA_OUTPUT || 'output/desempenho-20261111/dialogos'),dist = resolve(out,'build');
+await mkdir(out,{recursive:true});
+await build({logLevel:'error',build:{outDir:dist,rollupOptions:{input:'scripts/fixtures/desempenho-dialogo.html'}}});
+const server=createServer(async(req,res)=>{try{const p=resolve(dist,'.'+new URL(req.url,'http://local').pathname);assert(p.startsWith(dist+sep));res.setHeader('Content-Type',({'.js':'text/javascript','.css':'text/css','.html':'text/html'})[extname(p)]||'application/octet-stream');res.end(await readFile(p));}catch{res.statusCode=404;res.end();}});
+await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+const checks=[],tempos=[];
+try {
+ const p=await browser.newPage({viewport:{width:390,height:844}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
+ await p.goto('http://127.0.0.1:'+server.address().port+'/scripts/fixtures/desempenho-dialogo.html');
+ await p.getByRole('button',{name:'Abrir formulário'}).waitFor();
+ assert.deepEqual(await p.evaluate(()=>window.qa),{carregamentos:0,montagens:0,desmontagens:0});
+ assert.equal(await p.locator('input').count(),0);checks.push('Janela inicialmente fechada não monta o formulário nem carrega o módulo');
+ const inicio=performance.now();await p.getByRole('button',{name:'Abrir formulário'}).click();await p.getByLabel('Anotação').waitFor();tempos.push({acao:'primeira abertura',segundos:(performance.now()-inicio)/1000});await p.getByLabel('Anotação').fill('Dados preservados');
+ assert.deepEqual(await p.evaluate(()=>window.qa),{carregamentos:1,montagens:1,desmontagens:0});
+ checks.push('Primeira abertura carrega e monta uma única vez');
+ await p.getByRole('button',{name:'Fechar janela'}).click();await p.getByRole('dialog').waitFor({state:'hidden'});
+ assert.deepEqual(await p.evaluate(()=>window.qa),{carregamentos:1,montagens:1,desmontagens:0});
+ const reabrir=performance.now();await p.getByRole('button',{name:'Abrir formulário'}).click();assert.equal(await p.getByLabel('Anotação').inputValue(),'Dados preservados');tempos.push({acao:'reabertura',segundos:(performance.now()-reabrir)/1000});
+ checks.push('Fechar e reabrir conserva campos e estado, sem remount nem novo carregamento');
+ await p.keyboard.press('Escape');await p.getByRole('dialog').waitFor({state:'hidden'});
+ assert(!await p.evaluate(()=>document.body.style.overflow==='hidden'));checks.push('Escape fecha a janela e libera a rolagem');
+ assert.deepEqual(errors,[]);checks.push('Sem exceções JavaScript');
+ await writeFile(resolve(out,'resultado.json'),JSON.stringify({ok:true,checks,tempos,moduloSimuladoMs:120},null,2));console.log('PASS: '+checks.join('; '));
+} finally {await browser.close();await new Promise(ok=>server.close(ok));}

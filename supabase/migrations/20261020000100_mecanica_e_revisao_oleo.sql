@@ -1,0 +1,9 @@
+begin;
+-- Ampliação dos registros opcionais; preserva fichas e permissões existentes.
+do $atualizacao$
+declare perfis jsonb := private.perfis_atendimento();
+begin
+ perfis := perfis || $dados${"autocenter":{"campos":{"mecanica_solicitacao":{"tipo":"area"},"mecanica_diagnostico":{"tipo":"area"},"mecanica_reparo":{"tipo":"area"},"mecanica_conferencia":{"tipo":"area"},"pneus":{"tipo":"texto"},"desgaste":{"tipo":"area"},"freios_suspensao":{"tipo":"area"},"geometria_antes":{"tipo":"area"},"geometria_depois":{"tipo":"area"},"pressao":{"tipo":"area"},"rodizio":{"tipo":"texto"},"proxima_data":{"tipo":"data"},"proxima_km":{"tipo":"numero"}},"checklist":["Desgaste e condição dos pneus conferidos","Freios e suspensão inspecionados","Geometria / balanceamento conferidos quando aplicáveis","Torque e pressão conforme aplicação conferidos","Teste final e orientação de retorno realizados"],"etapas":["Inspeção","Peças e reparos","Alinhamento / balanceamento","Teste e conferência"]},"troca_oleo":{"campos":{"viscosidade":{"tipo":"texto"},"especificacao":{"tipo":"texto"},"produto":{"tipo":"texto"},"volume":{"tipo":"numero"},"filtros":{"tipo":"area"},"km_atual":{"tipo":"texto"},"conferencia":{"tipo":"texto"},"proxima_data":{"tipo":"data"},"proxima_km":{"tipo":"numero"},"km_por_dia":{"tipo":"numero"},"referencia_intervalo":{"tipo":"texto"}},"checklist":["Aplicação e especificação conferidas","Óleo e filtros identificados","Vedação e fechamento conferidos","Nível e ausência de vazamento conferidos","Próxima troca orientada por tempo e quilometragem"],"etapas":["Conferência da aplicação","Troca de óleo e filtros","Nível e vazamentos","Registro da próxima troca"]}}$dados$::jsonb;
+ execute format('create or replace function private.perfis_atendimento() returns jsonb language sql immutable set search_path='''' as %L', 'select ' || quote_literal(perfis::text) || '::jsonb');
+end $atualizacao$;
+commit;

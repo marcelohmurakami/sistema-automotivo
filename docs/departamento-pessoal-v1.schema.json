@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:patio:departamento-pessoal:v1",
+  "title": "Pátio — preparação para departamento pessoal, versão 1",
+  "description": "Dados gerenciais para conferência e mapeamento pelo integrador. Não representa folha calculada, ponto legal, documento fiscal ou evento transmitido ao eSocial.",
+  "type": "object",
+  "required": ["id", "oficina_id", "inicio", "fim", "dados", "dados_canonicos", "hash", "criado_em"],
+  "properties": {
+    "id": {"type": "string", "format": "uuid"},
+    "oficina_id": {"type": "string", "format": "uuid"},
+    "inicio": {"type": "string", "format": "date"},
+    "fim": {"type": "string", "format": "date"},
+    "criado_em": {"type": "string", "format": "date-time"},
+    "autor": {"type": "string", "format": "uuid"},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA-256 hexadecimal dos bytes UTF-8 de dados_canonicos. Não é assinatura digital."},
+    "dados_canonicos": {"type": "string", "description": "Texto JSON exato usado no hash. Ao verificar integridade, conferir também que seu conteúdo corresponde a dados."},
+    "dados": {
+      "type": "object",
+      "required": ["versao", "finalidade", "inicio", "fim", "funcionarios", "lancamentos", "ocorrencias", "horas_produtivas", "comissoes", "pendencias"],
+      "properties": {
+        "versao": {"const": "patio.dp.v1"},
+        "finalidade": {"type": "string"},
+        "inicio": {"type": "string", "format": "date"},
+        "fim": {"type": "string", "format": "date"},
+        "funcionarios": {"type": "array", "items": {"type": "object", "required": ["id", "nome", "ativo"], "description": "Salário-base atual informado, sem proporcionalização. Matrícula, admissão, desligamento, vínculo e jornada declarada devem ser conferidos."}},
+        "lancamentos": {"type": "array", "items": {"type": "object", "required": ["id", "funcionario_id", "competencia", "natureza", "rubrica", "valor_centavos", "referencia"], "properties": {"natureza": {"enum": ["provento", "desconto", "informativo"]}, "valor_centavos": {"type": "integer", "minimum": 0}}, "description": "Lançamentos manuais. Itens com cancelado_em preenchido são históricos e não devem compor apuração."}},
+        "ocorrencias": {"type": "array", "items": {"type": "object", "required": ["id", "funcionario_id", "tipo", "inicio", "situacao"], "description": "Ausências, férias, afastamentos, alterações salariais, vales e empréstimos; não presume descontos nem cálculo de folha."}},
+        "horas_produtivas": {"type": "array", "items": {"type": "object", "required": ["id", "documento_id", "funcionario_id", "origem", "inicio", "fim", "minutos", "em_aberto"], "properties": {"origem": {"enum": ["producao", "atendimento", "os"]}, "minutos": {"type": ["number", "null"]}}, "description": "Produção, não jornada legal. Intervalos recortados ao período. Horas abertas têm minutos nulos. Funcionário nulo exige identificação; não inferir identidade pelo nome."}},
+        "comissoes": {"type": "array", "items": {"type": "object", "required": ["id", "documento_id", "nome", "valor_centavos", "data"], "description": "Valores vinculados à data do serviço; não atestam liberação ou pagamento. Cadastro profissional automotivo pode exigir mapeamento para funcionário."}},
+        "pendencias": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

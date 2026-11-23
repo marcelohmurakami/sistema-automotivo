@@ -1,0 +1,305 @@
+.configuracoes-pagina {
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  min-width: 0;
+}
+.configuracoes-pagina .titulo-pagina {
+  margin-bottom: 28px;
+}
+.configuracoes-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.configuracoes-menu {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.configuracoes-menu-titulo {
+  font-size: 12px;
+  font-weight: 750;
+  color: var(--ui-suave);
+  padding: 0 14px;
+}
+.configuracoes-menu-desktop {
+  display: grid;
+  gap: 6px;
+}
+.configuracoes-menu button,
+.configuracoes-seguranca {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 650;
+  color: inherit;
+}
+.configuracoes-menu svg {
+  flex-shrink: 0;
+}
+.configuracoes-menu button span,
+.configuracoes-seguranca span {
+  flex: 1;
+}
+.configuracoes-menu button[aria-pressed="true"] {
+  background: var(--gestao-suave);
+  border-color: var(--ui-borda);
+  box-shadow: inset 3px 0 var(--tema-borda-76963b, #76963b);
+}
+.configuracoes-menu button:hover,
+.configuracoes-seguranca:hover {
+  background: var(--gestao-suave);
+}
+.configuracoes-menu :is(button, a, select):focus-visible {
+  outline: 3px solid #88a75f;
+  outline-offset: 3px;
+}
+.configuracoes-seguranca {
+  border-top: 1px solid var(--ui-borda);
+  margin-top: 8px;
+  border-radius: 0 0 10px 10px;
+}
+.configuracoes-menu-mobile {
+  display: none;
+}
+.configuracoes-area {
+  min-width: 0;
+}
+.configuracoes-painel {
+  border: 1px solid var(--ui-borda);
+  background: var(--ui-painel);
+  border-radius: 16px;
+  min-width: 0;
+}
+.configuracoes-painel[hidden] {
+  display: none;
+}
+.configuracoes-painel-titulo {
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.configuracoes-painel-titulo h2 {
+  font-size: 20px;
+  line-height: 1.4;
+  margin: 0;
+}
+.configuracoes-painel-titulo p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ui-suave);
+  line-height: 1.6;
+}
+.configuracoes-conteudo {
+  padding: 28px;
+  min-width: 0;
+}
+.configuracoes-conteudo > :is(.erro-formulario, .aviso-cliente) {
+  margin: 0 0 20px;
+}
+.configuracoes-pagina .gestao-form {
+  max-width: none;
+  margin: 0;
+}
+.configuracoes-pagina .gestao-form fieldset {
+  margin: 0;
+  gap: 24px;
+}
+.configuracoes-pagina .gestao-form label,
+.configuracoes-menu-mobile {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 650;
+  gap: 8px;
+}
+.configuracoes-pagina .gestao-form :is(input, select),
+.configuracoes-menu-mobile select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-fundo);
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+}
+.configuracoes-grupo {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.configuracoes-grupo + .configuracoes-grupo {
+  border-top: 1px solid var(--ui-borda);
+  padding-top: 24px;
+}
+.configuracoes-grupo h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 750;
+}
+.configuracoes-pagina .gestao-form .dupla-campos {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 18px;
+}
+.configuracoes-endereco {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px minmax(120px, 0.5fr);
+  gap: 18px;
+}
+.configuracoes-form-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-top: 1px solid var(--ui-borda);
+  padding-top: 24px;
+}
+.configuracoes-form-rodape p {
+  flex: 1 1 200px;
+}
+.configuracoes-conteudo .texto-suave {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.configuracoes-form-rodape button {
+  flex-shrink: 0;
+}
+.configuracoes-etapas {
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+}
+.configuracoes-etapas summary {
+  cursor: pointer;
+  padding: 16px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.configuracoes-etapas ol {
+  margin: 0;
+  padding: 0 24px 16px 40px;
+  display: grid;
+  gap: 10px;
+  font-size: 13px;
+}
+.configuracoes-etapas p {
+  padding: 0 16px 16px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ui-suave);
+}
+.configuracoes-pagina .gestao-temas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.configuracoes-pagina .gestao-temas button {
+  flex-direction: column;
+  padding: 24px 12px;
+  min-width: 0;
+  min-height: 126px;
+  position: relative;
+}
+.configuracoes-pagina .gestao-temas button svg:last-child:not(:first-child) {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.configuracoes-pagina .gestao-dados {
+  margin: 0 0 24px;
+}
+.configuracoes-pagina .gestao-dados > div {
+  padding: 18px 0;
+}
+.configuracoes-pagina .gestao-dados > div:first-child {
+  padding-top: 0;
+}
+.configuracoes-pagina .gestao-dados dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.configuracoes-pagina .gestao-legenda {
+  margin-top: 20px;
+}
+@media (max-width: 1000px) {
+  .configuracoes-layout {
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: 18px;
+  }
+  .configuracoes-conteudo,
+  .configuracoes-painel-titulo {
+    padding: 22px;
+  }
+}
+@media (max-width: 760px) {
+  .configuracoes-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .configuracoes-menu-desktop,
+  .configuracoes-menu-titulo {
+    display: none;
+  }
+  .configuracoes-menu-mobile {
+    display: grid;
+  }
+  .configuracoes-seguranca {
+    justify-self: start;
+    border: 0;
+    margin: 0;
+    padding: 8px 0;
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .configuracoes-menu {
+    gap: 4px;
+  }
+  .configuracoes-pagina .titulo-pagina {
+    margin-bottom: 24px;
+  }
+}
+@media (max-width: 540px) {
+  .configuracoes-conteudo,
+  .configuracoes-painel-titulo {
+    padding: 20px 16px;
+  }
+  .configuracoes-painel-titulo h2 {
+    font-size: 18px;
+  }
+  .configuracoes-pagina .gestao-form .dupla-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .configuracoes-endereco {
+    grid-template-columns: 90px minmax(0, 1fr);
+  }
+  .configuracoes-endereco > label:first-child {
+    grid-column: 1 / -1;
+  }
+  .configuracoes-form-rodape {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .configuracoes-form-rodape p {
+    flex: auto;
+  }
+  .configuracoes-pagina .gestao-temas {
+    gap: 8px;
+  }
+  .configuracoes-pagina .gestao-temas button {
+    padding: 24px 6px 16px;
+    min-height: 112px;
+    font-size: 12px;
+  }
+}

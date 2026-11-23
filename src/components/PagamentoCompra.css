@@ -1,0 +1,46 @@
+.compra-pagamento {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  min-width: 0;
+}
+.compra-pagamento h3,
+.compra-pagamento p {
+  margin: 0;
+}
+.compra-pagamento p {
+  font-size: 0.875rem;
+  color: var(--texto-secundario);
+}
+.compra-pagamento-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.compra-pagamento label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.compra-parcelas {
+  display: grid;
+  gap: 0.625rem;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+.compra-parcelas label {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 1fr);
+  align-items: center;
+}
+.compra-pagamento input,
+.compra-pagamento select {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .compra-pagamento-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

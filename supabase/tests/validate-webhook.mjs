@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {createHmac} from 'node:crypto';
+import {verificarAssinaturaStripe,lerConfiguracaoCobranca,projetarAssinatura,conferirPreco,idAssinaturaEvento,chamarStripe} from '../functions/_shared/cobranca.mjs';
+const agora=Date.now(),t=Math.floor(agora/1000),segredo='segredo-ficticio-teste',corpo='{"id":"evt_teste","livemode":false}';
+const assinar=(s=corpo,data=t)=>`t=${data},v1=${createHmac('sha256',segredo).update(`${data}.${s}`).digest('hex')}`;
+let n=0;function ok(v,label){assert.ok(v,label);console.log('PASS',label);n++;}
+ok(await verificarAssinaturaStripe(corpo,assinar(),segredo,agora),'Assinatura correta validada');
+ok(!await verificarAssinaturaStripe(corpo+' ',assinar(),segredo,agora),'Corpo alterado rejeitado');
+ok(!await verificarAssinaturaStripe(corpo,assinar(),segredo+'x',agora),'Segredo incorreto rejeitado');
+ok(!await verificarAssinaturaStripe(corpo,assinar(corpo,t-301),segredo,agora),'Replay antigo rejeitado');
+ok(!await verificarAssinaturaStripe(corpo,assinar(corpo,t+301),segredo,agora),'Timestamp futuro rejeitado');
+ok(!await verificarAssinaturaStripe(corpo,'t=nan,v1=aa',segredo,agora),'Cabeçalho inválido rejeitado');
+ok(!await verificarAssinaturaStripe(corpo,`${assinar()},t=${t}`,segredo,agora),'Timestamp duplicado rejeitado');
+ok(await verificarAssinaturaStripe(corpo,`${assinar()},v1=${'f'.repeat(64)}`,segredo,agora),'Rotação de assinatura aceita um segredo válido');
+const env={COBRANCA_HABILITADA:'true',STRIPE_SECRET_KEY:'sk_test_ficticia',STRIPE_WEBHOOK_SECRET:'whsec_ficticio',APP_URL:'https://teste.example',STRIPE_PRICE_BASIC:'price_a',STRIPE_PRICE_INTERMEDIATE:'price_b',STRIPE_PRICE_COMPLETE:'price_c'};
+const config=lerConfiguracaoCobranca(k=>env[k]);ok(config.habilitado,'Configuração completa habilita somente teste');
+ok(!lerConfiguracaoCobranca(k=>k==='STRIPE_SECRET_KEY'?'sk_live_ficticia':env[k]).habilitado,'Chave live não habilita cobranças reais por acidente');
+ok(!lerConfiguracaoCobranca(k=>k==='APP_URL'?'https://evil@teste.example':env[k]).habilitado,'URL com credencial rejeitada');
+ok(!lerConfiguracaoCobranca(k=>k==='STRIPE_PRICE_COMPLETE'?'price_a':env[k]).habilitado,'Preço duplicado entre planos rejeitado');
+const price={id:'price_c',livemode:false,active:true,currency:'brl',unit_amount:19900,type:'recurring',recurring:{interval:'month',interval_count:1}};
+conferirPreco(price,'complete',config);ok(true,'Preço mensal BRL conferido');
+assert.throws(()=>conferirPreco({...price,unit_amount:1},'complete',config));ok(true,'Preço divergente bloqueado');
+const s={id:'sub_teste',livemode:false,customer:'cus_teste',metadata:{oficina_id:'oficina'},status:'active',cancel_at_period_end:true,items:{data:[{quantity:1,current_period_end:t+86400,price}]}};
+ok(projetarAssinatura(s,'oficina','cus_teste',config).cancelar_no_fim,'Cancelamento ao final preservado');
+assert.throws(()=>projetarAssinatura(s,'outra','cus_teste',config));ok(true,'Metadados de outra oficina rejeitados');
+assert.throws(()=>projetarAssinatura({...s,livemode:true},'oficina','cus_teste',config));ok(true,'Evento de produção rejeitado');
+assert.throws(()=>projetarAssinatura({...s,items:{data:[...s.items.data,...s.items.data]}},'oficina','cus_teste',config));ok(true,'Assinatura com vários itens rejeitada');
+ok(idAssinaturaEvento({type:'invoice.paid',data:{object:{parent:{subscription_details:{subscription:'sub_teste'}}}}})==='sub_teste','Fatura identifica assinatura pela API Basil');
+ok(idAssinaturaEvento({type:'customer.created',data:{object:{id:'cus_teste'}}})===null,'Eventos fora do escopo ignorados');
+await chamarStripe(config,'checkout/sessions',{mode:'subscription'},'chave-teste',async(url,init)=>{
+  ok(url==='https://api.stripe.com/v1/checkout/sessions'&&init.headers['Idempotency-Key']==='chave-teste'&&init.method==='POST','Chamada tem destino fixo e chave de idempotência');
+  return Response.json({id:'cs_test_teste'});
+});
+console.log(`${n} verificações de webhook aprovadas.`);

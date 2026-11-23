@@ -1,0 +1,10 @@
+import {readFile,writeFile} from 'node:fs/promises';
+const raiz=process.env.QA_RAIZ || 'output/picos-51-20261119';
+const local=JSON.parse(await readFile(process.env.QA_BUILD_LOCAL ? `${process.env.QA_BUILD_LOCAL}/health.json` : `${raiz}/build-depois/health.json`,'utf8'));
+const url='https://patio-gestao-peach.vercel.app/health.json';
+const r=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(20000)});
+if(!r.ok)throw Error(`Consulta do estado publicado retornou HTTP ${r.status}`);
+const publicado=await r.json();
+const resultado={consultadoEm:new Date().toISOString(),url,http:r.status,publicado,local,mesmoBuild:publicado.build===local.build,publicacaoFeitaNestaRodada:false};
+await writeFile(`${raiz}/publicacao.json`,JSON.stringify(resultado,null,2));
+console.log(JSON.stringify(resultado));

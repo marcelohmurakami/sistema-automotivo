@@ -1,0 +1,11 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {MemoryRouter,Routes,Route} from 'react-router-dom';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {QualidadeAvancada} from '../../src/pages/QualidadeAvancada';
+import {PesquisaPublica} from '../../src/pages/PesquisaPublica';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+const p=new URLSearchParams(location.search);document.documentElement.dataset.tema=p.get('tema')||'escuro';
+const c=await fetch('/test-context?perfil='+p.get('perfil')).then(r=>r.json());
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}})}><ContextoAcesso.Provider value={{demo:false,oficina:c.oficina,usuario:c.usuario,permite:()=>true}}><MemoryRouter initialEntries={[p.get('rota')||'/garantias?aba=analise']}><main style={{maxWidth:1260,padding:'clamp(12px,3vw,30px)',margin:'0 auto',minWidth:0}}><Routes><Route path="/garantias" element={<QualidadeAvancada/>}/><Route path="/pesquisa/:token" element={<PesquisaPublica/>}/></Routes></main></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

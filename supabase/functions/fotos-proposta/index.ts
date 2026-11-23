@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { assinarFotos } from "./assinar-fotos.mjs";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -24,14 +25,7 @@ Deno.serve(async (req) => {
       p_token: token,
     });
     if (error) return reply({ erro: "Proposta indisponível" }, 404);
-    const fotos = [];
-    for (const f of data) {
-      const { data: link, error: e } = await db.storage
-        .from("workshop-files")
-        .createSignedUrl(f.caminho, 60);
-      if (e) throw e;
-      fotos.push({ legenda: f.legenda, url: link.signedUrl });
-    }
+    const fotos = await assinarFotos(data, db.storage.from("workshop-files"));
     return reply({ fotos });
   } catch {
     return reply({ erro: "Não foi possível consultar as fotos" }, 503);

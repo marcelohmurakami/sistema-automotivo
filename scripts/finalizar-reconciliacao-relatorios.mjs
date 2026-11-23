@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const pasta='output/auditoria-numeros-20261102',url='https://patio-gestao-peach.vercel.app';
+const ler=async n=>JSON.parse(await readFile(pasta+'/'+n,'utf8'));
+const [local,rpc,ui,pacote,regressao]=await Promise.all(['numeros.json','publicado-numeros.json','publicado-ui.json','pacote-publicacao.json','regressao-resumo.json'].map(ler));
+assert(local.ok&&local.resultados.length===26&&regressao.ok);
+assert(rpc.ok&&rpc.resultados.length===26);assert(ui.ok&&ui.subsetores===26);assert.equal(ui.build,pacote.build);
+for(const f of pacote.fontes)assert.equal(createHash('sha256').update(await readFile(f.arquivo)).digest('hex'),f.sha256,'Fonte mudou: '+f.arquivo);
+const health=await fetch(url+'/health.json?qa='+Date.now(),{cache:'no-store'}).then(r=>r.json());assert.equal(health.build,pacote.build);
+const indice=await fetch(url+'/?qa='+Date.now(),{cache:'no-store'}).then(r=>r.text());assert.equal(indice,await readFile(pacote.destino+'/index.html','utf8'));
+const publicacao={data:new Date().toISOString(),publicado:true,url,build:health.build,deployment:'dpl_CKkFV788EdiEjzzJnWsxu1Hdkooj',migracao:{arquivo:'20261102220242_reconciliacao_numeros_relatorios.sql',registro:'20261102224443',nome:'reconciliacao_numeros_relatorios_20261102220242',aplicada:true},verificacao:{banco:rpc.verificacoes,interface:ui.verificacoes,empresas:26,documentos:rpc.resultados.reduce((s,x)=>s+x.documentos,0),produtos:rpc.resultados.reduce((s,x)=>s+x.produtos,0),divergencias:0},permissoes:{anonimoSemExecucao:true,auxiliaresPrivadosSemExecucaoDireta:true,consultasPublicasAutenticadas:true,searchPathVazio:true}};
+await writeFile(pasta+'/publicacao.json',JSON.stringify(publicacao,null,2));
+await writeFile(pasta+'/pacote-publicacao.json',JSON.stringify({...pacote,publicado:true,publicadoEm:publicacao.data,deployment:publicacao.deployment},null,2));
+console.log(JSON.stringify(publicacao.verificacao));

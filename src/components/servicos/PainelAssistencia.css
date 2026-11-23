@@ -1,0 +1,176 @@
+.assistencia-painel {
+  min-width: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+.assistencia-painel .assistencia-busca {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  max-width: 34rem;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+}
+.assistencia-painel .assistencia-busca input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  min-height: 36px;
+  padding: 6px;
+}
+.assistencia-quadro {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  padding-bottom: 1rem;
+  align-items: start;
+}
+@media (max-width: 1399px) {
+  .assistencia-quadro {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .assistencia-quadro {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .assistencia-quadro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.assistencia-coluna {
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--borda);
+  border-radius: 14px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.8rem;
+  background: var(--superficie);
+  min-width: 0;
+}
+.assistencia-coluna > header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.2rem 0.7rem;
+}
+.assistencia-coluna h2 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.assistencia-coluna header small {
+  grid-column: 1 / -1;
+  opacity: 0.7;
+}
+.assistencia-coluna header > span {
+  font-weight: 700;
+}
+.etapa-producao {
+  border-top-color: #429ba7;
+}
+.etapa-parados {
+  border-top-color: #d27d68;
+}
+.etapa-prontos {
+  border-top-color: #87aa62;
+}
+.assistencia-coluna-vazia {
+  padding: 1.5rem 0.4rem;
+  text-align: center;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+.assistencia-reparo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  position: relative;
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 1rem;
+  background: var(--superficie);
+}
+.assistencia-reparo-abrir::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+.assistencia-reparo-acoes {
+  position: relative;
+  z-index: 1;
+}
+.assistencia-reparo:has(.assistencia-reparo-abrir:focus-visible) {
+  outline: 2px solid var(--ui-acento);
+  outline-offset: 2px;
+}
+.dialogo.dialogo-parada-servico {
+  width: min(520px, 94vw);
+}
+.parada-servico-form {
+  display: grid;
+  gap: 16px;
+}
+.parada-servico-identificacao {
+  margin: 0;
+  color: var(--ui-suave);
+}
+.parada-servico-form .os-detalhes {
+  margin: 0;
+}
+.assistencia-reparo-abrir {
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.assistencia-reparo-abrir small {
+  font-size: 0.72rem;
+  opacity: 0.65;
+}
+.assistencia-reparo-abrir strong {
+  font-size: 1.08rem;
+}
+.assistencia-reparo-abrir span {
+  font-weight: 600;
+}
+.assistencia-reparo p {
+  margin: 0;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.assistencia-reparo-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+.assistencia-reparo-acoes {
+  display: grid;
+  gap: 0.45rem;
+  border-top: 1px solid var(--borda);
+  padding-top: 0.7rem;
+}
+.assistencia-reparo-acoes button {
+  min-height: 36px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.assistencia-parada {
+  border-left: 3px solid #d27d68;
+  padding: 0.3rem 0.6rem;
+}

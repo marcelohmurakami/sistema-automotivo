@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {createServer} from 'node:http';
+import {build} from './lib/vite-conferencia.mjs';
+import {chromium} from './lib/chrome-conferencia.mjs';
+const out=resolve(process.env.QA_OUTPUT || 'output/desempenho-20261111/pecas'),dist=resolve(out,'build');await mkdir(out,{recursive:true});
+await build({logLevel:'error',define:{'import.meta.env.VITE_SUPABASE_URL':'""','import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY':'""'},plugins:[{name:'qa-rpc-pecas',enforce:'pre',resolveId(id){if(/(?:^|\/)lib\/rpc(?:\.ts)?$/.test(id))return resolve('scripts/fixtures/desempenho-pecas-rpc.js');}}],build:{outDir:dist,rollupOptions:{input:'scripts/fixtures/desempenho-pecas.html'}}});
+const server=createServer(async(req,res)=>{try{const path=resolve(dist,'.'+new URL(req.url,'http://local').pathname);assert(path.startsWith(dist+sep));res.setHeader('Content-Type',({'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2'})[extname(path)]||'application/octet-stream');res.end(await readFile(path));}catch{res.statusCode=404;res.end();}});await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
+const base='http://127.0.0.1:'+server.address().port+'/scripts/fixtures/desempenho-pecas.html',browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'}),resultados=[];
+try{for(const caso of ['sucesso','conflito','erro']){
+ const ctx=await browser.newContext({viewport:{width:390,height:844}}),p=await ctx.newPage();p.setDefaultTimeout(10000);await p.goto(base+'?caso='+caso);
+ if(caso==='erro'){await p.getByRole('button',{name:'Tentar novamente'}).waitFor();assert.equal(await p.getByRole('button',{name:'Salvar e concluir entrega'}).count(),0);resultados.push({caso,ok:true,checks:['Erro de consulta preservado; não libera entrega sem conferência']});await ctx.close();continue;}
+ await p.getByText('Peça avulsa',{exact:false}).first().waitFor();let chamadas=await p.evaluate(()=>window.qaChamadas);assert.equal(chamadas.filter(x=>x.nome==='consultar_produto_estoque').length,1);assert.equal(chamadas.filter(x=>x.nome==='listar_estoque').length,0);
+ assert.equal(await p.locator('.peca-entrega').count(),1);
+ await p.getByLabel('Estoque da oficina',{exact:true}).check();const busca=p.getByRole('combobox');await busca.fill('2');await busca.fill('20');await busca.fill('200');await busca.fill('2000');await p.getByRole('option',{name:/Peça de teste 2000/}).click();await p.waitForTimeout(350);assert.equal(await busca.inputValue(),'Peça de teste 2000');
+ chamadas=await p.evaluate(()=>window.qaChamadas);assert(chamadas.filter(x=>x.nome==='listar_estoque').length<=3);assert(chamadas.filter(x=>x.nome==='listar_estoque').every(x=>x.dados.p_pagina===0));
+ assert(await p.locator('dialog').evaluate(e=>e.scrollWidth<=e.clientWidth+2));await p.screenshot({path:resolve(out,caso+'.png')});await p.getByRole('button',{name:'Salvar e concluir entrega'}).click();
+ if(caso==='sucesso'){await p.getByText('Finalizado',{exact:true}).waitFor();assert(await p.evaluate(()=>window.qaContinuou));assert.equal((await p.evaluate(()=>window.qaChamadas)).filter(x=>x.nome==='vincular_estoque_item_os').length,1);}else{await p.getByText('Esta OS foi alterada. Confira as peças atualizadas e tente novamente.').waitFor();assert.equal(await p.evaluate(()=>window.qaContinuou),false);assert.equal((await p.evaluate(()=>window.qaChamadas)).filter(x=>x.nome==='vincular_estoque_item_os').length,0);}
+ resultados.push({caso,ok:true,checks:['2.000 produtos: consulta somente 1 vínculo deduplicado','Peça da página distante encontrada por busca','Digitação agrupada e apenas primeira página consultada','Seleção permanece após limpar busca','Sem rolagem horizontal em 390 px',caso==='sucesso'?'Vínculo correto enviado uma única vez':'Revisão concorrente bloqueada']});await ctx.close();
+}}catch(e){console.error(e.stack);process.exitCode=1;}finally{await browser.close();await new Promise(ok=>server.close(ok));await writeFile(resolve(out,'resultados.json'),JSON.stringify({ok:!process.exitCode,resultados},null,2));}

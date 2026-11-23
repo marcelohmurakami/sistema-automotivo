@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import {randomUUID as uuid} from 'node:crypto';
+import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {criarCenarioSubsistemas} from './subsistemas-fixture.mjs';
+process.env.DB_VALIDATION_RUNTIME ||= resolve('node_modules/@electric-sql/pglite/dist/index.js');
+process.env.DB_VALIDATION_MIGRATION_LIMIT ||= '99999999999999';
+const pasta=resolve('output/operacao-simplificada-20261104');await mkdir(pasta,{recursive:true});
+let db;const resultados=[];
+try {
+ const c=await criarCenarioSubsistemas();db=c.db;const {registros,ids,login}=c;
+ const call=async(f,args)=>Object.values((await db.query(`select public.${f}(${args.map((_,i)=>'$'+(i+1)).join(',')})`,args.map(a=>a&&typeof a==='object'?JSON.stringify(a):a))).rows[0])[0];
+ for(const [perfil,r] of Object.entries(registros)){
+  const checks=[];const eq=(a,b,m)=>{assert.deepEqual(a,b,perfil+': '+m);checks.push(m);};
+  const no=async(fn,m,code='22023')=>{await assert.rejects(fn,e=>e.code===code,perfil+': '+m);checks.push(m);};
+  await login(ids[perfil]);const origem=r.atendimento?'atendimento':'os',doc=r.atendimento||(await call('salvar_ordem_servico',[r.w,{cliente_id:r.cliente,veiculo_id:r.objeto},uuid()])).id;
+  const save=(tipo,situacao,dados,a)=>call('salvar_acompanhamento_qualidade',[r.w,a?.id||uuid(),origem,doc,tipo,situacao,dados,a?.revisao??null]);
+  const analise=await save('analise','aberta',{descricao:'Falha intermitente após o serviço'});
+  const oc=(criar,dados=null,rev=null)=>call('ocorrencia_da_analise',[r.w,analise.id,criar,dados,rev]);
+  eq(await oc(false),null,'consulta não cria ocorrência');
+  let o=await oc(true);eq([o.custo_centavos,o.minutos],[0,0],'ocorrência criada sem inventar custos');
+  eq((await oc(true)).id,o.id,'repetição não duplica ocorrência');
+  o=await oc(false,{custo_centavos:4500,minutos:90},o.revisao);eq([o.custo_centavos,o.minutos],[4500,90],'custos e horas persistidos');
+  await no(()=>oc(false,{custo_centavos:5000,minutos:90},1),'edição antiga bloqueada','PT409');
+  await no(()=>oc(false,{custo_centavos:-1,minutos:90},o.revisao),'custo negativo bloqueado',origem==='os'?'22023':'23514');
+  const ff={descricao:'Peça defeituosa após instalação',fabricante:'Fabricante QA',pecas:'Uma peça de teste',solicitado_centavos:10000,autorizado_centavos:8000,recebido_centavos:0,protocolo:'QA-001',autorizacao:'Autorização escrita QA',vencimento_ressarcimento:r.hoje};
+  let a=await save('fabricante','aberta',ff);
+  const financeiro=()=>call('consultar_financeiro_garantia',[r.w,a.id]);
+  eq(await financeiro(),null,'solicitação não gera recebível');
+  a=await save('fabricante','autorizada',ff,a);let t=await financeiro();eq([t.valor_centavos,t.baixado_centavos,t.aberto_centavos],[8000,0,8000],'aprovação gera conta a receber sem caixa');
+  a=await save('fabricante','autorizada',ff,a);eq((await financeiro()).id,t.id,'salvar novamente não duplica conta');
+  await no(()=>save('fabricante','ressarcida',{...ff,recebido_centavos:8000},a),'não recebe por alteração de texto');
+  const chave=uuid();const args=[r.w,t.id,chave,3000,0,r.hoje,'banco','pix','Ressarcimento parcial'];
+  const baixa=await call('baixar_titulo_financeiro',args);eq(await call('baixar_titulo_financeiro',args),baixa,'recebimento idempotente');
+  a=await call('consultar_acompanhamento_qualidade',[r.w,a.id]);eq(a.dados.recebido_centavos,3000,'parcial refletido na garantia');
+  t=await financeiro();eq(t.aberto_centavos,5000,'saldo parcial correto');
+  await no(()=>save('fabricante','cancelada',a.dados,a),'não cancela com recebimento');
+  await no(()=>save('fabricante','autorizada',{...a.dados,autorizado_centavos:2000},a),'não reduz abaixo do recebido');
+  await no(()=>call('cancelar_titulo_financeiro',[r.w,t.id,t.revisao,'Cancelar diretamente']),'financeiro não cancela garantia');
+  await call('baixar_titulo_financeiro',[r.w,t.id,uuid(),5000,0,r.hoje,'banco','pix','Restante']);
+  a=await call('consultar_acompanhamento_qualidade',[r.w,a.id]);eq([a.situacao,a.dados.recebido_centavos],['ressarcida',8000],'quitação encerra ressarcimento');
+  await call('estornar_baixa_financeira',[r.w,baixa,r.hoje,'Estorno de teste']);
+  a=await call('consultar_acompanhamento_qualidade',[r.w,a.id]);eq([a.situacao,a.dados.recebido_centavos],['autorizada',5000],'estorno reabre saldo e atualiza garantia');
+  eq((await financeiro()).aberto_centavos,3000,'saldo após estorno correto');
+  const outra=Object.values(registros).find(x=>x.w!==r.w);
+  await no(()=>call('consultar_financeiro_garantia',[outra.w,a.id]),'isolamento financeiro','42501');
+  await no(()=>call('ocorrencia_da_analise',[outra.w,analise.id,true,null,null]),'isolamento ocorrência','42501');
+  resultados.push({perfil,checks});console.log(perfil+': '+checks.length);
+ }
+ await writeFile(resolve(pasta,'garantia-banco.json'),JSON.stringify({ok:true,total:resultados.reduce((n,x)=>n+x.checks.length,0),resultados},null,2));
+}catch(e){console.error({message:e.message,code:e.code,where:e.where,query:e.internalQuery});process.exitCode=1;}finally{await db?.close();}

@@ -1,6 +1,7 @@
+import { codigoConflitoRevisao } from './banco-local.mjs';
 import assert from 'node:assert/strict';
 import {criarBancoLocal} from './banco-local.mjs';
-const db=await criarBancoLocal('20260930000200'); let n=0;
+const db=await criarBancoLocal('20261013000800'); let n=0;
 const uid='99000000-0000-4000-8000-000000000001',outro='99000000-0000-4000-8000-000000000002';
 const esc=v=>`'${String(v).replaceAll("'","''")}'`;const js=v=>esc(JSON.stringify(v))+'::jsonb';
 const scalar=async sql=>Object.values((await db.query(sql)).rows[0])[0];
@@ -17,7 +18,7 @@ try{
  const chave='99000000-0000-4000-8001-000000000001',dados={cliente_id:c,veiculo_id:v,queixa_cliente:'Ruído na direção',diagnostico:'Inspecionar',checklist:{'Pertences conferidos':true},quilometragem_entrada:1000};
  let o=await scalar(`select public.salvar_ordem_servico('${w}',${js(dados)},'${chave}')`);ok(o.numero===1&&o.historico.length===1,'OS criada com histórico');
  ok((await scalar(`select public.salvar_ordem_servico('${w}',${js(dados)},'${chave}')`)).id===o.id,'criação idempotente');
- await falha(`select public.salvar_ordem_servico('${w}',${js(dados)},'${chave}','${o.id}',0)`,'PT409','edição concorrente bloqueada');
+ await falha(`select public.salvar_ordem_servico('${w}',${js(dados)},'${chave}','${o.id}',0)`,codigoConflitoRevisao,'edição concorrente bloqueada');
  await login(outro);await falha(`select public.consultar_ordem_servico('${w}','${o.id}')`,'42501','outra oficina não acessa');await login(uid);
  await db.exec(`select public.salvar_item_os('${w}','${o.id}',${o.revisao},'{"descricao":"Alinhamento","tipo":"service","quantidade":2,"preco_unitario_centavos":7500}')`);
  o=await scalar(`select public.consultar_ordem_servico('${w}','${o.id}')`);ok(o.total_centavos===15000&&o.itens.length===1,'total calculado pelo banco');

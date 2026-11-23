@@ -1,0 +1,95 @@
+.assistencia-sistema .sidebar-desktop .marca-empresa-nome {
+  font-size: 23px;
+  line-height: 1.3;
+}
+.assistencia-sistema .sidebar-desktop .marca-empresa {
+  margin-bottom: 20px;
+}
+.assistencia-sistema .menu-principal svg {
+  flex-shrink: 0;
+}
+.assistencia-sistema .busca-menu input {
+  min-width: 0;
+}
+.assistencia-sistema .busca-menu .botao-icone {
+  flex-shrink: 0;
+  width: 24px;
+  min-height: 28px;
+}
+.assistencia-sistema .servicos-titulo {
+  align-items: center;
+}
+.assistencia-sistema .servicos-titulo h1 {
+  font-size: clamp(25px, 3vw, 32px);
+}
+.assistencia-sistema .servicos-titulo p {
+  opacity: 1;
+  color: var(--ui-suave);
+  line-height: 1.6;
+  max-width: 65ch;
+}
+.assistencia-sistema .servicos-filtros input,
+.assistencia-sistema .servicos-filtros select {
+  max-width: 100%;
+}
+.assistencia-sistema .servicos-pagina .servicos-filtros > label:first-child {
+  flex: 1 1 260px;
+}
+.assistencia-sistema .servicos-vazio {
+  display: grid;
+  gap: 12px;
+}
+.assistencia-sistema .subsetor-atalhos {
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+}
+.assistencia-sistema .servicos-vazio p {
+  color: var(--ui-suave);
+  line-height: 1.6;
+  margin: 0;
+}
+.assistencia-sistema .servicos-vazio h2 {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .assistencia-sistema .servicos-titulo {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .assistencia-sistema .servicos-titulo > .botao-primario {
+    width: 100%;
+    justify-content: center;
+  }
+  .assistencia-sistema .subsetor-atalhos {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .assistencia-sistema .subsetor-atalhos:has(> :nth-child(4)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .assistencia-sistema .subsetor-atalho {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 12px 10px;
+    min-width: 0;
+  }
+  .assistencia-sistema .subsetor-atalho span {
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+  .assistencia-sistema .servicos-filtros-lista {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .assistencia-sistema .servicos-filtros-lista > label:nth-child(-n + 2) {
+    grid-column: 1 / -1;
+  }
+  .assistencia-sistema .servicos-filtros > label {
+    min-width: 0;
+    width: 100%;
+  }
+}

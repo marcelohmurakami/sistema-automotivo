@@ -111,3 +111,20 @@
     gap: 18px;
   }
 }
+.formulario-cliente .aceite-termos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.aceite-termos input {
+  width: 18px !important;
+  min-height: 18px !important;
+  height: 18px;
+  margin-right: 5px;
+}
+.aceite-termos a {
+  text-decoration: underline;
+}

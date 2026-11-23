@@ -1,3 +1,4 @@
+import { novoId } from "../lib/uuid.ts";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAcesso, nomesPlanos, type Plano } from "../auth/contexto";
@@ -35,7 +36,7 @@ export function CobrancaTeste() {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
-  const [chave, setChave] = useState(() => crypto.randomUUID());
+  const [chave, setChave] = useState(() => novoId());
   const consulta = useQuery({
     queryKey: ["cobranca-teste", oficina.id],
     queryFn: async () => {
@@ -58,13 +59,7 @@ export function CobrancaTeste() {
         </button>
       </p>
     );
-  if (!consulta.data.habilitado)
-    return (
-      <p className="texto-suave">
-        Contratação comercial ainda não habilitada. Sua assinatura atual
-        continua sendo validada pelo banco.
-      </p>
-    );
+  if (!consulta.data.habilitado) return null;
   const dados = consulta.data;
   async function confirmar() {
     if (enviando) return;
@@ -80,7 +75,7 @@ export function CobrancaTeste() {
       });
       if (error) throw error;
       setConfirmando(false);
-      setChave(crypto.randomUUID());
+      setChave(novoId());
       setSucesso("Simulação registrada. Nenhum valor foi cobrado.");
       await acesso.atualizar();
       await consultas.invalidateQueries();
@@ -95,10 +90,9 @@ export function CobrancaTeste() {
       <div className="sobretitulo">AMBIENTE DE TESTE · SEM COBRANÇA REAL</div>
       <h2>Teste sua assinatura</h2>
       <p>
-        As simulações alteram o acesso desta oficina. Aprovar libera o plano por
-        30 dias; atraso e cancelamento bloqueiam os módulos. Você pode voltar
-        aqui e aprovar novamente para liberar o acesso. Uma recusa mantém a
-        assinatura atual.
+        As simulações alteram o acesso desta empresa. Aprovar libera o plano por 30
+        dias; atraso e cancelamento bloqueiam os módulos. Você pode voltar aqui e
+        aprovar novamente para liberar o acesso. Uma recusa mantém a assinatura atual.
       </p>
       <div className="campos-cobranca">
         <label>
@@ -108,7 +102,7 @@ export function CobrancaTeste() {
             value={plano}
             onChange={(e) => {
               setPlano(e.target.value as Plano);
-              setChave(crypto.randomUUID());
+              setChave(novoId());
             }}
           >
             {(Object.keys(nomesPlanos) as Plano[]).map((p) => (
@@ -125,7 +119,7 @@ export function CobrancaTeste() {
             value={acao}
             onChange={(e) => {
               setAcao(e.target.value as Acao);
-              setChave(crypto.randomUUID());
+              setChave(novoId());
             }}
           >
             {(Object.keys(nomes) as Acao[]).map((a) => (
@@ -155,7 +149,7 @@ export function CobrancaTeste() {
               disabled={enviando}
               onClick={() => {
                 setConfirmando(false);
-                setChave(crypto.randomUUID());
+                setChave(novoId());
                 setErro("");
               }}
             >
@@ -189,8 +183,7 @@ export function CobrancaTeste() {
             <li key={e.id}>
               <strong>{nomes[e.acao]}</strong>
               <span>
-                {nomesPlanos[e.codigo_plano]} · valor simulado{" "}
-                {moeda(e.valor_centavos)}
+                {nomesPlanos[e.codigo_plano]} · valor simulado {moeda(e.valor_centavos)}
               </span>
               <time dateTime={e.criado_em}>
                 {new Date(e.criado_em).toLocaleString("pt-BR")}

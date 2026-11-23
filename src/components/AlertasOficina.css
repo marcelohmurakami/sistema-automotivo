@@ -1,0 +1,221 @@
+.sininho-alertas {
+  position: relative;
+}
+.alerta-titulo {
+  display: block;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.alerta-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0;
+}
+.alerta-confirmacao {
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  margin-top: 12px;
+}
+.contador-alertas {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 18px;
+  padding: 2px 4px;
+  border-radius: 20px;
+  background: #b83228;
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+}
+.dialogo-alertas {
+  width: min(640px, calc(100vw - 24px));
+}
+.alertas-filtros,
+.alerta-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.alertas-filtros label {
+  display: grid;
+  gap: 6px;
+  flex: 1 1 100%;
+}
+.alertas-acoes-gerais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+.alertas-acoes-gerais button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.alertas-filtros select {
+  padding: 8px;
+  border: 1px solid var(--borda, #d6ddd9);
+  border-radius: 8px;
+  background: var(--superficie, transparent);
+  color: inherit;
+}
+.alertas-lista {
+  display: grid;
+  gap: 10px;
+}
+.alerta-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--borda, #d6ddd9);
+  border-radius: 12px;
+}
+.alerta-item > svg {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.alerta-item > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.alerta-item strong,
+.alerta-item small {
+  display: block;
+}
+.alerta-item p {
+  margin: 6px 0;
+}
+.alerta-item small {
+  opacity: 0.75;
+}
+.alerta-novo {
+  border-left: 4px solid #198568;
+}
+.alerta-atrasado {
+  color: #c9473d;
+  font-weight: 700;
+}
+.alerta-acoes {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+.alerta-acoes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--borda, #d6ddd9);
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+}
+.recorrencias-lista {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.recorrencia-card {
+  padding: 16px;
+  border: 1px solid var(--borda, #d6ddd9);
+  border-radius: 12px;
+}
+.recorrencia-card p {
+  margin: 8px 0;
+}
+.recorrencia-valor-mes {
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+}
+.recorrencia-valor-mes summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+.recorrencia-valor-mes p {
+  margin: 16px 0;
+  line-height: 1.7;
+}
+.recorrencias-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.recorrencias-cabecalho h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+.recorrencias-cabecalho svg {
+  flex-shrink: 0;
+}
+.recorrencias-cabecalho button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.recorrencias-introducao {
+  max-width: 1000px;
+  padding: 24px 0;
+}
+.recorrencias-introducao p {
+  margin: 0;
+  line-height: 1.8;
+}
+.recorrencias-introducao p + p {
+  margin-top: 14px;
+}
+.recorrencias-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 190px;
+  padding: 32px 20px;
+  border: 1px dashed var(--ui-borda);
+  border-radius: 12px;
+  text-align: center;
+}
+.recorrencias-vazio p {
+  margin: 0;
+  color: var(--ui-suave);
+  line-height: 1.7;
+}
+.recorrencias-painel .recorrencias-lista:empty {
+  display: none;
+}
+.recorrencias-painel .recorrencia-card {
+  padding: 22px;
+}
+.recorrencia-card .fin-acoes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+@media (max-width: 600px) {
+  .recorrencias-cabecalho button {
+    width: 100%;
+  }
+}

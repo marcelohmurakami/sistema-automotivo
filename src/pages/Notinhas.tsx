@@ -1,10 +1,17 @@
+import { useBuscaDebounced } from "../lib/useBuscaDebounced";
+import { novoId } from "../lib/uuid.ts";
+import { rpc } from "../lib/rpc";
+import { dinheiro } from "../lib/formatacao";
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAcesso } from "../auth/contexto";
 import { listarClientes } from "../services/clientes";
-import { rpc, dinheiro, type ItemProposta } from "../services/orcamentos";
-import { consultarIdentidade, type Notinha } from "../services/documentos";
-import { gerarPdfNotinha } from "../services/pdfDocumentos";
+import { type ItemProposta } from "../services/orcamentos";
+import {
+  consultarIdentidade,
+  type Notinha,
+  type DetalhesNotinha,
+} from "../services/documentos";
 import { erroPublico } from "../lib/supabase";
 import { Dialogo } from "../components/Dialogo";
 import "./Documentos.css";
@@ -27,20 +34,26 @@ export function Notinhas() {
     [erro, setErro] = useState(""),
     [busy, setBusy] = useState(false),
     [cancelar, setCancelar] = useState<Notinha | null>(null);
+  const [detalhes, setDetalhes] = useState<DetalhesNotinha>({
+    assinatura: "recebimento",
+  });
   const trava = useRef(false),
-    chave = useRef(crypto.randomUUID());
+    chave = useRef(novoId());
+  const pdfEmAndamento = useRef(false);
+  const [gerandoPdf, setGerandoPdf] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ["notinhas", a.demo, a.oficina!.id],
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       a.demo
-        ? (JSON.parse(
-            localStorage.getItem("patio_notinhas_demo") || "[]",
-          ) as Notinha[])
-        : rpc<Notinha[]>("listar_notinhas", { p_oficina: a.oficina!.id }),
+        ? (JSON.parse(localStorage.getItem("patio_notinhas_demo") || "[]") as Notinha[])
+        : rpc<Notinha[]>("listar_notinhas", { p_oficina: a.oficina!.id }, signal),
   });
+  const termoConsulta1 = useBuscaDebounced(busca);
   const c = useQuery({
-    queryKey: ["clientes-notinha", a.demo, a.oficina!.id, busca],
-    queryFn: () => listarClientes(a.demo, a.oficina!.id, busca, false, 0),
+    enabled: nova,
+    queryKey: ["clientes-notinha", a.demo, a.oficina!.id, termoConsulta1],
+    queryFn: ({ signal }) =>
+      listarClientes(a.demo, a.oficina!.id, termoConsulta1, false, 0, signal),
   });
   const total = itens.reduce(
     (s, i) => s + Math.round(i.quantidade * i.preco_unitario_centavos),
@@ -53,7 +66,10 @@ export function Notinhas() {
     setErro("");
     try {
       await fn();
-      await qc.invalidateQueries({ queryKey: ["notinhas"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["notinhas"] }),
+        qc.invalidateQueries({ queryKey: ["ficha-cliente"] }),
+      ]);
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
@@ -63,6 +79,21 @@ export function Notinhas() {
   }
   function alterar(index: number, d: Partial<ItemProposta>) {
     setItens(itens.map((i, n) => (n === index ? { ...i, ...d } : i)));
+  }
+  async function baixar(nota: Notinha) {
+    if (pdfEmAndamento.current) return;
+    pdfEmAndamento.current = true;
+    setGerandoPdf(nota.id);
+    setErro("");
+    try {
+      const { gerarPdfNotinha } = await import("../services/pdfDocumentos");
+      gerarPdfNotinha(nota).save(`notinha-${nota.numero}.pdf`);
+    } catch (e) {
+      setErro(erroPublico(e));
+    } finally {
+      pdfEmAndamento.current = false;
+      setGerandoPdf(null);
+    }
   }
   return (
     <div className="documentos-pagina">
@@ -77,12 +108,18 @@ export function Notinhas() {
         <button
           className="botao-primario"
           onClick={() => {
-            chave.current = crypto.randomUUID();
+            chave.current = novoId();
             setItens([vazio()]);
             setCliente("");
             setDesconto(0);
             setObs("");
             setErro("");
+            setDetalhes({
+              assinatura: "recebimento",
+              data_servico: new Date().toLocaleDateString("en-CA", {
+                timeZone: "America/Sao_Paulo",
+              }),
+            });
             setNova(true);
           }}
         >
@@ -90,8 +127,8 @@ export function Notinhas() {
         </button>
       </header>
       <p className="texto-suave">
-        Documento sem valor fiscal. A emissão não registra pagamento nem
-        movimenta o estoque.
+        Documento sem valor fiscal. A emissão não registra pagamento nem movimenta o
+        estoque.
       </p>
       {erro && !nova && !cancelar && <p role="alert">{erro}</p>}
       {q.isError ? (
@@ -114,11 +151,10 @@ export function Notinhas() {
                 <div className="acoes-proposta">
                   <button
                     className="botao-secundario"
-                    onClick={() =>
-                      gerarPdfNotinha(n).save(`notinha-${n.numero}.pdf`)
-                    }
+                    disabled={!!gerandoPdf}
+                    onClick={() => void baixar(n)}
                   >
-                    Baixar PDF
+                    {gerandoPdf === n.id ? "Gerando PDF…" : "Baixar PDF"}
                   </button>
                   {n.situacao === "issued" && a.oficina?.perfil !== "staff" && (
                     <button
@@ -156,17 +192,27 @@ export function Notinhas() {
           onSubmit={(e) => {
             e.preventDefault();
             void executar(async () => {
+              if (
+                detalhes.pix_copia_cola &&
+                (!detalhes.pix_copia_cola.startsWith("000201") ||
+                  !/br\.gov\.bcb\.pix/i.test(detalhes.pix_copia_cola))
+              )
+                throw new Error(
+                  "Cole um código Pix copia e cola válido, gerado pelo banco.",
+                );
               if (a.demo) {
                 const nota: Notinha = {
                   id: chave.current,
-                  numero:
-                    Math.max(0, ...(q.data || []).map((n) => n.numero)) + 1,
+                  numero: Math.max(0, ...(q.data || []).map((n) => n.numero)) + 1,
                   situacao: "issued",
                   emitido_em: new Date().toISOString(),
+                  detalhes,
                   dados_cliente: {
+                    telefone_e164: c.data?.itens.find((c) => c.id === cliente)
+                      ?.telefone_e164,
+                    endereco: c.data?.itens.find((c) => c.id === cliente)?.endereco,
                     nome:
-                      c.data?.itens.find((c) => c.id === cliente)?.nome ||
-                      "Cliente",
+                      c.data?.itens.find((c) => c.id === cliente)?.nome || "Cliente",
                   },
                   dados_oficina: await consultarIdentidade(true, a.oficina!.id),
                   itens,
@@ -174,19 +220,21 @@ export function Notinhas() {
                   desconto_centavos: desconto,
                   total_centavos: total - desconto,
                   observacoes: obs,
+                  cliente_id: cliente,
                 };
                 localStorage.setItem(
                   "patio_notinhas_demo",
                   JSON.stringify([nota, ...(q.data || [])]),
                 );
               } else
-                await rpc("emitir_notinha", {
+                await rpc("emitir_notinha_detalhada", {
                   p_oficina: a.oficina!.id,
                   p_chave: chave.current,
                   p_cliente: cliente,
                   p_itens: itens,
                   p_desconto: desconto,
                   p_observacoes: obs,
+                  p_detalhes: detalhes,
                 });
               setNova(false);
             });
@@ -220,6 +268,69 @@ export function Notinhas() {
               </select>
             </label>
             {c.isError && <p role="alert">{erroPublico(c.error)}</p>}
+            <fieldset className="os-detalhes">
+              <legend>Dados do atendimento</legend>
+              <div className="dupla-campos">
+                {(
+                  [
+                    ["data_servico", "Data do serviço", "date"],
+                    ["vencimento", "Vencimento", "date"],
+                    ["veiculo", "Veículo / equipamento", "text"],
+                    ["motor", "Motor / componente", "text"],
+                    ["empresa_cliente", "Empresa do cliente (opcional)", "text"],
+                    ["documento_cliente", "CPF/CNPJ do cliente (opcional)", "text"],
+                    ["forma_pagamento", "Forma de pagamento combinada", "text"],
+                  ] as const
+                ).map(([campo, label, tipo]) => (
+                  <label key={campo}>
+                    {label}
+                    <input
+                      type={tipo}
+                      maxLength={180}
+                      value={detalhes[campo] || ""}
+                      onChange={(e) =>
+                        setDetalhes((atual) => ({
+                          ...atual,
+                          [campo]: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+              <label>
+                Confirmação na assinatura
+                <select
+                  value={detalhes.assinatura || "recebimento"}
+                  onChange={(e) =>
+                    setDetalhes((atual) => ({
+                      ...atual,
+                      assinatura: e.target.value as DetalhesNotinha["assinatura"],
+                    }))
+                  }
+                >
+                  <option value="recebimento">
+                    Recebimento e conferência dos serviços
+                  </option>
+                  <option value="pendente">Recebimento com pagamento pendente</option>
+                </select>
+              </label>
+              <label>
+                Pix copia e cola (opcional)
+                <textarea
+                  maxLength={1024}
+                  rows={2}
+                  value={detalhes.pix_copia_cola || ""}
+                  onChange={(e) =>
+                    setDetalhes((atual) => ({
+                      ...atual,
+                      pix_copia_cola: e.target.value.trim(),
+                    }))
+                  }
+                  placeholder="Cole o código fornecido pelo seu banco para mostrar o QR Code no PDF"
+                />
+              </label>
+            </fieldset>
             {itens.map((i, n) => (
               <div className="documento-item" key={n}>
                 <label>
@@ -254,9 +365,7 @@ export function Notinhas() {
                     max="10000"
                     step="0.001"
                     value={i.quantidade}
-                    onChange={(e) =>
-                      alterar(n, { quantidade: Number(e.target.value) })
-                    }
+                    onChange={(e) => alterar(n, { quantidade: Number(e.target.value) })}
                   />
                 </label>
                 <label>
@@ -303,9 +412,7 @@ export function Notinhas() {
                 max={total / 100}
                 step="0.01"
                 value={desconto / 100}
-                onChange={(e) =>
-                  setDesconto(Math.round(Number(e.target.value) * 100))
-                }
+                onChange={(e) => setDesconto(Math.round(Number(e.target.value) * 100))}
               />
             </label>
             <label>
@@ -318,8 +425,8 @@ export function Notinhas() {
             </label>
             <h2>Total: {dinheiro(total - desconto)}</h2>
             <p>
-              A notinha emitida preserva os itens e valores. Para corrigir,
-              cancele e emita outra.
+              A notinha emitida preserva os itens e valores. Para corrigir, cancele e
+              emita outra.
             </p>
             <button className="botao-primario">
               {busy ? "Emitindo…" : "Emitir notinha"}
@@ -347,9 +454,7 @@ export function Notinhas() {
                   "patio_notinhas_demo",
                   JSON.stringify(
                     q.data!.map((n) =>
-                      n.id === cancelar!.id
-                        ? { ...n, situacao: "cancelled" }
-                        : n,
+                      n.id === cancelar!.id ? { ...n, situacao: "cancelled" } : n,
                     ),
                   ),
                 );

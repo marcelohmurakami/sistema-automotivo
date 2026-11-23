@@ -1,0 +1,140 @@
+.lembrete-faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--primaria, #a4c66c);
+  border-radius: 14px;
+  background: var(--tema-fundo-ffffff, #fff);
+}
+.lembrete-faixa > div {
+  min-width: 0;
+}
+.lembrete-faixa p {
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+}
+.lembrete-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.lembrete-acoes > * {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+.dialogo-lembretes {
+  width: min(760px, calc(100vw - 24px));
+}
+.dialogo-lembretes .dialogo-interior {
+  min-width: 0;
+}
+.lembrete-formulario {
+  display: grid;
+  gap: 18px;
+}
+.lembrete-formulario label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.lembrete-formulario input:not([type="checkbox"]),
+.lembrete-formulario select {
+  width: 100%;
+  min-width: 0;
+}
+.lembrete-formulario .lembrete-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lembrete-check input {
+  flex-shrink: 0;
+}
+.lembrete-data {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.lembretes-itens {
+  display: grid;
+  margin: 16px 0;
+}
+.lembrete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--borda);
+}
+.lembrete-item > div:first-child {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.lembrete-item h3 {
+  font-size: 1rem;
+  margin: 5px 0;
+}
+.lembrete-item p {
+  font-size: 0.85rem;
+  margin: 5px 0;
+}
+.lembrete-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.lembrete-carregando {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 200;
+  padding: 12px 20px;
+  background: var(--tema-fundo-ffffff, #fff);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+}
+.alertas-grupo-financeiro {
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  margin: 10px 0;
+  min-width: 0;
+}
+.alertas-grupo-financeiro > summary {
+  cursor: pointer;
+  padding: 16px;
+  font-weight: 700;
+}
+.alertas-grupo-financeiro .alerta-item {
+  border-radius: 0;
+}
+@media (max-width: 600px) {
+  .lembrete-faixa {
+    padding: 14px;
+  }
+  .lembrete-faixa .lembrete-acoes {
+    width: 100%;
+  }
+  .lembrete-acoes .botao-primario,
+  .lembrete-acoes .botao-secundario {
+    flex: 1 1 140px;
+  }
+  .lembrete-item .lembrete-acoes {
+    width: 100%;
+  }
+  .lembrete-data {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "data": "2026-10-06",
+  "migracao": "20261006000400_os_aguardando_orcamento.sql",
+  "supabase": {
+    "projeto": "hzihxtjirttetnfdujcx",
+    "aplicada": true,
+    "verificacao": "Editor SQL confirmou execução e existência da função criar_os_aguardando_orcamento(uuid,uuid)."
+  },
+  "testes_locais": {
+    "suites_banco_aprovadas": 20,
+    "verificacoes_novo_fluxo": 25,
+    "compilacao_typescript": "aprovada",
+    "build_producao": "aprovado",
+    "eslint_arquivos_alterados": "aprovado",
+    "cobertura": [
+      "Restrição por plano e isolamento entre oficinas",
+      "Veículo somente com nome, sem placa",
+      "Serviço avulso persistido fora do catálogo",
+      "OS vinculada sem aprovação artificial, sem itens e sem total executável",
+      "Bloqueio de execução, inclusão de itens e resolução da parada antes do aceite",
+      "Aprovação pública parcial incorpora somente itens autorizados e desconto proporcional",
+      "Repetição de criação e conversão sem duplicar OS",
+      "Recusa não libera a OS; conversão tradicional de aprovado preservada"
+    ]
+  },
+  "navegador": {
+    "oficina": "[VALIDAÇÃO] Atendimento completo 2026-09-30 19:41:46",
+    "prefixo_dados_ficticios": "[TESTE ORÇAMENTO 06/10]",
+    "orcamento_com_os": 8,
+    "orcamento_sem_os": 9,
+    "os_aguardando_aprovacao": 11,
+    "resultados": [
+      "Novo veículo acessível mesmo antes de selecionar cliente; nome digitado preservado ao cadastrar o cliente",
+      "Cliente e veículo sem placa cadastrados e selecionados pelo formulário",
+      "Serviço criado no catálogo e adicionado ao orçamento por R$ 120,00",
+      "Item exclusivo salvo por R$ 80,00, presente após reabrir o orçamento e ausente na busca do catálogo",
+      "Pacotes recolhidos por padrão; voz/foto abaixo dos campos e menor; aviso de rascunho removido",
+      "Pergunta sobre criar OS visível após salvar; corrigida sobreposição entre as janelas",
+      "Criar OS abriu a OS 11 com pendência de aprovação e botão Iniciar serviço desabilitado",
+      "Agora não manteve o orçamento 9 salvo sem criar outra OS",
+      "Layout conferido em desktop e celular de 390px sem rolagem horizontal na página",
+      "Nenhum erro registrado no console durante esta verificação"
+    ],
+    "limite": "Aceite público e aprovação parcial verificados em banco local isolado. Os documentos fictícios no Supabase ficaram como rascunho e a OS aguardando aprovação, sem envio ao cliente."
+  }
+}

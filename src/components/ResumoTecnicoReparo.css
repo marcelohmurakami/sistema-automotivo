@@ -1,0 +1,36 @@
+.reparo-tecnico-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.reparo-tecnico-resumo > div {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  min-width: 0;
+}
+.reparo-tecnico-resumo span,
+.reparo-tecnico-resumo small {
+  color: var(--ui-suave);
+  line-height: 1.5;
+}
+.reparo-tecnico-resumo strong,
+.reparo-tecnico-resumo small {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.reparo-tecnico-resumo .reparo-validado {
+  border-left: 4px solid #4e9b7b;
+}
+.reparo-tecnico-resumo .reparo-validacao-pendente {
+  border-left: 4px solid #cf984a;
+}
+@media (max-width: 650px) {
+  .reparo-tecnico-resumo {
+    grid-template-columns: 1fr;
+  }
+}

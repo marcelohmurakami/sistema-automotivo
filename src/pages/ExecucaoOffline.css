@@ -1,0 +1,235 @@
+.offline-unificado {
+  padding-block: 28px;
+  gap: 24px;
+}
+.offline-documento,
+.offline-documento > fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.offline-documento-grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.offline-documento label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.offline-documento input,
+.offline-documento select,
+.offline-documento textarea {
+  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+}
+.offline-documento .os-detalhes > div {
+  margin-top: 16px;
+}
+.offline-documento-acoes {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid var(--ui-borda);
+  padding-top: 16px;
+}
+@media (max-width: 600px) {
+  .offline-documento-grade {
+    grid-template-columns: 1fr;
+  }
+  .offline-documento-acoes > button {
+    flex: 1 1 150px;
+  }
+}
+.offline-unificado p {
+  margin: 0;
+}
+.offline-cabecalho,
+.offline-resumo,
+.offline-secao-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.offline-cabecalho > div {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.offline-cabecalho p,
+.offline-ajuda,
+.offline-resumo p,
+.offline-secao-cabecalho > span {
+  color: var(--ui-suave);
+  font-size: 14px;
+}
+.offline-voltar {
+  width: fit-content;
+  font-size: 13px;
+  color: var(--ui-suave);
+}
+.offline-conexao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--ui-texto);
+}
+.offline-conexao.sem-rede {
+  color: #b46c19;
+}
+.offline-resumo {
+  padding: 18px 20px;
+  background: var(--ui-painel);
+  border: 1px solid var(--ui-borda);
+  border-radius: 14px;
+}
+.offline-resumo > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.offline-resumo strong {
+  overflow-wrap: anywhere;
+}
+.offline-novos,
+.offline-execucoes {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.offline-lista {
+  display: grid;
+  gap: 10px;
+}
+.offline-lista:empty {
+  display: none;
+}
+.offline-registro {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+  min-width: 0;
+}
+.offline-registro-info {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+.offline-registro h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.offline-registro p,
+.offline-registro h2,
+.offline-registro h3 {
+  overflow-wrap: anywhere;
+}
+.offline-relato {
+  white-space: pre-wrap;
+  color: var(--ui-suave);
+  font-size: 14px;
+}
+.offline-registro-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 400px;
+}
+.offline-remover {
+  color: var(--ui-suave);
+  font-size: 12px;
+  padding: 8px;
+}
+.offline-execucoes .offline-registro {
+  display: grid;
+  gap: 12px;
+}
+.offline-execucoes .plano-cabecalho {
+  width: 100%;
+}
+.offline-execucoes .estado-lista {
+  padding: 12px 0;
+  text-align: left;
+}
+.offline-aviso,
+.offline-erro {
+  border: 1px solid var(--ui-borda);
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.offline-erro {
+  border-color: #b65b4e;
+}
+.offline-formulario fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.offline-formulario .agil-fotos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 12px;
+}
+.offline-formulario .agil-fotos > div {
+  display: grid;
+  gap: 8px;
+}
+.offline-formulario .agil-fotos img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+@media (max-width: 650px) {
+  .offline-unificado {
+    padding: 16px;
+    gap: 20px;
+  }
+  .offline-cabecalho {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .offline-resumo,
+  .offline-registro {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .offline-registro-acoes {
+    justify-content: flex-start;
+    max-width: none;
+  }
+  .offline-registro-acoes .botao-secundario {
+    flex: 1 1 140px;
+  }
+  .offline-secao-cabecalho {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .offline-secao-cabecalho .botao-primario {
+    width: 100%;
+  }
+  .offline-execucoes .plano-acoes {
+    width: 100%;
+  }
+  .offline-execucoes .plano-acoes button {
+    flex: 1 1 130px;
+  }
+}

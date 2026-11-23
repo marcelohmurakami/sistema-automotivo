@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';import{readFile,writeFile,mkdir}from'node:fs/promises';import{chromium}from'playwright';
+const raiz='output/desconto-percentual-20261105',pasta=raiz+'/site-publicado',base='https://patio-gestao-peach.vercel.app';await mkdir(pasta,{recursive:true});
+const pacote=JSON.parse(await readFile(raiz+'/pacote-publicacao.json','utf8'));assert.equal((await fetch(base+'/health.json?qa='+Date.now()).then(r=>r.json())).build,pacote.build);
+const conta=JSON.parse(await readFile('output/contas-teste/20261019/credenciais.local.json','utf8')).contas.find(c=>c.especialidade==='retifica');assert(conta.empresa.startsWith('ZZ [TESTE 20261019] '));
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'}),ctx=await browser.newContext({viewport:{width:1920,height:1080},locale:'pt-BR',timezoneId:'America/Sao_Paulo'}),p=await ctx.newPage(),resultados=[],erros=[];p.setDefaultTimeout(30000);p.on('pageerror',e=>erros.push(e.message));
+try{
+ await p.goto(base+'/ordens-servico');await p.getByLabel('E-mail',{exact:true}).fill(conta.email);await p.getByLabel('Senha',{exact:true}).fill(conta.senha);await p.getByRole('button',{name:'Entrar no sistema',exact:true}).click();await p.getByRole('button',{name:'Nova OS',exact:true}).waitFor();
+ for(const [tela,rota] of [['os','/ordens-servico?nova=1'],['orcamento','/orcamentos?novo=1']]){
+  await p.goto(base+rota);await p.getByRole('button',{name:'Serviço ou peça avulsa',exact:true}).click();await p.getByLabel('Nome do serviço ou peça',{exact:true}).fill('QA desconto - não salvo');await p.getByLabel('Preço unitário (R$)',{exact:true}).fill('199.99');await p.getByRole('button',{name:'Adicionar serviço',exact:true}).click();await p.getByRole('spinbutton',{name:'Desconto (%)',exact:true}).fill('12.5');assert((await p.locator('.campo-desconto-ajuda').innerText()).includes('25,00'));assert((await p.locator('.os-editor-total').innerText()).includes('174,99'));
+  await p.getByRole('button',{name:'Aumentar quantidade de QA desconto - não salvo',exact:true}).click();assert((await p.locator('.os-editor-total').innerText()).includes('349,98'));await p.getByRole('button',{name:'Desconto em reais',exact:true}).click();assert.equal(await p.getByRole('spinbutton',{name:'Desconto (R$)',exact:true}).inputValue(),'50');await p.getByRole('button',{name:'Desconto em porcentagem',exact:true}).click();
+  for(const largura of [1920,390,320]){await p.setViewportSize({width:largura,height:largura===1920?1080:844});const d=p.getByRole('dialog').filter({has:p.locator('.campo-desconto')});assert(await d.evaluate(e=>e.scrollWidth<=e.clientWidth+1));await p.locator('.os-editor-valores').screenshot({path:pasta+'/'+tela+'-'+largura+'.png'});}
+  resultados.push({tela,semGravar:true,percentual:12.5,subtotal:39998,desconto:5000,total:34998});console.log('PASS desconto no site publicado',tela);await p.setViewportSize({width:1920,height:1080});
+ }
+ assert.deepEqual(erros,[]);
+}catch(e){process.exitCode=1;console.error(e.stack);await p.screenshot({path:pasta+'/falha.png',fullPage:true});await writeFile(pasta+'/falha.html',await p.content());}
+finally{await browser.close();await writeFile(pasta+'/resumo.json',JSON.stringify({ok:!process.exitCode,build:pacote.build,resultados,erros},null,2));}

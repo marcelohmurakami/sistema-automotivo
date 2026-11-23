@@ -1,0 +1,57 @@
+.conta-cabecalho {
+  position: relative;
+}
+.conta-cabecalho .perfil-cabecalho {
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--ui-texto);
+  text-align: left;
+}
+.conta-cabecalho .perfil-cabecalho[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.menu-conta {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 45;
+  width: min(250px, calc(100vw - 24px));
+  padding: 6px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+  box-shadow: 0 12px 32px #0002;
+}
+.menu-conta a,
+.menu-conta button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  color: var(--ui-texto);
+  font-size: 13px;
+  text-align: left;
+}
+.menu-conta a:hover,
+.menu-conta button:hover {
+  background: var(--ui-hover);
+}
+.menu-conta button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.menu-conta p {
+  margin: 8px 12px;
+  color: var(--ui-texto);
+  font-size: 12px;
+}
+.menu-conta .identificacao-conta {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ui-borda);
+  overflow-wrap: anywhere;
+}

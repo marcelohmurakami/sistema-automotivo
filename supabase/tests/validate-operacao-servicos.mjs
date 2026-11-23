@@ -1,0 +1,76 @@
+import { codigoConflitoRevisao } from './banco-local.mjs';
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { criarBancoLocal } from './banco-local.mjs';
+import { especialidadePadrao } from '../../src/lib/especialidades.ts';
+let db;
+try {
+ db=await criarBancoLocal('20261015000500');
+ const one=async(s,args=[])=>Object.values((await db.query(s,args)).rows[0])[0];
+ const u=randomUUID(),other=randomUUID(),staff=randomUUID();
+ await db.exec(`alter table auth.users add column email_confirmed_at timestamptz;insert into auth.users values('${u}',now()),('${other}',now()),('${staff}',now());select set_config('request.jwt.claim.sub','${u}',false);set role authenticated;`);
+ const fail=async(fn,code)=>assert.rejects(fn,e=>!code||e.code===code);
+ for(const ramo of ['assistencia_tecnica','manutencao_campo','limpeza']) {
+  const w=await one("select public.configurar_nova_empresa($1,$2,'','{}',$3,$4)",[randomUUID(),`Teste ${ramo}`,ramo,especialidadePadrao(ramo)]);
+  await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='complete' where oficina_id='${w}';insert into public.membros_oficina(oficina_id,usuario_id,perfil) values('${w}','${staff}','staff');set role authenticated;`);
+  const c=await one('select public.salvar_cliente($1,$2)',[w,{nome:'Cliente de bancada'}]);
+  const objeto=randomUUID(),at=randomUUID(),func=randomUUID(),produto=randomUUID();
+  await one('select public.salvar_objeto_atendimento($1,$2,$3)',[w,objeto,{cliente_id:c.id,nome:'Equipamento ou local',dados:{}}]);
+  await one('select public.salvar_funcionario($1,$2,$3)',[w,func,{nome:'Técnico de bancada',ativo:true}]);
+  await one('select public.salvar_produto_estoque($1,$2,$3)',[w,{descricao:'Material controlado',unidade:'un',custo_centavos:2500},produto]);
+  await one("select public.movimentar_estoque($1,$2,'entrada',5,'Entrada de teste',$3,1)",[w,produto,randomUUID()]);
+  const base={cliente_id:c.id,objeto_id:objeto,titulo:'Atendimento integrado',situacao:'orcamento',dados:{},valor_centavos:0,vencimento:'2026-10-30',data_servico:'2026-10-15'};
+  await one('select public.salvar_atendimento_servico($1,$2,$3)',[w,at,base]);
+  const get=()=>one('select public.consultar_detalhes_atendimento($1,$2)',[w,at]);
+  let d=await get();assert.equal(d.atendimento.data_servico,'2026-10-15');
+  const itens=[{id:randomUUID(),tipo:'servico',descricao:'Mão de obra',quantidade:2,unidade:'h',preco_centavos:10000,custo_centavos:1000,origem:'externa'}, {id:randomUUID(),tipo:'material',descricao:'Material',quantidade:2,unidade:'un',preco_centavos:5000,custo_centavos:1,origem:'estoque',produto_id:produto}];
+  const saveItems=(lista=itens,rev=d.atendimento.revisao)=>one('select public.salvar_itens_atendimento($1,$2,$3,$4,3000,500,$5)',[w,at,rev,lista,'Deslocamento']);
+  await saveItems(); d=await get();assert.equal(d.atendimento.valor_centavos,27000);assert.equal(d.itens.find(x=>x.tipo==='material').custo_centavos,2500);
+  await fail(()=>saveItems(itens,1),codigoConflitoRevisao);
+  await fail(()=>saveItems([itens[0],itens[0]]),'22023');
+  await fail(()=>saveItems([itens[0],{...itens[1],quantidade:1.001}]),'22023');
+  await fail(()=>one('select public.arquivar_produto_estoque($1,$2,true)',[w,produto]),'22023');
+  await fail(()=>one('select public.salvar_equipe_atendimento($1,$2,$3,$4)',[w,at,d.atendimento.revisao,[{funcionario_id:func,percentual:10},{funcionario_id:func,percentual:10}]]),'22023');
+  await one('select public.salvar_equipe_atendimento($1,$2,$3,$4)',[w,at,d.atendimento.revisao,[{funcionario_id:func,percentual:10,custo_hora_centavos:2000}]]);
+  d=await get();await one('select public.salvar_atendimento_servico($1,$2,$3,$4)',[w,at,{...d.atendimento,situacao:'aprovado'},d.atendimento.revisao]);d=await get();
+  assert.equal(d.comercial.orcado_centavos,27000);
+  const now=Date.now(),ini=new Date(now-7200000).toISOString(),fim=new Date(now-3600000).toISOString(),hora=randomUUID();
+  await one('select public.registrar_horas_atendimento($1,$2,$3,$4,$5,$6,$7)',[w,at,hora,func,ini,fim,'Execução']);
+  await one('select public.registrar_horas_atendimento($1,$2,$3,$4,$5,$6,$7)',[w,at,hora,func,ini,fim,'Execução']);
+  await fail(()=>one('select public.registrar_horas_atendimento($1,$2,$3,$4,$5,$6)',[w,at,randomUUID(),func,ini,fim]),'23P01');
+  await one('select public.salvar_atendimento_servico($1,$2,$3,$4)',[w,at,{...d.atendimento,situacao:'concluido'},d.atendimento.revisao]);
+  d=await get();assert.equal(d.equipe[0].comissao_centavos,1800);assert.ok(d.atendimento.concluido_em);
+  const estoque=()=>one("select public.listar_estoque($1,'','controlados',0)",[w]);assert.equal((await estoque()).itens[0].saldo,3);
+  await db.exec('reset role');
+  const movimento=await one('select movimento_id from public.consumos_atendimento where atendimento_id=$1 and estorno_id is null',[at]);
+  await db.exec('set role authenticated');
+  await fail(()=>one('select public.estornar_movimentacao_estoque($1,$2,$3)',[w,movimento,'Estorno avulso indevido']),'22023');
+  await one('select public.salvar_atendimento_servico($1,$2,$3,$4)',[w,at,d.atendimento,d.atendimento.revisao]);d=await get();assert.equal((await estoque()).itens[0].saldo,3);
+  await fail(()=>saveItems(),'22023');
+  const com=await one('select public.gerar_comissao_atendimento($1,$2)',[w,d.equipe[0].id]);assert.equal(await one('select public.gerar_comissao_atendimento($1,$2)',[w,d.equipe[0].id]),com);
+  await fail(()=>one('select public.reabrir_atendimento_servico($1,$2,$3,$4)',[w,at,d.atendimento.revisao,'Ajuste técnico']),'22023');
+  // Conta de comissão cancelada sem pagamentos: permite desfazer o serviço.
+  await db.exec(`reset role;update public.titulos_financeiros set cancelado_em=now() where id='${com}';set role authenticated;`);
+  await one('select public.reabrir_atendimento_servico($1,$2,$3,$4)',[w,at,d.atendimento.revisao,'Ajuste técnico']);d=await get();assert.equal((await estoque()).itens[0].saldo,5);
+  // Falha na conclusão deve reverter todos os efeitos.
+  await saveItems([itens[0],{...itens[1],quantidade:8}]);d=await get();
+  await fail(()=>one('select public.salvar_atendimento_servico($1,$2,$3,$4)',[w,at,{...d.atendimento,situacao:'concluido'},d.atendimento.revisao]),'22023');assert.equal((await estoque()).itens[0].saldo,5);assert.equal((await get()).atendimento.situacao,'em_execucao');
+  await saveItems();d=await get();await one('select public.salvar_atendimento_servico($1,$2,$3,$4)',[w,at,{...d.atendimento,situacao:'concluido'},d.atendimento.revisao]);d=await get();
+  const qid=randomUUID();await one('select public.salvar_qualidade_atendimento($1,$2,$3,$4)',[w,at,qid,{tipo:'garantia',motivo:'Falha de funcionamento',aberto_em:'2026-10-15',custo_centavos:5000,minutos:90,nota:3,funcionario_id:func}]);
+  assert.equal((await get()).qualidade[0].custo_centavos,5000);
+  const conta=await one('select public.faturar_atendimento_servico($1,$2)',[w,at]);assert.equal(await one('select public.faturar_atendimento_servico($1,$2)',[w,at]),conta);
+  const rel=await one('select public.consultar_relatorios_servicos($1,$2,$3)',[w,'2026-10-01','2026-10-31']);
+  assert.equal(rel.detalhes.length,1);assert.equal(rel.qualidade.length,1);assert.equal(rel.devedores[0].saldo,27000);assert.equal(rel.estoque[0].saldo,3);
+  assert.equal(rel.detalhes[0].equipe[0].comissao_centavos,1800);assert.equal(rel.detalhes[0].comercial.orcado_centavos,27000);
+  await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id='${w}';set role authenticated;`);
+  const semComissao=await get();assert.ok(!('comissao_centavos' in semComissao.equipe[0]));assert.equal(semComissao.comercial.comissao_total_centavos,1800,'Mudança de plano preserva o custo histórico da comissão');
+  await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='complete' where oficina_id='${w}';set role authenticated;`);
+  await fail(()=>one('select public.consultar_relatorios_servicos($1,$2,$3)',[w,'2026-10-31','2026-10-01']),'22023');
+  await db.exec(`select set_config('request.jwt.claim.sub','${staff}',false)`);const restrito=await get();assert.ok(!('custo_centavos' in restrito.itens[0]));assert.ok(!('comissao_centavos' in restrito.equipe[0]));assert.equal(restrito.qualidade.length,0);
+  await fail(()=>one('select public.salvar_itens_atendimento($1,$2,$3,$4)',[w,at,d.atendimento.revisao,itens]),'42501');
+  await fail(()=>one('select public.consultar_relatorios_servicos($1,$2,$3)',[w,'2026-10-01','2026-10-31']),'42501');
+  await db.exec(`select set_config('request.jwt.claim.sub','${other}',false)`);await fail(get,'42501');
+  await db.exec(`select set_config('request.jwt.claim.sub','${u}',false)`);
+  console.log(`PASS ${ramo}: itens, estoque atômico, reabertura, horas, comissão, garantia, faturamento e isolamento`);
+ }
+} catch(e) {console.error(e.message,e.code,e.where,e.detail);process.exitCode=1;} finally {await db?.close();}

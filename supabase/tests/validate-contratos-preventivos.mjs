@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {randomUUID as uuid} from 'node:crypto';
+import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {criarCenarioSubsistemas} from './subsistemas-fixture.mjs';
+process.env.DB_VALIDATION_MIGRATION_LIMIT ||= '20261028000400';
+process.env.DB_VALIDATION_RUNTIME ||= resolve('node_modules/@electric-sql/pglite/dist/index.js');
+const {db,login,ids,registros}=await criarCenarioSubsistemas();
+const call=async(n,a)=>Object.values((await db.query(`select public.${n}(${a.map((_,i)=>'$'+(i+1)).join(',')})`,a)).rows[0])[0];
+const resultados=[];
+try{for(const [perfil,r] of Object.entries(registros)){
+ await login(ids[perfil]);const checks=[],id=uuid();
+ const regras={mensalidade:10000,franquia_visitas:2,franquia_minutos:120,franquia_materiais:2000,excedente_visita:5000,excedente_hora:6000,participacao_visita:1000,vencimento_dia:10,servicos:['Preventiva'],equipamentos:['Equipamento QA']};
+ const d={cliente_id:r.cliente,nome:'Contrato QA',inicio:'2025-01-01',regras};
+ await call('salvar_contrato_preventivo',[r.w,id,d]);checks.push('contrato com cobertura');
+ let lista=await call('consultar_contratos',[r.w,'Contrato QA',0]);assert.ok(lista.itens.some(c=>c.id===id));checks.push('busca por contrato');
+ const uso={data:'2025-01-15',servico:'Preventiva',equipamento:'Equipamento QA',visitas:3,minutos:180,materiais_centavos:3000,observacoes:'Execução QA'},chave=uuid();
+ await call('registrar_consumo_contrato',[r.w,id,chave,uso]);await call('registrar_consumo_contrato',[r.w,id,chave,uso]);checks.push('consumo idempotente');
+ await assert.rejects(()=>call('registrar_consumo_contrato',[r.w,id,uuid(),{...uso,servico:'Não coberto'}]),e=>e.code==='22023');checks.push('serviço fora da cobertura recusado');
+ await assert.rejects(()=>call('registrar_consumo_contrato',[r.w,id,uuid(),{...uso,equipamento:'Outro'}]),e=>e.code==='22023');checks.push('equipamento fora da cobertura recusado');
+ await assert.rejects(()=>call('registrar_consumo_contrato',[r.w,id,uuid(),{...uso,data:'2024-12-01'}]),e=>e.code==='22023');checks.push('vigência validada');
+ let f=await call('faturar_contrato',[r.w,id,'2025-01-01',false]);assert.equal(f.total,25000);assert.equal(f.vencimento,'2025-02-10');assert.equal(f.fechada,false);checks.push('cálculo mensalidade franquias e excedentes');
+ f=await call('faturar_contrato',[r.w,id,'2025-01-01',true]);assert.ok(f.titulo_id);assert.deepEqual(await call('faturar_contrato',[r.w,id,'2025-01-01',true]),f);checks.push('fatura sem duplicação');
+ await db.exec('reset role');const saldo=(await db.query('select * from private.financeiro_saldos where id=$1',[f.titulo_id])).rows[0];await login(ids[perfil]);assert.equal(Number(saldo.baixado_centavos),0);assert.equal(Number(saldo.aberto_centavos),25000);checks.push('cobrança não gera pagamento');
+ await assert.rejects(()=>call('registrar_consumo_contrato',[r.w,id,chave,{},true]),e=>e.code==='22023');checks.push('fechamento imutável');
+ await call('salvar_contrato_preventivo',[r.w,id,{desde:'2025-02-01',motivo:'Reajuste anual',regras:{...regras,mensalidade:11000}},1]);assert.equal((await call('faturar_contrato',[r.w,id,'2025-02-01',false])).mensalidade,11000);assert.equal((await call('faturar_contrato',[r.w,id,'2025-01-01',false])).mensalidade,10000);checks.push('reajuste preserva versão faturada');
+ await assert.rejects(()=>call('salvar_contrato_preventivo',[r.w,id,{desde:'2025-03-01',motivo:'Reajuste anual',regras},1]),e=>e.code==='PT409');checks.push('conflito de revisão');
+ await call('encerrar_contrato',[r.w,id,2,'2025-02-14']);assert.equal((await call('faturar_contrato',[r.w,id,'2025-02-01',false])).mensalidade,5500);checks.push('proporcionalidade por encerramento');
+ await assert.rejects(()=>call('registrar_consumo_contrato',[r.w,id,uuid(),{...uso,data:'2025-03-01'}]),e=>e.code==='22023');checks.push('consumo após encerramento recusado');
+ await assert.rejects(()=>call('faturar_contrato',[registros[perfil==='mecanica'?'retifica':'mecanica'].w,id,'2025-01-01',false]),e=>e.code==='42501');checks.push('isolamento entre empresas');
+ resultados.push({perfil,checks});console.log('PASS',perfil,checks.length);
+}await mkdir('output/operacao-completa-20261028',{recursive:true});await writeFile('output/operacao-completa-20261028/contratos.json',JSON.stringify({subsetores:resultados.length,verificacoes:resultados.reduce((n,r)=>n+r.checks.length,0),resultados},null,2));
+}catch(e){console.error(e.code,e.message,e.where);process.exitCode=1;}finally{await db.close();}

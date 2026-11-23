@@ -1,0 +1,16 @@
+export const camposFichaFuncionario = [
+  ["nascimento", "Data de nascimento", "date"],
+  ["documento", "CPF / documento", "text"],
+  ["endereco", "Endereço", "text"],
+  ["emergencia_nome", "Contato de emergência", "text"],
+  ["emergencia_telefone", "Telefone de emergência", "tel"],
+  ["matricula", "Matrícula", "text"],
+  ["departamento", "Setor", "text"],
+  ["vinculo", "Tipo de contratação", "text"],
+  ["jornada", "Jornada / horário de trabalho", "text"],
+  ["escala", "Escala / dias de trabalho", "text"],
+  ["pagamento", "Dia e forma de pagamento combinados", "text"],
+  ["beneficios", "Benefícios e adicionais combinados", "text"],
+  ["experiencia_fim", "Fim do período de experiência", "date"],
+  ["salario_periodicidade", "Periodicidade do salário (mensal, hora, diária)", "text"],
+];

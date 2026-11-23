@@ -21,6 +21,10 @@ try{
  const compra=await scalar('select gen_random_uuid()');const args=`'${w}','${compra}','${f}','${hoje}','${hoje}','NF-1','',${js([{produto_id:p,quantidade:10,custo_centavos:2000}])},5000,'banco','pix'`;
  await db.exec(`select public.registrar_compra_estoque(${args})`);let c=await scalar(`select public.consultar_compra_estoque('${w}','${compra}')`),d=await fin();
  ok(c.total_centavos===20000&&c.titulo.baixado_centavos===5000&&c.titulo.aberto_centavos===15000,'compra parcial e saldo financeiro corretos');
+ await db.exec(`select public.salvar_titulo_financeiro('${w}','${c.titulo.id}',${js({...c.titulo,vencimento:'2999-01-01'})},${c.titulo.revisao})`);
+ c=await scalar(`select public.consultar_compra_estoque('${w}','${compra}')`);
+ ok(c.titulo.vencimento==='2999-01-01'&&c.titulo.baixado_centavos===5000&&c.titulo.aberto_centavos===15000,'adiar pagamento da compra preserva valor pago e saldo em aberto');
+ ok((await scalar(`select public.historico_financeiro('${w}','${c.titulo.id}')`)).length===1,'definir a pagar não cria outro pagamento');
  const estoque=()=>scalar(`select to_jsonb(e) from public.estoque_produtos e where item_catalogo_id='${p}'`);let e=await estoque();ok(Number(e.saldo)===20&&e.custo_centavos===1500,'entrada e custo médio ponderado corretos');
  ok(d.resumo.despesas===0&&d.resumo.saidas===5000&&d.resumo.pagar===15000,'compra afeta caixa e contas, não duplica despesa no resultado');
  await db.exec(`select public.registrar_compra_estoque(${args})`);ok(Number((await estoque()).saldo)===20,'reenvio não duplica estoque nem cobrança');

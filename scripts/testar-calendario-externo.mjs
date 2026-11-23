@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {gerarIcal,textoIcal,dobrarLinha} from '../supabase/functions/calendario-externo/ical.mjs';
+const e={id:'123',inicio:'2026-10-28T10:00:00-03:00',fim:'2026-10-28T11:00:00-03:00',saida:'2026-10-28T09:30:00-03:00',retorno:'2026-10-28T11:20:00-03:00',atualizado:'2026-10-28T09:00:00-03:00',revisao:2,situacao:'agendado',titulo:'Inspeção; manutenção, preventiva',descricao:'Cliente\nSegunda linha',local:'Rua São João'};
+const ics=gerarIcal({nome:'Agenda QA',eventos:[e]});
+assert.equal((ics.match(/BEGIN:VEVENT/g)||[]).length,3);assert.ok(ics.includes('DTSTART:20261028T130000Z'));assert.ok(ics.includes('DTSTART:20261028T123000Z'));assert.ok(ics.includes('DTEND:20261028T142000Z'));assert.ok(ics.includes('SEQUENCE:2'));
+assert.equal(textoIcal('a,b;c\\d\r\nBEGIN:VEVENT'),'a\\,b\\;c\\\\d\\nBEGIN:VEVENT');
+assert.equal((gerarIcal({nome:'QA',eventos:[{...e,titulo:'\r\nBEGIN:VEVENT\r\nUID:bad'}]}).match(/\r\nBEGIN:VEVENT\r\n/g)||[]).length,3);
+const long='SUMMARY:'+ 'áÇ😀'.repeat(100),fold=dobrarLinha(long);for(const l of fold.split('\r\n'))assert.ok(Buffer.byteLength(l)<=75);assert.equal(fold.replaceAll('\r\n ',''),long);
+assert.ok(gerarIcal({nome:'QA',eventos:[{...e,situacao:'cancelado'}]}).includes('STATUS:CANCELLED'));
+assert.throws(()=>gerarIcal({nome:'QA',eventos:[{...e,fim:e.inicio}]}));assert.throws(()=>gerarIcal({nome:'QA',eventos:[{...e,inicio:'invalid'}]}));
+assert.equal(gerarIcal({nome:'Vazia',eventos:[]}).endsWith('END:VCALENDAR\r\n'),true);
+console.log('PASS: iCalendar UTC, deslocamentos, cancelamento, escape, UTF-8, datas e agenda vazia');

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {chaveEmpresaUsuario,resolverEmpresa} from '../src/lib/selecaoEmpresa.ts';
+const empresas=[{id:'testes'},{id:'retifica',padrao:true}];
+assert.equal(resolverEmpresa(empresas,'')?.id,'retifica');
+assert.equal(resolverEmpresa(empresas,'empresa-de-outra-conta')?.id,'retifica');
+assert.equal(resolverEmpresa(empresas,'testes')?.id,'testes');
+assert.equal(resolverEmpresa([],'testes'),null);
+assert.notEqual(chaveEmpresaUsuario('marcelo',false),chaveEmpresaUsuario('teste',false));
+assert.notEqual(chaveEmpresaUsuario('marcelo',false),chaveEmpresaUsuario('marcelo',true));
+assert.equal(chaveEmpresaUsuario(null,false),null);
+console.log('PASS: padrão operacional, escolha explícita, escolha inacessível, nenhuma empresa e isolamento da preferência por usuário/demo.');

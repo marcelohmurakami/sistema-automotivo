@@ -1,0 +1,430 @@
+.produtividade {
+  min-width: 0;
+}
+.documentos-pagina.produtividade {
+  gap: 24px;
+}
+.produtividade .titulo-pagina {
+  margin-bottom: 4px;
+}
+.produtividade .os-abas {
+  margin: 0 0 8px;
+}
+.produtividade .secao-recolhivel {
+  margin: 0;
+}
+.produtividade .secao-recolhivel > summary {
+  padding: 22px 24px;
+}
+.produtividade .secao-recolhivel-conteudo {
+  padding: 24px;
+}
+.produtividade .secao-recolhivel-conteudo > p {
+  margin: 0 0 22px;
+  line-height: 1.6;
+}
+.prod-agenda-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.prod-agenda-cabecalho > div:first-child {
+  flex: 1 1 280px;
+}
+.prod-agenda-cabecalho h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 18px;
+}
+.prod-agenda-cabecalho p {
+  margin: 10px 0 0;
+  color: var(--ui-suave);
+  line-height: 1.6;
+  font-size: 13px;
+}
+.prod-agenda-filtro {
+  display: flex;
+  flex: 1 1 480px;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.prod-agenda-filtro label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.prod-agenda-filtro input:not([type="checkbox"]) {
+  min-height: 48px;
+  min-width: 190px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--ui-texto);
+  background: var(--ui-fundo);
+  font: inherit;
+}
+.prod-agenda-vazia {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding: 40px 24px;
+  text-align: center;
+  border: 1px dashed var(--ui-borda);
+  border-radius: 12px;
+}
+.prod-agenda-vazia > svg {
+  color: var(--ui-suave);
+}
+.prod-agenda-vazia h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+.prod-agenda-vazia p {
+  margin: 0;
+  max-width: 460px;
+  color: var(--ui-suave);
+  line-height: 1.7;
+  font-size: 13px;
+}
+.prod-agenda .prod-registro {
+  padding: 24px 0;
+}
+.prod-agenda .prod-registro p {
+  margin: 10px 0;
+  line-height: 1.6;
+}
+.produtividade .mini-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  .prod-agenda-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .prod-agenda-cabecalho > div:first-child,
+  .prod-agenda-filtro {
+    flex: initial;
+  }
+  .prod-agenda-filtro label {
+    flex: 1;
+  }
+  .prod-agenda-filtro input:not([type="checkbox"]) {
+    width: 100%;
+    min-width: 0;
+  }
+  .produtividade .secao-recolhivel > summary,
+  .produtividade .secao-recolhivel-conteudo {
+    padding: 18px;
+  }
+}
+.prod-grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.prod-registro {
+  border-bottom: 1px solid var(--borda, #dde1d7);
+  padding: 18px 0;
+  overflow-wrap: anywhere;
+}
+.prod-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.prod-linha label {
+  max-width: 120px;
+}
+.produtividade button,
+.produtividade a {
+  min-height: 44px;
+}
+.produtividade button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--borda, #d7ddd3);
+  background: var(--superficie, #fff);
+  color: inherit;
+  cursor: pointer;
+}
+.produtividade .botao-primario {
+  background: #d5f675;
+  color: #22301c;
+}
+.produtividade nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.produtividade nav [aria-pressed="true"] {
+  background: #d5f675;
+  color: #22301c;
+}
+.prod-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.prod-resumo > div {
+  padding: 15px;
+  background: var(--superficie, #fff);
+  border: 1px solid var(--borda, #ddd);
+  border-radius: 12px;
+}
+.prod-resumo strong {
+  display: block;
+  font-size: 21px;
+}
+.prod-vistoria {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 420px;
+  margin: 20px auto;
+}
+.prod-vistoria button {
+  min-height: 64px;
+}
+.prod-vistoria button[aria-pressed="true"] {
+  outline: 3px solid #80a742;
+}
+.prod-carro {
+  grid-column: 2;
+  display: grid;
+  place-items: center;
+  grid-row: 2/4;
+}
+.prod-carro svg {
+  width: 85px;
+  height: 110px;
+}
+.produtividade details {
+  margin: 16px 0;
+}
+.produtividade summary {
+  cursor: pointer;
+  padding: 14px 0;
+  font-weight: 700;
+}
+.rascunho-status {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--superficie, #eef3e8);
+  font-size: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 600px) {
+  .prod-grade {
+    grid-template-columns: 1fr;
+  }
+  .prod-resumo {
+    grid-template-columns: 1fr;
+  }
+  .produtividade .mini-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+.prod-agenda-acoes {
+  display: flex;
+  justify-content: flex-end;
+}
+.prod-agenda-filtro label.plano-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  cursor: pointer;
+}
+.prod-agenda-filtro input[type="checkbox"] {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ui-acento);
+}
+.prod-agenda-acoes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.dialogo.dialogo-agendamento {
+  width: min(860px, calc(100vw - 24px));
+}
+.dialogo-agendamento .documentos-form fieldset {
+  display: grid;
+  gap: 16px;
+  border: 0;
+  padding: 0;
+  margin-top: 24px;
+}
+.dialogo-agendamento
+  .documentos-form
+  > fieldset
+  > :is(.planejamento-visita, .distribuicao-agenda, .reserva-recursos) {
+  margin-block: 0;
+}
+.dialogo-agendamento .prod-grade label {
+  display: grid;
+  gap: 8px;
+}
+.prod-agenda .prod-agendamento {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  column-gap: 24px;
+  row-gap: 20px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 24px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 16px;
+  background: var(--ui-fundo);
+}
+.prod-data-destaque {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  border-radius: 12px;
+  background: #d5f675;
+  color: #22301c;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.prod-data-destaque > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.prod-data-destaque strong {
+  font-size: 40px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.prod-agendamento-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.prod-horario {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.prod-horario > time {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.prod-horario > span {
+  font-size: 13px;
+  color: var(--ui-suave);
+}
+.prod-agendamento-status {
+  padding: 6px 10px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.prod-agendamento-info .prod-agendamento-cliente {
+  margin: 18px 0 6px;
+  font-size: 23px;
+  line-height: 1.35;
+}
+.prod-agendamento-veiculo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.prod-agendamento-veiculo > span {
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 6px;
+  letter-spacing: 0.06em;
+}
+.prod-agendamento-detalhes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 16px;
+  color: var(--ui-suave);
+  font-size: 14px;
+}
+.prod-agendamento-detalhes > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prod-agendamento-detalhes svg {
+  flex-shrink: 0;
+}
+.prod-agenda .prod-agendamento .mini-acoes {
+  grid-column: 2;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--ui-borda);
+}
+.prod-agendamento--cancelado .prod-data-destaque,
+.prod-agendamento--convertido .prod-data-destaque {
+  background: var(--ui-superficie, var(--ui-fundo));
+  color: var(--ui-suave);
+  border: 1px solid var(--ui-borda);
+}
+@media (max-width: 600px) {
+  .prod-agenda .prod-agendamento {
+    grid-template-columns: 76px minmax(0, 1fr);
+    padding: 16px;
+    column-gap: 14px;
+  }
+  .prod-data-destaque {
+    padding: 12px 4px;
+    font-size: 11px;
+  }
+  .prod-data-destaque strong {
+    font-size: 32px;
+  }
+  .prod-horario > time {
+    font-size: 25px;
+  }
+  .prod-agendamento-info .prod-agendamento-cliente {
+    font-size: 20px;
+  }
+  .prod-agendamento-veiculo {
+    font-size: 17px;
+  }
+  .prod-agenda .prod-agendamento .mini-acoes {
+    grid-column: 1 / -1;
+  }
+}

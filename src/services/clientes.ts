@@ -1,3 +1,4 @@
+import { novoId } from "../lib/uuid.ts";
 import { supabase } from "../lib/supabase";
 export type DadosCliente = {
   nome: string;
@@ -19,7 +20,7 @@ export type Cliente = Omit<DadosCliente, "telefone_e164" | "email"> & {
 };
 export type ListaClientes = { itens: Cliente[]; total: number };
 const chaveDemo = "patio_clientes_demo_v1";
-function lerDemo(): Cliente[] {
+export function lerDemo(): Cliente[] {
   const guardados = localStorage.getItem(chaveDemo);
   if (guardados) {
     try {
@@ -51,6 +52,11 @@ function lerDemo(): Cliente[] {
     arquivado_em: null,
   }));
 }
+export function consultarClienteDemo(id: string) {
+  const cliente = lerDemo().find((c) => c.id === id);
+  if (!cliente) throw new Error("Cliente não encontrado.");
+  return cliente;
+}
 export function normalizarTelefone(valor: string) {
   const digitos = valor.replace(/\D/g, "");
   if (!digitos) return "";
@@ -70,14 +76,17 @@ export async function listarClientes(
   busca: string,
   arquivados: boolean,
   pagina: number,
+  signal?: AbortSignal,
 ): Promise<ListaClientes> {
   if (!demo) {
-    const { data, error } = await supabase!.rpc("listar_clientes", {
+    const consulta = supabase!.rpc("listar_clientes", {
       p_oficina: oficina,
       p_busca: busca,
       p_arquivados: arquivados,
       p_pagina: pagina,
     });
+    if (signal) consulta.abortSignal(signal);
+    const { data, error } = await consulta;
     if (error) throw error;
     return data;
   }
@@ -114,12 +123,10 @@ export async function salvarCliente(
   const clientes = lerDemo();
   const atual = anterior && clientes.find((c) => c.id === anterior.id);
   if (anterior && (!atual || atual.revisao !== anterior.revisao))
-    throw new Error(
-      "Este cliente foi alterado. Atualize a lista e abra novamente.",
-    );
+    throw new Error("Este cliente foi alterado. Atualize a lista e abra novamente.");
   const cliente: Cliente = {
     ...dados,
-    id: anterior?.id ?? crypto.randomUUID(),
+    id: anterior?.id ?? novoId(),
     oficina_id: oficina,
     revisao: (anterior?.revisao ?? 0) + 1,
     criado_em: anterior?.criado_em ?? new Date().toISOString(),
@@ -151,9 +158,7 @@ export async function arquivarCliente(
   const clientes = lerDemo();
   const atual = clientes.find((c) => c.id === cliente.id);
   if (!atual || atual.revisao !== cliente.revisao)
-    throw new Error(
-      "Este cliente foi alterado. Atualize a lista e tente novamente.",
-    );
+    throw new Error("Este cliente foi alterado. Atualize a lista e tente novamente.");
   localStorage.setItem(
     chaveDemo,
     JSON.stringify(

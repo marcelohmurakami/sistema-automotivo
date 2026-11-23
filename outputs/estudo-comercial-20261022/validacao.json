@@ -1,0 +1,23 @@
+{
+  "total": 138,
+  "pendencias": 73,
+  "porSituacao": {
+    "Presente": 65,
+    "Parcial": 45,
+    "Ausente": 23,
+    "Externo": 5
+  },
+  "porCapitulo": {
+    "3": 14,
+    "4": 16,
+    "5": 23,
+    "6": 18,
+    "7": 13,
+    "8": 12,
+    "9": 16,
+    "10": 12,
+    "11": 14
+  },
+  "fonte": "Relatório da conversa de 21/10/2026",
+  "organizadoEm": "2026-10-22"
+}

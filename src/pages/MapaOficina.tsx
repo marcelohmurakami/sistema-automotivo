@@ -1,142 +1,527 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { IconeTipoServico } from "../components/TipoServico";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { IndicadorEntrega, LegendaEntrega } from "../components/PrazoEntrega";
+import { useAgora } from "../lib/useAgora";
+import {
+  lerOrdenacoesMapa,
+  salvarOrdenacoesMapa,
+  ordenarVeiculosMapa,
+  type OrdenacaoMapa,
+} from "../lib/ordenacaoMapa";
+import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
+  ArrowLeft,
   ArrowUpRight,
-  CalendarDays,
   CarFront,
+  ClipboardList,
+  ClipboardCheck,
+  UserRound,
   CheckCheck,
   ChevronRight,
-  Clock3,
   LayoutGrid,
   List,
-  MapPin,
   Plus,
+  Pause,
+  Play,
   Search,
-  SlidersHorizontal,
   Timer,
+  TriangleAlert,
   Wrench,
 } from "lucide-react";
 import {
   etapasMapa as etapas,
-  normalizarBuscaMapa as normalizar,
+  filtrarVeiculosMapa,
   prepararMapa,
+  motivosParada,
 } from "../lib/mapaOficina";
-import { useQuery } from "@tanstack/react-query";
-import { consultarMapaOficina } from "../services/mapaOficina";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  consultarMapaOficina,
+  moverOSNoMapa,
+  executarAcaoNoMapa,
+  type AcaoRapidaMapa,
+} from "../services/mapaOficina";
+import { Dialogo } from "../components/Dialogo";
+import { PecasNaEntrega } from "../components/PecasNaEntrega";
+import { faltaOrigemPeca } from "../lib/origemPecas";
+import { OrdenarMapa } from "../components/OrdenarMapa";
+import { situacoesOS } from "../services/ordensServico";
+import { destinoNoMapa, type DirecaoMapa } from "../lib/movimentacaoMapa";
+import { atualizarIntegracoes } from "../lib/atualizarIntegracoes";
+import {
+  devePerguntarPagamentoOS,
+  usePagamentoAposRegistro,
+} from "../lib/pagamentoAposRegistro";
 import { useAcesso } from "../auth/contexto";
 import { erroPublico } from "../lib/supabase";
 import "./MapaOficina.css";
-import type { VeiculoMapa as Veiculo } from "../lib/mapaOficina";
+import type { OrdemNoMapa, VeiculoMapa as Veiculo } from "../lib/mapaOficina";
 
-function CartaoVeiculo({
+function EntradaVeiculo({ veiculo }: { veiculo: Veiculo }) {
+  return veiculo.entrada ? (
+    <span className="mapa-entrada" title={`Entrada em ${veiculo.entradaTexto}`}>
+      Entrada{" "}
+      <time dateTime={veiculo.entrada} aria-label={veiculo.entradaTexto}>
+        {veiculo.entradaTexto.replace(/\/\d{4}/, "").replace(" às ", " · ")}
+      </time>
+    </span>
+  ) : null;
+}
+
+const AcoesEtapaMapa = memo(function AcoesEtapaMapa({ veiculo }: { veiculo: Veiculo }) {
+  const perguntarPagamento = usePagamentoAposRegistro();
+  const acesso = useAcesso(),
+    qc = useQueryClient();
+  const [parando, setParando] = useState(false);
+  const [conferirPecas, setConferirPecas] = useState(false);
+  const [detalhes, setDetalhes] = useState("");
+  const trava = useRef(false);
+  const chaveMapa = ["mapa-oficina", acesso.demo, acesso.oficina!.id];
+  const movimento = useMutation({
+    onMutate: () => qc.cancelQueries({ queryKey: chaveMapa, exact: true }),
+    mutationFn: ({
+      acao,
+      revisao,
+    }: {
+      acao: DirecaoMapa | AcaoRapidaMapa;
+      revisao: number;
+    }) =>
+      typeof acao === "string"
+        ? moverOSNoMapa(acesso.demo, acesso.oficina!.id, veiculo.osId, revisao, acao)
+        : executarAcaoNoMapa(
+            acesso.demo,
+            acesso.oficina!.id,
+            veiculo.osId,
+            revisao,
+            acao,
+          ),
+    onError: (erro) => {
+      if (faltaOrigemPeca(erro)) setConferirPecas(true);
+    },
+    onSuccess: async (atual) => {
+      // Uma leitura iniciada antes da gravação não pode restaurar a revisão antiga.
+      await qc.cancelQueries({ queryKey: chaveMapa, exact: true });
+      setParando(false);
+      if (devePerguntarPagamentoOS(veiculo.situacao, atual.situacao)) {
+        perguntarPagamento({ tipo: "os", id: veiculo.osId, contexto: "entrega" });
+      }
+      qc.setQueryData<OrdemNoMapa[]>(chaveMapa, (ordens) =>
+        ordens?.map((o) =>
+          o.id === veiculo.osId && atual.revisao >= o.revisao ? { ...o, ...atual } : o,
+        ),
+      );
+    },
+    onSettled: () => {
+      // A RPC já confirmou a etapa. A reconciliação continua em segundo plano,
+      // inclusive após erro/conflito, sem travar a próxima ação confirmada.
+      void atualizarIntegracoes(qc, []).catch(() => {
+        /* As consultas mantêm seus próprios estados de erro e nova tentativa. */
+      });
+    },
+  });
+  const mudar = async (
+    acao: DirecaoMapa | AcaoRapidaMapa,
+    revisao = veiculo.revisao,
+  ) => {
+    if (trava.current) return;
+    trava.current = true;
+    try {
+      await movimento.mutateAsync({ acao, revisao });
+    } catch {
+      /* O erro fica visível no próprio cartão. */
+    } finally {
+      trava.current = false;
+    }
+  };
+  const conferencia = veiculo.situacao === "quality_check";
+  const erro =
+    movimento.isError &&
+    (faltaOrigemPeca(movimento.error) ? (
+      <button
+        className="mapa-avancar mapa-acao-inteira"
+        onClick={() => setConferirPecas(true)}
+      >
+        Conferir peças e entregar
+      </button>
+    ) : (
+      <p className="mapa-movimento-erro" role="alert">
+        {erroPublico(movimento.error)}
+      </p>
+    ));
+  return (
+    <>
+      <div
+        className="mapa-movimentacao"
+        aria-label={`Mudar etapa da OS ${veiculo.id}`}
+        aria-busy={movimento.isPending}
+      >
+        {veiculo.motivo ? (
+          <button
+            className="mapa-avancar mapa-acao-inteira"
+            disabled={movimento.isPending}
+            aria-label={`Retomar serviço da OS ${veiculo.id}`}
+            title="Resolve as pendências abertas e volta à etapa anterior à parada."
+            onClick={() => void mudar({ acao: "retomar" })}
+          >
+            <Play size={16} aria-hidden="true" />
+            {movimento.isPending ? "Salvando…" : "Retomar serviço"}
+          </button>
+        ) : (
+          <>
+            {conferencia && (
+              <button
+                className="mapa-avancar mapa-acao-inteira"
+                disabled={movimento.isPending}
+                aria-label={`Concluir serviço da OS ${veiculo.id}`}
+                title="Conclui os itens da OS e deixa o veículo pronto para entrega."
+                onClick={() => void mudar({ acao: "concluir" })}
+              >
+                <CheckCheck size={16} aria-hidden="true" />
+                {movimento.isPending ? "Salvando…" : "Concluir serviço"}
+              </button>
+            )}
+            {(["voltar", "avancar"] as const)
+              .filter((d) => !(conferencia && d === "avancar"))
+              .map((direcao) => {
+                const destino = destinoNoMapa(veiculo.situacao, direcao);
+                const texto =
+                  direcao === "voltar"
+                    ? "Voltar"
+                    : destino === "delivered"
+                      ? "Entregar"
+                      : "Avançar";
+                const descricao = destino
+                  ? `${texto} OS ${veiculo.id} para ${situacoesOS[destino]}`
+                  : "Primeira etapa";
+                return (
+                  <button
+                    key={direcao}
+                    className={direcao === "avancar" ? "mapa-avancar" : undefined}
+                    disabled={movimento.isPending || !destino}
+                    title={
+                      destino === "delivered"
+                        ? "Registrar entrega e finalizar a OS, com baixa de estoque e atualização do financeiro."
+                        : descricao
+                    }
+                    aria-label={descricao}
+                    onClick={() => void mudar(direcao)}
+                  >
+                    {direcao === "voltar" && <ArrowLeft size={16} aria-hidden="true" />}
+                    {movimento.isPending && movimento.variables?.acao === direcao
+                      ? "Salvando…"
+                      : texto}
+                    {direcao === "avancar" && (
+                      <ArrowRight size={16} aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })}
+            {veiculo.situacao !== "ready" && (
+              <button
+                className={`mapa-parar ${conferencia ? "" : "mapa-acao-inteira"}`}
+                disabled={movimento.isPending}
+                aria-label={`Parar serviço da OS ${veiculo.id}`}
+                onClick={() => {
+                  movimento.reset();
+                  setDetalhes("");
+                  setParando(true);
+                }}
+              >
+                <Pause size={16} aria-hidden="true" />
+                Parar serviço
+              </button>
+            )}
+          </>
+        )}
+        {!parando && erro}
+      </div>
+      {conferirPecas && (
+        <PecasNaEntrega
+          osId={veiculo.osId}
+          fechar={() => setConferirPecas(false)}
+          continuar={async (atual) => {
+            if (atual.situacao !== "ready")
+              throw new Error(
+                "A situação da OS mudou. Confira o atendimento antes de entregar.",
+              );
+            await movimento.mutateAsync({ acao: "avancar", revisao: atual.revisao });
+            setConferirPecas(false);
+          }}
+        />
+      )}
+      {parando && (
+        <Dialogo
+          aberto={parando}
+          titulo={`Parar serviço · OS #${veiculo.id}`}
+          classe="mapa-dialogo-parada"
+          fechar={() => {
+            if (!trava.current) setParando(false);
+          }}
+        >
+          <p>Toque no motivo para colocar o serviço em Paradas.</p>
+          <label className="mapa-detalhes-parada">
+            Detalhes (opcional)
+            <textarea
+              value={detalhes}
+              onChange={(e) => setDetalhes(e.target.value)}
+              maxLength={2000}
+              rows={2}
+              disabled={movimento.isPending}
+              placeholder="Ex.: aguardando a chegada do filtro"
+            />
+          </label>
+          <div className="mapa-motivos-parada" aria-busy={movimento.isPending}>
+            {Object.entries(motivosParada).map(([motivo, nome]) => (
+              <button
+                key={motivo}
+                className="botao-secundario"
+                disabled={movimento.isPending}
+                onClick={() => void mudar({ acao: "parar", motivo, detalhes })}
+              >
+                <Pause size={16} aria-hidden="true" />
+                {nome}
+              </button>
+            ))}
+          </div>
+          {movimento.isPending && <p role="status">Registrando parada…</p>}
+          {erro}
+        </Dialogo>
+      )}
+    </>
+  );
+});
+
+const CartaoVeiculo = memo(function CartaoVeiculo({
   veiculo,
   abrir,
 }: {
   veiculo: Veiculo;
-  abrir: () => void;
+  abrir: (veiculo: Veiculo) => void;
 }) {
   return (
-    <button
+    <article
       className={`cartao-veiculo ${veiculo.etapa === "pronto" ? "cartao-pronto" : ""}`}
-      onClick={abrir}
-      aria-label={`Ver ${veiculo.modelo}, placa ${veiculo.placa}, OS ${veiculo.id}`}
+      data-prazo={veiculo.prazoEntrega.tipo}
     >
-      <div className="cartao-topo">
-        <span className="placa">{veiculo.placa}</span>
-        <span className="numero-os">
-          OS #{veiculo.id}
-          <ChevronRight size={14} />
-        </span>
-      </div>
-      <div className="cartao-modelo">
-        <div>
-          <h3>{veiculo.modelo}</h3>
-          <p>{veiculo.versao}</p>
+      <button
+        className="cartao-veiculo-conteudo"
+        onClick={() => abrir(veiculo)}
+        aria-label={`Ver ${veiculo.modelo}, placa ${veiculo.placa}, OS ${veiculo.id}${veiculo.entrada ? `, entrada em ${veiculo.entradaTexto}` : ""}, ${veiculo.prazoEntrega.rotulo}, ${veiculo.prazoEntrega.data}`}
+      >
+        <div className="cartao-modelo">
+          <div>
+            <h3>{veiculo.modelo}</h3>
+            <div className="cartao-topo">
+              {veiculo.placa && veiculo.placa !== "Sem placa" && (
+                <span className="placa">{veiculo.placa}</span>
+              )}
+              <span className="numero-os">
+                OS #{veiculo.id}
+                <ChevronRight size={14} />
+              </span>
+            </div>
+          </div>
+          <IconeTipoServico tipo={veiculo.tipoServico} />
         </div>
-        <CarFront size={29} strokeWidth={1.4} />
-      </div>
-      <p className="cliente-cartao">{veiculo.cliente}</p>
-      <p className="mapa-responsavel">Responsável: {veiculo.tecnico}</p>
-      {!veiculo.presente && (
-        <p className="mapa-responsavel">Entrada ainda não registrada</p>
-      )}
-      <div className="servico-cartao">
-        <Wrench size={13} />
-        <span>{veiculo.servico}</span>
-      </div>
-      {veiculo.motivo && (
-        <div className="motivo-parada">
-          <Clock3 size={13} />
-          {veiculo.motivo}
+        <p className="cliente-cartao">
+          <UserRound size={16} aria-hidden="true" />
+          {veiculo.cliente}
+        </p>
+        <p className="mapa-responsavel">Responsável: {veiculo.tecnico}</p>
+        <EntradaVeiculo veiculo={veiculo} />
+        {veiculo.motivo && (
+          <div className="motivo-parada">
+            <TriangleAlert size={18} aria-hidden="true" />
+            <span>
+              <strong>Pendência para retomar</strong>
+              {veiculo.motivo}
+            </span>
+          </div>
+        )}
+        <div className="cartao-rodape">
+          <IndicadorEntrega prazo={veiculo.prazoEntrega} />
+          <span
+            className={`avatar-tecnico ${veiculo.cor}`}
+            title={`Responsável: ${veiculo.tecnico}`}
+          >
+            {veiculo.iniciais}
+          </span>
         </div>
-      )}
-      {veiculo.etapa === "pronto" && (
-        <div className="servico-concluido">
-          <CheckCheck size={15} /> Serviço concluído
-        </div>
-      )}
-      <div className="cartao-rodape">
-        <span className={`prazo ${veiculo.atrasado ? "prazo-atrasado" : ""}`}>
-          <Clock3 size={13} />
-          {veiculo.atrasado ? "Atrasado · " : ""}
-          {veiculo.prazo}
-        </span>
-        <span
-          className={`avatar-tecnico ${veiculo.cor}`}
-          title={`Responsável: ${veiculo.tecnico}`}
-        >
-          {veiculo.iniciais}
-        </span>
-      </div>
-    </button>
+      </button>
+      <AcoesEtapaMapa veiculo={veiculo} />
+    </article>
   );
-}
+});
+
+const LinhaVeiculo = memo(function LinhaVeiculo({
+  veiculo: v,
+  abrir,
+}: {
+  veiculo: Veiculo;
+  abrir: (veiculo: Veiculo) => void;
+}) {
+  return (
+    <article className="mapa-item-lista">
+      <button
+        onClick={() => abrir(v)}
+        className="linha-veiculo"
+        data-prazo={v.prazoEntrega.tipo}
+      >
+        <span className="icone-veiculo">
+          <IconeTipoServico tipo={v.tipoServico} />
+        </span>
+        <span>
+          <strong>{v.modelo}</strong>
+          <small>
+            OS #{v.id} · {v.cliente}
+          </small>
+          <small>Responsável: {v.tecnico}</small>
+          <EntradaVeiculo veiculo={v} />
+          {v.motivo && <small className="texto-laranja">{v.motivo}</small>}
+        </span>
+        <span className="placa">{v.placa}</span>
+        <span className={`etiqueta-etapa ${v.etapa}`}>
+          {etapas.find((e) => e.id === v.etapa)?.nome}
+        </span>
+        <IndicadorEntrega prazo={v.prazoEntrega} />
+        <ChevronRight size={17} />
+      </button>
+      <AcoesEtapaMapa veiculo={v} />
+    </article>
+  );
+});
 
 export function MapaOficina() {
+  const acesso = useAcesso();
+  const chaveOrdenacao = `patio_mapa_ordenacao_v1:${acesso.demo ? "demo" : acesso.usuario}:${acesso.oficina!.id}`;
+  return <ConteudoMapaOficina key={chaveOrdenacao} chaveOrdenacao={chaveOrdenacao} />;
+}
+
+function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
+  const agora = useAgora();
   const acesso = useAcesso(),
     navegar = useNavigate();
   const consulta = useQuery({
     queryKey: ["mapa-oficina", acesso.demo, acesso.oficina!.id],
-    queryFn: () => consultarMapaOficina(acesso.demo, acesso.oficina!.id),
+    queryFn: ({ signal }) =>
+      consultarMapaOficina(acesso.demo, acesso.oficina!.id, signal),
     refetchInterval: 30000,
     refetchOnWindowFocus: "always",
   });
-  const veiculos = prepararMapa(consulta.data ?? []);
-  const abrirVeiculo = (v: Veiculo) => navegar("/ordens-servico?os=" + v.osId);
+  const veiculos = useMemo(
+    () => prepararMapa(consulta.data ?? [], agora),
+    [consulta.data, agora],
+  );
+  const abrirVeiculo = useCallback(
+    (v: Veiculo) => navegar("/ordens-servico?os=" + v.osId),
+    [navegar],
+  );
   const abrirNovaOS = () => navegar("/ordens-servico?nova=1");
+  const [ordenacoes, setOrdenacoes] = useState(() => lerOrdenacoesMapa(chaveOrdenacao));
+  const mudarOrdenacao = (secao: string, ordem: OrdenacaoMapa) => {
+    const preferencias = { ...ordenacoes, [secao]: ordem };
+    setOrdenacoes(preferencias);
+    salvarOrdenacoesMapa(chaveOrdenacao, preferencias);
+  };
   const [filtro, setFiltro] = useState("todos"),
     [busca, setBusca] = useState(""),
-    [modo, setModo] = useState<"quadro" | "lista">("quadro");
-  const [tecnico, setTecnico] = useState("todos"),
-    [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [etapaCelular, setEtapaCelular] = useState("todas");
-  const atrasados = veiculos.filter((v) => v.atrasado).length;
-  const prontos = veiculos.filter((v) => v.etapa === "pronto").length;
-  const lista = veiculos.filter(
-    (v) =>
-      (filtro === "todos" ||
-        (filtro === "atrasados" && v.atrasado) ||
-        (filtro === "hoje" && v.hoje) ||
-        (filtro === "parados" && !!v.motivo) ||
-        (filtro === "sem-prazo" && v.semPrazo)) &&
-      (tecnico === "todos" || v.tecnico === tecnico) &&
-      (etapaCelular === "todas" || v.etapa === etapaCelular) &&
-      normalizar(
-        `${v.id} ${v.placa} ${v.modelo} ${v.cliente} ${v.motivo} ${v.tecnico}`,
-      ).includes(normalizar(busca)),
+    [modo, setModo] = useState<"quadro" | "lista">(() =>
+      window.matchMedia("(max-width: 700px)").matches ? "lista" : "quadro",
+    );
+  const contagens = useMemo(() => {
+    const presentes = new Set<string>();
+    const totais = {
+      atrasados: 0,
+      prontos: 0,
+      execucao: 0,
+      hoje: 0,
+      parados: 0,
+      semPrazo: 0,
+    };
+    for (const v of veiculos) {
+      if (v.presente) presentes.add(v.veiculoId || v.osId);
+      if (v.atrasado) totais.atrasados++;
+      if (v.etapa === "pronto") totais.prontos++;
+      if (v.etapa === "execucao") totais.execucao++;
+      if (v.hoje) totais.hoje++;
+      if (v.motivo) totais.parados++;
+      if (v.semPrazo) totais.semPrazo++;
+    }
+    return { ...totais, presentes: presentes.size };
+  }, [veiculos]);
+  const { atrasados, prontos } = contagens;
+  const lista = useMemo(
+    () => filtrarVeiculosMapa(veiculos, filtro, busca),
+    [veiculos, filtro, busca],
   );
+  const mapaFiltrado = filtro !== "todos" || busca.trim() !== "";
+  const porEtapa = useMemo(() => {
+    const grupos = new Map<string, Veiculo[]>();
+    for (const v of lista) {
+      const grupo = grupos.get(v.etapa) ?? [];
+      grupo.push(v);
+      grupos.set(v.etapa, grupo);
+    }
+    if (modo === "quadro") {
+      for (const [etapa, grupo] of grupos)
+        grupos.set(etapa, ordenarVeiculosMapa(grupo, ordenacoes[etapa] ?? "entrega"));
+    }
+    return grupos;
+  }, [lista, ordenacoes, modo]);
+  const listaOrdenada = useMemo(
+    () =>
+      modo === "lista" ? ordenarVeiculosMapa(lista, ordenacoes.lista ?? "entrega") : [],
+    [lista, ordenacoes.lista, modo],
+  );
+  const etapasVisiveis = mapaFiltrado
+    ? etapas.filter((etapa) => porEtapa.has(etapa.id))
+    : etapas;
+  const resumos = [
+    {
+      filtro: "presentes",
+      nome: "Veículos na oficina",
+      quantidade: contagens.presentes,
+      icone: CarFront,
+      detalhe: "Com entrada registrada",
+      tom: "neutro",
+    },
+    {
+      filtro: "execucao",
+      nome: "Em execução",
+      quantidade: contagens.execucao,
+      icone: Wrench,
+      detalhe: "Serviços em andamento",
+      tom: "andamento",
+    },
+    {
+      filtro: "atrasados",
+      nome: "Entregas atrasadas",
+      quantidade: atrasados,
+      icone: Timer,
+      detalhe: atrasados ? "Priorize estes atendimentos" : "Nenhuma entrega atrasada",
+      tom: atrasados > 0 ? "urgente" : "neutro",
+    },
+    {
+      filtro: "prontos",
+      nome: "Prontos para entregar",
+      quantidade: prontos,
+      icone: CheckCheck,
+      detalhe: "Aguardando retirada",
+      tom: "concluido",
+    },
+  ];
   return (
-    <div className="mapa-real">
+    <div className={`mapa-real${veiculos.length > 80 ? " mapa-volumoso" : ""}`}>
       <div className="titulo-pagina">
         <div>
           <div className="sobretitulo">
             <span className="linha-verde" /> VISÃO GERAL DA OPERAÇÃO
           </div>
           <h1>
-            Sua oficina, em movimento<span>.</span>
+            Mapa da oficina<span>.</span>
           </h1>
-          <p>Menos tempo procurando. Mais tempo fazendo acontecer.</p>
+          <p>Veja os carros, os prazos e o que precisa de atenção.</p>
         </div>
         <button className="botao-primario" onClick={abrirNovaOS}>
           <Plus size={20} /> Nova ordem de serviço
@@ -144,154 +529,63 @@ export function MapaOficina() {
         </button>
       </div>
       {acesso.demo && (
-        <p className="aviso-cliente">
+        <p className="nota-demo">
           Demonstração · O mapa acompanha as OS cadastradas neste navegador.
         </p>
       )}
-      <div className="mapa-atualizacao">
-        <span>
-          {consulta.isPending
-            ? "Carregando OS…"
-            : consulta.isError
-              ? "Falha ao atualizar"
-              : "Atualização a cada 30 segundos · " +
-                new Date(consulta.dataUpdatedAt).toLocaleTimeString("pt-BR")}
-        </span>
-        <button
-          className="botao-secundario"
-          disabled={consulta.isFetching}
-          onClick={() => void consulta.refetch()}
-        >
-          Atualizar mapa
-        </button>
-      </div>
       {consulta.isError && (
         <p role="alert" className="erro-formulario">
           {erroPublico(consulta.error)}{" "}
           {consulta.data ? "Exibindo a última atualização disponível." : ""}
         </p>
       )}
-      {consulta.isPending && (
-        <p role="status">Buscando veículos e pendências…</p>
-      )}
+      {consulta.isPending && <p role="status">Buscando veículos e pendências…</p>}
       {consulta.data && (
         <>
-          <section className="indicadores" aria-label="Resumo da oficina">
-            <div className="indicador indicador-destaque">
-              <div className="indicador-topo">
-                <span>Veículos na oficina</span>
-                <CarFront size={20} />
-              </div>
-              <div className="indicador-valor">
-                {String(
-                  new Set(
-                    veiculos.filter((v) => v.presente).map((v) => v.veiculoId),
-                  ).size,
-                ).padStart(2, "0")}
-                <span className="mini-barras" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
-              <div className="indicador-rodape">
-                <span className="ponto-status" /> Seu pátio, em uma só visão
-              </div>
-            </div>
-            <div className="indicador">
-              <div className="indicador-topo">
-                <span>Em execução</span>
-                <span className="icone-suave azul">
-                  <Wrench size={18} />
-                </span>
-              </div>
-              <div className="indicador-valor">
-                {String(
-                  veiculos.filter((v) => v.etapa === "execucao").length,
-                ).padStart(2, "0")}
-                <small>serviços em andamento</small>
-              </div>
-              <div className="indicador-rodape">
-                <span className="ponto-azul" /> A equipe está a todo vapor
-              </div>
-            </div>
-            <button
-              className={`indicador indicador-interativo ${filtro === "atrasados" ? "selecionado" : ""}`}
-              onClick={() =>
-                setFiltro(filtro === "atrasados" ? "todos" : "atrasados")
-              }
-              aria-pressed={filtro === "atrasados"}
-            >
-              <div className="indicador-topo">
-                <span>Precisam de atenção</span>
-                <span className="icone-suave laranja">
-                  <Timer size={19} />
-                </span>
-              </div>
-              <div className="indicador-valor">
-                {String(atrasados).padStart(2, "0")}
-                <small>com prazo vencido</small>
-              </div>
-              <div className="indicador-rodape texto-laranja">
-                Ver pendências
-                <ArrowRight size={15} />
-              </div>
-            </button>
-            <div className="indicador">
-              <div className="indicador-topo">
-                <span>Prontos para entregar</span>
-                <span className="icone-suave verde">
-                  <CheckCheck size={20} />
-                </span>
-              </div>
-              <div className="indicador-valor">
-                {String(prontos).padStart(2, "0")}
-                <small>
-                  {prontos === 1 ? "cliente vai sorrir" : "clientes vão sorrir"}
-                </small>
-              </div>
-              <div className="indicador-rodape">
-                <span className="ponto-verde" /> Tudo conferido. Bora entregar!
-              </div>
-            </div>
-          </section>
-          <section className="secao-mapa" aria-labelledby="titulo-mapa">
-            <div className="mapa-titulo">
-              <div className="flex items-center gap-3">
-                <h2 id="titulo-mapa">Mapa da oficina</h2>
-                <span className="contagem-total">
-                  {lista.length} de {veiculos.length} OS
-                </span>
-              </div>
-              <div
-                className="modos-visualizacao"
-                aria-label="Visualização do mapa"
+          <section className="mapa-visao-rapida" aria-label="Resumo da oficina">
+            {resumos.map((item) => (
+              <button
+                key={item.filtro}
+                type="button"
+                className="mapa-resumo-acao"
+                data-tom={item.tom}
+                aria-pressed={filtro === item.filtro}
+                onClick={() =>
+                  setFiltro(filtro === item.filtro ? "todos" : item.filtro)
+                }
               >
-                <button
-                  aria-label="Visualizar em quadro"
-                  onClick={() => setModo("quadro")}
-                  className={modo === "quadro" ? "ativo" : ""}
-                  aria-pressed={modo === "quadro"}
-                >
-                  <LayoutGrid size={15} />
-                  <span>Quadro</span>
-                </button>
-                <button
-                  aria-label="Visualizar em lista"
-                  onClick={() => setModo("lista")}
-                  className={modo === "lista" ? "ativo" : ""}
-                  aria-pressed={modo === "lista"}
-                >
-                  <List size={17} />
-                  <span>Lista</span>
-                </button>
-              </div>
+                <span className="mapa-resumo-icone">
+                  <item.icone size={22} aria-hidden="true" />
+                </span>
+                <span className="mapa-resumo-rotulo">{item.nome}</span>
+                <strong>{String(item.quantidade).padStart(2, "0")}</strong>
+                <span className="mapa-resumo-ajuda">{item.detalhe}</span>
+                <ArrowUpRight
+                  size={15}
+                  className="mapa-resumo-seta"
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+          </section>
+          {resumos.some((item) => item.filtro === filtro) && (
+            <div className="mapa-recorte" role="status">
+              <span>
+                <strong>{resumos.find((item) => item.filtro === filtro)?.nome}</strong>{" "}
+                · {lista.length} OS{busca ? " nesta busca" : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setFiltro("todos");
+                  setBusca("");
+                }}
+              >
+                Ver todas as OS
+              </button>
             </div>
+          )}
+          <section className="secao-mapa" aria-label="Veículos da oficina">
             <div className="barra-mapa">
               <div className="abas-filtro" aria-label="Filtrar veículos">
                 {[
@@ -303,20 +597,18 @@ export function MapaOficina() {
                   {
                     id: "hoje",
                     nome: "Entrega hoje",
-                    quantidade: veiculos.filter((v) =>
-                      v.prazo.startsWith("Hoje"),
-                    ).length,
+                    quantidade: contagens.hoje,
                   },
                   { id: "atrasados", nome: "Atrasadas", quantidade: atrasados },
                   {
                     id: "parados",
                     nome: "Paradas",
-                    quantidade: veiculos.filter((v) => v.motivo).length,
+                    quantidade: contagens.parados,
                   },
                   {
                     id: "sem-prazo",
-                    nome: "Sem previsão",
-                    quantidade: veiculos.filter((v) => v.semPrazo).length,
+                    nome: "Sem data",
+                    quantidade: contagens.semPrazo,
                   },
                 ].map((item) => (
                   <button
@@ -340,73 +632,38 @@ export function MapaOficina() {
                     onChange={(e) => setBusca(e.target.value)}
                   />
                   {busca && (
-                    <button
-                      onClick={() => setBusca("")}
-                      aria-label="Limpar busca"
-                    >
+                    <button onClick={() => setBusca("")} aria-label="Limpar busca">
                       ×
                     </button>
                   )}
                 </label>
-                <button
-                  className={`botao-filtro ${mostrarFiltros ? "ativo" : ""}`}
-                  onClick={() => setMostrarFiltros(!mostrarFiltros)}
-                  aria-expanded={mostrarFiltros}
-                  aria-label="Filtrar por responsável"
+                <div
+                  className="modos-visualizacao"
+                  role="group"
+                  aria-label="Visualização do mapa"
                 >
-                  <SlidersHorizontal size={17} />
-                  <span>Filtros</span>
-                </button>
+                  <button
+                    aria-label="Visualizar em quadro"
+                    onClick={() => setModo("quadro")}
+                    className={modo === "quadro" ? "ativo" : ""}
+                    aria-pressed={modo === "quadro"}
+                  >
+                    <LayoutGrid size={15} aria-hidden="true" />
+                    <span>Quadro</span>
+                  </button>
+                  <button
+                    aria-label="Visualizar em lista"
+                    onClick={() => setModo("lista")}
+                    className={modo === "lista" ? "ativo" : ""}
+                    aria-pressed={modo === "lista"}
+                  >
+                    <List size={17} aria-hidden="true" />
+                    <span>Lista</span>
+                  </button>
+                </div>
               </div>
             </div>
-            {mostrarFiltros && (
-              <div className="filtro-expandido">
-                <label htmlFor="tecnico">Responsável</label>
-                <select
-                  id="tecnico"
-                  value={tecnico}
-                  onChange={(e) => setTecnico(e.target.value)}
-                >
-                  <option value="todos">Toda a equipe</option>
-                  {[...new Set(veiculos.map((v) => v.tecnico))].map((t) => (
-                    <option key={t}>{t}</option>
-                  ))}
-                </select>
-                <button
-                  className="link-texto"
-                  onClick={() => {
-                    setTecnico("todos");
-                    setEtapaCelular("todas");
-                    setBusca("");
-                    setFiltro("todos");
-                  }}
-                >
-                  Limpar filtros
-                </button>
-              </div>
-            )}
-            <div
-              className="etapas-celular etapas-mapa-real"
-              aria-label="Etapa do serviço"
-            >
-              <button
-                className={etapaCelular === "todas" ? "ativo" : ""}
-                aria-pressed={etapaCelular === "todas"}
-                onClick={() => setEtapaCelular("todas")}
-              >
-                Todas
-              </button>
-              {etapas.map((e) => (
-                <button
-                  key={e.id}
-                  className={etapaCelular === e.id ? "ativo" : ""}
-                  aria-pressed={etapaCelular === e.id}
-                  onClick={() => setEtapaCelular(e.id)}
-                >
-                  {e.nome}
-                </button>
-              ))}
-            </div>
+            <LegendaEntrega />
             {lista.length === 0 ? (
               <div className="estado-vazio">
                 <Search size={30} />
@@ -425,115 +682,77 @@ export function MapaOficina() {
                   onClick={() => {
                     setBusca("");
                     setFiltro("todos");
-                    setTecnico("todos");
-                    setEtapaCelular("todas");
                   }}
                 >
                   Limpar busca e filtros
                 </button>
               </div>
             ) : modo === "quadro" ? (
-              <div className="quadro">
-                {etapas
-                  .filter(
-                    (e) => etapaCelular === "todas" || e.id === etapaCelular,
-                  )
-                  .map((etapa) => (
-                    <section
-                      key={etapa.id}
-                      className={`coluna-etapa ${etapa.id} ${etapaCelular !== "todas" && etapaCelular !== etapa.id ? "ocultar-celular" : ""}`}
-                      aria-label={etapa.nome}
-                    >
-                      <div className="coluna-cabecalho">
-                        <div>
-                          <span className="ponto-etapa" />
-                          <h3>{etapa.nome}</h3>
-                          <span className="quantidade-etapa">
-                            {lista.filter((v) => v.etapa === etapa.id).length}
-                          </span>
+              <div className={mapaFiltrado ? "quadro quadro-filtrado" : "quadro"}>
+                {etapasVisiveis.map((etapa) => (
+                  <section
+                    key={etapa.id}
+                    className={`coluna-etapa ${etapa.id}`}
+                    aria-label={etapa.nome}
+                  >
+                    <div className="coluna-cabecalho">
+                      <div>
+                        <span className="mapa-icone-etapa" aria-hidden="true">
+                          {etapa.id === "recepcao" ? (
+                            <ClipboardList size={21} />
+                          ) : etapa.id === "aguardando" ? (
+                            <Pause size={21} />
+                          ) : etapa.id === "execucao" ? (
+                            <Wrench size={21} />
+                          ) : etapa.id === "conferencia" ? (
+                            <ClipboardCheck size={21} />
+                          ) : (
+                            <CheckCheck size={21} />
+                          )}
+                        </span>
+                        <h3>{etapa.nome}</h3>
+                        <span className="quantidade-etapa">
+                          {porEtapa.get(etapa.id)?.length ?? 0}
+                        </span>
+                        <OrdenarMapa
+                          secao={etapa.nome}
+                          valor={ordenacoes[etapa.id] ?? "entrega"}
+                          mudar={(ordem) => mudarOrdenacao(etapa.id, ordem)}
+                        />
+                      </div>
+                      <p>{etapa.descricao}</p>
+                    </div>
+                    <div className="coluna-cartoes">
+                      {(porEtapa.get(etapa.id) ?? []).map((v) => (
+                        <CartaoVeiculo key={v.osId} veiculo={v} abrir={abrirVeiculo} />
+                      ))}
+                      {!porEtapa.has(etapa.id) && (
+                        <div className="etapa-vazia">
+                          <CheckCheck size={22} />
+                          <p>Nenhum veículo nesta etapa.</p>
                         </div>
-                        <p>{etapa.descricao}</p>
-                      </div>
-                      <div className="coluna-cartoes">
-                        {lista
-                          .filter((v) => v.etapa === etapa.id)
-                          .map((v) => (
-                            <CartaoVeiculo
-                              key={v.id}
-                              veiculo={v}
-                              abrir={() => abrirVeiculo(v)}
-                            />
-                          ))}
-                        {!lista.some((v) => v.etapa === etapa.id) && (
-                          <div className="etapa-vazia">
-                            <CheckCheck size={22} />
-                            <p>Nenhum veículo nesta etapa.</p>
-                          </div>
-                        )}
-                      </div>
-                    </section>
-                  ))}
+                      )}
+                    </div>
+                  </section>
+                ))}
               </div>
             ) : (
-              <div className="lista-veiculos">
-                {lista
-                  .filter(
-                    (v) => etapaCelular === "todas" || v.etapa === etapaCelular,
-                  )
-                  .map((v) => (
-                    <button
-                      key={v.id}
-                      onClick={() => abrirVeiculo(v)}
-                      className="linha-veiculo"
-                    >
-                      <span className="icone-veiculo">
-                        <CarFront size={23} />
-                      </span>
-                      <span>
-                        <strong>{v.modelo}</strong>
-                        <small>
-                          OS #{v.id} · {v.cliente}
-                        </small>
-                        <small>Responsável: {v.tecnico}</small>
-                        {v.motivo && (
-                          <small className="texto-laranja">{v.motivo}</small>
-                        )}
-                      </span>
-                      <span className="placa">{v.placa}</span>
-                      <span className={`etiqueta-etapa ${v.etapa}`}>
-                        {etapas.find((e) => e.id === v.etapa)?.nome}
-                      </span>
-                      <span className={v.atrasado ? "texto-laranja" : ""}>
-                        {v.prazo}
-                      </span>
-                      <ChevronRight size={17} />
-                    </button>
+              <>
+                <div className="mapa-ordenacao-lista">
+                  <OrdenarMapa
+                    secao="lista de veículos"
+                    valor={ordenacoes.lista ?? "entrega"}
+                    mudar={(ordem) => mudarOrdenacao("lista", ordem)}
+                  />
+                </div>
+                <div className="lista-veiculos">
+                  {listaOrdenada.map((v) => (
+                    <LinhaVeiculo key={v.osId} veiculo={v} abrir={abrirVeiculo} />
                   ))}
-              </div>
+                </div>
+              </>
             )}
           </section>
-          <p className="mapa-nota">
-            OS com paradas abertas ficam em Paradas, preservando a situação no
-            cartão. Clique no veículo para atualizar o atendimento. Prazos no
-            horário de São Paulo.
-          </p>
-          <div className="faixa-dia">
-            <div className="faixa-dia-icone">
-              <CalendarDays size={22} />
-            </div>
-            <div>
-              <strong>Uma oficina organizada entrega mais.</strong>
-              <p>
-                Confira prazos, resolva pendências e mantenha seu cliente por
-                perto.
-              </p>
-            </div>
-            <Link to="/ordens-servico">
-              Ver todos os serviços
-              <ArrowUpRight size={17} />
-            </Link>
-            <MapPin className="decoracao-faixa" size={90} strokeWidth={0.7} />
-          </div>
         </>
       )}
     </div>

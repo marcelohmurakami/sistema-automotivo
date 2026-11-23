@@ -1,0 +1,1382 @@
+[
+  {
+    "id": "C3.01",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Buscar clientes",
+    "status": "Presente",
+    "delivery": "Localiza clientes cadastrados e permite consultar o histórico relacionado.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.02",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Reaproveitar dados anteriores",
+    "status": "Presente",
+    "delivery": "Reutiliza cliente e veículo ou equipamento em novos atendimentos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.03",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Orçamento com catálogo",
+    "status": "Presente",
+    "delivery": "Seleciona serviços e produtos previamente cadastrados, com seus valores.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.04",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Itens avulsos",
+    "status": "Presente",
+    "delivery": "Inclui serviço ou peça sem exigir cadastro prévio no catálogo.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.05",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Quantidade e preço",
+    "status": "Presente",
+    "delivery": "Permite ajustar quantidade e preço dos itens, respeitando o tipo de unidade.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.06",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Orçamento para OS",
+    "status": "Presente",
+    "delivery": "Reaproveita os dados na conversão automotiva ou na continuidade do atendimento nos demais ramos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C3.07",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Aprovação parcial do orçamento",
+    "status": "Parcial",
+    "delivery": "No automotivo, permite aprovação por grupos e dependências.",
+    "gap": "Completar a equivalência da aprovação parcial nos demais ramos.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C3.08",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Aprovação remota",
+    "status": "Parcial",
+    "delivery": "Automotivo oferece proposta por link. Demais atendimentos têm aprovação pelo portal autenticado.",
+    "gap": "Simplificar o acesso nos demais ramos, mantendo identificação, versão e registro da autorização.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C3.09",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Quem aprovou e qual versão",
+    "status": "Presente",
+    "delivery": "Registra aprovações e controla revisões nas operações implementadas.",
+    "gap": "Os detalhes e a experiência variam entre os fluxos. Não apresentar como assinatura certificada universal.",
+    "nature": ""
+  },
+  {
+    "id": "C3.10",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Taxa de diagnóstico com abatimento",
+    "status": "Parcial",
+    "delivery": "Valores e descontos podem ser lançados manualmente.",
+    "gap": "Criar política de cobrança do diagnóstico e abatimento ao aprovar, com registro e comprovação.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C3.11",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Campos opcionais separados",
+    "status": "Presente",
+    "delivery": "Organiza informações complementares em blocos opcionais recolhidos.",
+    "gap": "A facilidade para iniciantes ainda precisa ser medida com usuários.",
+    "nature": ""
+  },
+  {
+    "id": "C3.12",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Documento de orçamento",
+    "status": "Presente",
+    "delivery": "Gera documento com identificação, itens, valores e dados do atendimento.",
+    "gap": "Documento de atendimento não equivale a nota fiscal.",
+    "nature": ""
+  },
+  {
+    "id": "C3.13",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Comprovação completa da autorização",
+    "status": "Parcial",
+    "delivery": "Há registros de aprovação e revisão.",
+    "gap": "Padronizar a prova de manifestação do cliente; aprovação interna não comprova sozinha a autorização externa.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C3.14",
+    "chapter": 3,
+    "topic": "Atendimento e orçamento",
+    "feature": "Localização física de aparelhos e peças",
+    "status": "Parcial",
+    "delivery": "A OS identifica o atendimento e o equipamento.",
+    "gap": "Integrar etiqueta, leitura e localização de aparelho, acessórios, chaves e peças.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.01",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Etapas dos serviços",
+    "status": "Presente",
+    "delivery": "Mostra a situação dos atendimentos em painéis e listagens.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.02",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Paradas e motivos",
+    "status": "Presente",
+    "delivery": "Registra pausas por aprovação, peças e outras pendências.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.03",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Ações rápidas",
+    "status": "Presente",
+    "delivery": "Permite avançar ou interromper o serviço pelo painel.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.04",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Pronto versus entregue",
+    "status": "Presente",
+    "delivery": "Distingue a conclusão do trabalho da entrega ou retirada.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.05",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Recebimento na retirada",
+    "status": "Presente",
+    "delivery": "Abre o fluxo de pagamento e permite manter saldo pendente.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.06",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Prazos e atrasos",
+    "status": "Presente",
+    "delivery": "Destaca datas, prazos e atrasos nos atendimentos e relatórios.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.07",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Agenda e conflitos",
+    "status": "Presente",
+    "delivery": "Oferece agenda e validações de sobreposição de horários.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C4.08",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Deslocamento de visitas",
+    "status": "Parcial",
+    "delivery": "Permite informar duração de deslocamento.",
+    "gap": "Calcular trajetos entre visitas e incorporar a logística completa ao planejamento.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.09",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Roteirização geográfica",
+    "status": "Ausente",
+    "delivery": "Não foi identificada implementação de otimização de rotas.",
+    "gap": "Planejar visitas por região, distância e trajeto.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C4.10",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Alocação automática de técnicos",
+    "status": "Ausente",
+    "delivery": "Não foi identificada seleção automática do profissional adequado.",
+    "gap": "Combinar habilidade, certificação, disponibilidade, distância e materiais.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.11",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Reserva de técnico, box e equipamento",
+    "status": "Parcial",
+    "delivery": "Há responsáveis, agenda e capacidade básica.",
+    "gap": "Reservar e validar recursos simultaneamente, considerando indisponibilidades.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.12",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Horas efetivamente trabalhadas",
+    "status": "Presente",
+    "delivery": "Registra horas por apontamento.",
+    "gap": "O indicador depende de iniciar e encerrar os apontamentos corretamente.",
+    "nature": ""
+  },
+  {
+    "id": "C4.13",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Visitas recorrentes",
+    "status": "Parcial",
+    "delivery": "Há repetição e programação de visitas, especialmente na limpeza.",
+    "gap": "Completar recorrência por calendário, exceções, feriados e regras de contrato.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.14",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Contratos preventivos completos",
+    "status": "Parcial",
+    "delivery": "Registra referências de contrato e próximas visitas.",
+    "gap": "Controlar cobertura, franquia, reajuste, excedentes, vigência e faturamento contratual.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C4.15",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Execução integral sem internet",
+    "status": "Parcial",
+    "delivery": "Existe rascunho offline para entrada automotiva.",
+    "gap": "Ampliar para visitas, fotos, execução e sincronização nos demais ramos.",
+    "nature": "Desenvolvimento e validação"
+  },
+  {
+    "id": "C4.16",
+    "chapter": 4,
+    "topic": "Execução e agenda",
+    "feature": "Calendários externos",
+    "status": "Ausente",
+    "delivery": "Não foi identificada sincronização com Google Calendar ou Outlook.",
+    "gap": "Implementar integração e tratamento de conflitos de sincronização.",
+    "nature": "Integração"
+  },
+  {
+    "id": "C5.01",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Vendido versus recebido",
+    "status": "Presente",
+    "delivery": "Distingue valor dos atendimentos de contas e movimentações financeiras.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.02",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Contas a pagar e a receber",
+    "status": "Presente",
+    "delivery": "Controla valores, vencimentos, pagamentos e saldos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.03",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Pagamento parcial",
+    "status": "Presente",
+    "delivery": "Registra recebimentos parciais e preserva o saldo em aberto.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.04",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Parcelamento",
+    "status": "Presente",
+    "delivery": "Permite contas parceladas com vencimentos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.05",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Despesas recorrentes",
+    "status": "Presente",
+    "delivery": "Registra recorrência financeira e trata valores variáveis.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.06",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Inadimplência",
+    "status": "Presente",
+    "delivery": "Mostra contas vencidas, saldos e ranking de devedores.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.07",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Conta do cliente com seleção de OS",
+    "status": "Presente",
+    "delivery": "Gera documento da conta escolhendo os atendimentos incluídos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C5.08",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Custo dos serviços",
+    "status": "Parcial",
+    "delivery": "Soma custos informados de itens, trabalho e outros componentes registrados.",
+    "gap": "Melhorar captura e conferência dos custos; valores não informados não são descobertos automaticamente.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C5.09",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Margem por serviço e cliente",
+    "status": "Parcial",
+    "delivery": "Calcula margem com base nos custos cadastrados.",
+    "gap": "Explicitar custos faltantes e completar critérios de apropriação quando necessário.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C5.10",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Lucro líquido completo",
+    "status": "Parcial",
+    "delivery": "Oferece resultado gerencial e despesas gerais.",
+    "gap": "Completar apuração e integração contábil antes de prometer fechamento contábil integral.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C5.11",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Formação automática de preço",
+    "status": "Parcial",
+    "delivery": "Disponibiliza preços, custos e indicadores.",
+    "gap": "Criar cálculo guiado com custo, capacidade, impostos aplicáveis e margem desejada.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C5.12",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Custo real da hora produtiva",
+    "status": "Parcial",
+    "delivery": "Usa custo-hora informado e horas apontadas.",
+    "gap": "Incorporar encargos, ociosidade e despesas indiretas ao cálculo da hora.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C5.13",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Orçado versus final",
+    "status": "Presente",
+    "delivery": "Compara dados comerciais e valores, com maior profundidade no automotivo.",
+    "gap": "Demonstrar o fluxo do ramo vendido; não prometer equivalência integral entre módulos.",
+    "nature": ""
+  },
+  {
+    "id": "C5.14",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Serviços e peças que mais rendem",
+    "status": "Presente",
+    "delivery": "Exibe rankings de receita e margem.",
+    "gap": "Margem depende dos custos registrados.",
+    "nature": ""
+  },
+  {
+    "id": "C5.15",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Múltiplas contas bancárias",
+    "status": "Parcial",
+    "delivery": "Controla os agrupamentos caixa e banco.",
+    "gap": "Criar contas bancárias individuais, saldos e transferências entre elas.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C5.16",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Conciliação bancária automática",
+    "status": "Ausente",
+    "delivery": "Não foi identificada conciliação por extrato ou Open Finance.",
+    "gap": "Importar extratos ou conectar bancos e conciliar lançamentos.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C5.17",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Pix com confirmação integrada",
+    "status": "Externo",
+    "delivery": "Há implementação com Mercado Pago.",
+    "gap": "Configurar credenciais e validar cobrança, confirmação e operação real por empresa.",
+    "nature": "Ativação externa e validação"
+  },
+  {
+    "id": "C5.18",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Boleto e integração com maquininhas",
+    "status": "Ausente",
+    "delivery": "É possível registrar formas de pagamento, sem fluxo completo de emissão ou conciliação.",
+    "gap": "Integrar emissão de boletos, adquirentes e confirmação dos recebimentos.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C5.19",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Emissão fiscal",
+    "status": "Ausente",
+    "delivery": "Não foi identificada emissão fiscal integrada.",
+    "gap": "Implementar emissão adequada de NFS-e/NF-e e suas operações, conforme o escopo comercial.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C5.20",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Importação de XML de compra",
+    "status": "Presente",
+    "delivery": "Lê XML de NF-e para auxiliar a entrada da compra.",
+    "gap": "Importação não equivale a emissão fiscal nem a verificação completa na SEFAZ.",
+    "nature": ""
+  },
+  {
+    "id": "C5.21",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Integração com contador",
+    "status": "Ausente",
+    "delivery": "Não foi identificada integração contábil pronta.",
+    "gap": "Criar exportação ou integração contábil compatível com o processo do cliente.",
+    "nature": "Integração"
+  },
+  {
+    "id": "C5.22",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Mensalidades de contratos dos clientes",
+    "status": "Parcial",
+    "delivery": "Contas recorrentes ajudam no registro financeiro.",
+    "gap": "Ligar cobrança a contrato, vigência, reajuste, franquia e serviços excedentes.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C5.23",
+    "chapter": 5,
+    "topic": "Financeiro e cobrança",
+    "feature": "Assinatura do nosso software",
+    "status": "Externo",
+    "delivery": "Há integração para cobrança da assinatura do SaaS.",
+    "gap": "Configurar e validar o ambiente comercial de assinaturas. É distinto da cobrança dos serviços do cliente.",
+    "nature": "Ativação externa e validação"
+  },
+  {
+    "id": "C6.01",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Saldo de estoque",
+    "status": "Presente",
+    "delivery": "Controla produtos, movimentações e saldo.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.02",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Estoque zerado e abaixo do mínimo",
+    "status": "Presente",
+    "delivery": "Destaca itens que precisam de atenção.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.03",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Custo médio de compra",
+    "status": "Presente",
+    "delivery": "Atualiza o custo médio a partir das entradas de compra.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.04",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Consumo vinculado ao serviço",
+    "status": "Presente",
+    "delivery": "Relaciona itens consumidos ao atendimento e ao estoque.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.05",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Proteção contra consumo duplicado",
+    "status": "Presente",
+    "delivery": "Usa controles transacionais para evitar repetir movimentações em operações críticas.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.06",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Peça própria ou do cliente",
+    "status": "Presente",
+    "delivery": "Diferencia origem e tratamento de custo do item.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.07",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Reserva de estoque para OS",
+    "status": "Parcial",
+    "delivery": "Calcula quantidades comprometidas e disponíveis nos relatórios.",
+    "gap": "Completar reserva transacional, liberação e prevenção de conflitos em todos os fluxos.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.08",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Estoque parado",
+    "status": "Presente",
+    "delivery": "Identifica itens sem movimentação, com maior detalhamento no automotivo.",
+    "gap": "Confirmar o conjunto de indicadores disponível no ramo apresentado.",
+    "nature": ""
+  },
+  {
+    "id": "C6.09",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Compra integrada a estoque e contas",
+    "status": "Presente",
+    "delivery": "Relaciona fornecedor, itens, estoque e financeiro.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C6.10",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Pedidos com entregas parciais",
+    "status": "Parcial",
+    "delivery": "Registra compras e recebimentos nos fluxos existentes.",
+    "gap": "Completar pedido, múltiplas entregas, saldo pendente e reposições.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.11",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Cotação com vários fornecedores",
+    "status": "Ausente",
+    "delivery": "Não foi identificada rodada estruturada de cotações.",
+    "gap": "Comparar propostas, preços, prazos e condições, com escolha e histórico.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.12",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Sugestão automática de compra",
+    "status": "Parcial",
+    "delivery": "Estoque mínimo indica necessidade de atenção.",
+    "gap": "Calcular reposição com consumo, prazo do fornecedor e estoque de segurança.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.13",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Estoque por série ou IMEI",
+    "status": "Ausente",
+    "delivery": "Série/IMEI do equipamento atendido não constitui estoque serializado.",
+    "gap": "Rastrear cada unidade desde a entrada até venda, instalação e garantia.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.14",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Estoque por lote e validade",
+    "status": "Parcial",
+    "delivery": "Algumas fichas registram lote como informação.",
+    "gap": "Criar saldo, consumo e rastreabilidade por lote e vencimento.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.15",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Etiquetas e código de barras",
+    "status": "Ausente",
+    "delivery": "Não foi identificado fluxo completo de impressão e leitura.",
+    "gap": "Implementar etiquetas de produtos/equipamentos e leitura integrada às operações.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.16",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Estoque por depósito e veículo",
+    "status": "Ausente",
+    "delivery": "Não foi identificado controle completo por múltiplos locais.",
+    "gap": "Separar saldos e transferir materiais entre loja, depósito e veículo do técnico.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.17",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Devolução e crédito do fornecedor",
+    "status": "Parcial",
+    "delivery": "Há ajustes e registros de estoque.",
+    "gap": "Controlar solicitação, análise, envio, substituição, crédito e encerramento da devolução.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C6.18",
+    "chapter": 6,
+    "topic": "Estoque e compras",
+    "feature": "Catálogos externos de fornecedores",
+    "status": "Ausente",
+    "delivery": "Não foi identificada consulta integrada a distribuidores.",
+    "gap": "Integrar aplicações, preços e disponibilidade de peças.",
+    "nature": "Integração"
+  },
+  {
+    "id": "C7.01",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Fotos de entrada e saída",
+    "status": "Presente",
+    "delivery": "Registra imagens e observações do estado inicial e resultado.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.02",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Testes antes e depois",
+    "status": "Presente",
+    "delivery": "Oferece fichas e verificações específicas por especialidade.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.03",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Retorno em garantia",
+    "status": "Presente",
+    "delivery": "Registra ocorrências relacionadas ao atendimento.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.04",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Motivo e custo de retrabalho",
+    "status": "Presente",
+    "delivery": "Registra motivo, solução, horas e custos de qualidade.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.05",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Vínculo com serviço e funcionário",
+    "status": "Presente",
+    "delivery": "Relaciona ocorrências aos atendimentos e responsáveis registrados.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.06",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Determinação automática da causa",
+    "status": "Ausente",
+    "delivery": "O sistema registra a atribuição informada, sem comprovar tecnicamente a causa.",
+    "gap": "Não prometer culpa automática. Pode evoluir para análise orientada de causa com evidências.",
+    "nature": "Análise especializada"
+  },
+  {
+    "id": "C7.07",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Tempo para resolver reclamação",
+    "status": "Presente",
+    "delivery": "Usa datas e situação das ocorrências para acompanhar resolução.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.08",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Garantia com fabricante",
+    "status": "Parcial",
+    "delivery": "Registra referência e tipo de garantia.",
+    "gap": "Completar solicitação, autorização, peças, comprovação e ressarcimento do fabricante.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C7.09",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Satisfação de todos os clientes",
+    "status": "Parcial",
+    "delivery": "Mostra avaliações registradas em ocorrências.",
+    "gap": "Coletar avaliações de uma população definida e mostrar cobertura; não chamar a média atual de satisfação geral.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C7.10",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Pesquisa automática pós-atendimento",
+    "status": "Ausente",
+    "delivery": "Não foi identificada rotina universal de pesquisa após cada serviço.",
+    "gap": "Criar convite, resposta, acompanhamento e tratamento de insatisfação.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C7.11",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Aceite de manutenção e limpeza",
+    "status": "Presente",
+    "delivery": "Registra aceite, ressalvas, recusa e histórico.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C7.12",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Assinatura eletrônica especializada",
+    "status": "Parcial",
+    "delivery": "Existem registros de confirmação e aceite.",
+    "gap": "Integrar processo especializado quando o comprador exigir esse tipo de assinatura.",
+    "nature": "Integração"
+  },
+  {
+    "id": "C7.13",
+    "chapter": 7,
+    "topic": "Qualidade e garantia",
+    "feature": "Custódia de itens não retirados",
+    "status": "Parcial",
+    "delivery": "Há estados e acompanhamento de serviços prontos.",
+    "gap": "Completar notificações, documentos e histórico de custódia e retirada.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C8.01",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Funcionário sem login",
+    "status": "Presente",
+    "delivery": "Cadastra o funcionário sem criar acesso ao sistema.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C8.02",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Dados de contratação e salário",
+    "status": "Presente",
+    "delivery": "Registra admissão, salário, função e contato na ficha.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C8.03",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Férias, ausências e recados",
+    "status": "Presente",
+    "delivery": "Guarda registros administrativos do funcionário.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C8.04",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Vales e empréstimos",
+    "status": "Presente",
+    "delivery": "Registra valores e acompanha seus lançamentos.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C8.05",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Comissões",
+    "status": "Presente",
+    "delivery": "Calcula e acompanha comissões nos fluxos implementados.",
+    "gap": "Depende das regras e percentuais cadastrados.",
+    "nature": ""
+  },
+  {
+    "id": "C8.06",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Horas por atendimento",
+    "status": "Presente",
+    "delivery": "Registra apontamentos de trabalho associados ao serviço.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C8.07",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Faturamento por funcionário",
+    "status": "Parcial",
+    "delivery": "Nos não automotivos, rateia a receita entre participantes do atendimento.",
+    "gap": "Criar atribuição por serviço, participação ou outro critério explícito quando necessário.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C8.08",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Contribuição individual exata",
+    "status": "Parcial",
+    "delivery": "Disponibiliza rateio, horas e registros relacionados.",
+    "gap": "Relacionar efetivamente produção, venda, execução e custo por participante; rateio não comprova contribuição exata.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C8.09",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Produtividade e retrabalho da equipe",
+    "status": "Presente",
+    "delivery": "Combina horas, atendimentos e ocorrências registradas.",
+    "gap": "Depende da qualidade dos apontamentos e da atribuição das ocorrências.",
+    "nature": ""
+  },
+  {
+    "id": "C8.10",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Folha, eSocial e ponto legal",
+    "status": "Ausente",
+    "delivery": "A ficha de funcionário é administrativa.",
+    "gap": "Implementar ou integrar folha e obrigações específicas se fizerem parte da oferta.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C8.11",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Escala automática da equipe",
+    "status": "Ausente",
+    "delivery": "Não foi identificada montagem automática considerando férias e qualificações.",
+    "gap": "Combinar jornada, ausências, competências e demanda.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C8.12",
+    "chapter": 8,
+    "topic": "Equipe e produtividade",
+    "feature": "Validade de treinamentos e aptidões",
+    "status": "Parcial",
+    "delivery": "Registros administrativos podem guardar informações.",
+    "gap": "Criar matriz de aptidões e vencimentos ligada à atribuição dos serviços.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.01",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Vendas e recebimentos no período",
+    "status": "Presente",
+    "delivery": "Apresenta receita dos atendimentos e movimentos financeiros.",
+    "gap": "Conferir a data e o critério usados por cada quadro.",
+    "nature": ""
+  },
+  {
+    "id": "C9.02",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Ranking de devedores",
+    "status": "Presente",
+    "delivery": "Mostra clientes com valores em aberto.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C9.03",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Clientes por faturamento",
+    "status": "Presente",
+    "delivery": "Ordena clientes pela receita registrada.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C9.04",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Clientes por margem",
+    "status": "Parcial",
+    "delivery": "Calcula o resultado a partir dos custos informados.",
+    "gap": "Mostrar completude dos custos e completar a apropriação necessária.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C9.05",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Clientes por custo de garantia",
+    "status": "Presente",
+    "delivery": "Relaciona custos de ocorrências aos clientes.",
+    "gap": "É necessário registrar e vincular corretamente o retrabalho.",
+    "nature": ""
+  },
+  {
+    "id": "C9.06",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Serviços vendidos e rentáveis",
+    "status": "Presente",
+    "delivery": "Apresenta rankings de venda e margem.",
+    "gap": "Rentabilidade depende dos custos registrados.",
+    "nature": ""
+  },
+  {
+    "id": "C9.07",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Tempo até o serviço ficar pronto",
+    "status": "Presente",
+    "delivery": "Calcula o tempo decorrido até a conclusão.",
+    "gap": "Tempo decorrido inclui espera; não equivale a horas produtivas.",
+    "nature": ""
+  },
+  {
+    "id": "C9.08",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Tempo de trabalho versus espera",
+    "status": "Parcial",
+    "delivery": "Há histórico de etapas e apontamentos.",
+    "gap": "Consolidar a separação de espera e trabalho com critérios uniformes.",
+    "nature": "Desenvolvimento e processo"
+  },
+  {
+    "id": "C9.09",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Motivos de parada",
+    "status": "Presente",
+    "delivery": "Analisa os motivos registrados nas pausas.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C9.10",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Ocupação da oficina",
+    "status": "Parcial",
+    "delivery": "Há capacidade informada e indicadores.",
+    "gap": "Aprofundar a ocupação por recurso, capacidade real e disponibilidade.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.11",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Resultado por contrato",
+    "status": "Parcial",
+    "delivery": "Existem dados de atendimentos e custos.",
+    "gap": "Estruturar contratos e apropriar receita, visitas, materiais e despesas por contrato.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.12",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Resolução na primeira visita",
+    "status": "Parcial",
+    "delivery": "Há atendimentos, retornos e ocorrências.",
+    "gap": "Definir e calcular indicador próprio com vínculo entre problema, visita e retorno.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.13",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Custo histórico por equipamento",
+    "status": "Parcial",
+    "delivery": "Existe histórico de atendimentos.",
+    "gap": "Consolidar custos por ativo ao longo de seu ciclo de vida.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.14",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Reparar ou substituir equipamento",
+    "status": "Ausente",
+    "delivery": "Não foi identificada análise dedicada dessa decisão.",
+    "gap": "Comparar custo histórico, falhas, indisponibilidade e custo de substituição.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.15",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Rentabilidade por filial",
+    "status": "Ausente",
+    "delivery": "Acesso a várias empresas não equivale a consolidação de filiais.",
+    "gap": "Consolidar unidades e tratar custos, receitas e transferências entre elas.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C9.16",
+    "chapter": 9,
+    "topic": "Relatórios",
+    "feature": "Completude dos dados de margem",
+    "status": "Parcial",
+    "delivery": "Há avisos sobre custos não registrados.",
+    "gap": "Criar sinalização mais clara de completude e confiança dos dados usados no resultado.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C10.01",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Abrir WhatsApp do cliente",
+    "status": "Presente",
+    "delivery": "Abre a conversa usando o contato cadastrado.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C10.02",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Avisar que o serviço está pronto",
+    "status": "Presente",
+    "delivery": "Prepara a comunicação e abre a conversa por ação do usuário.",
+    "gap": "Não é envio automático universal.",
+    "nature": ""
+  },
+  {
+    "id": "C10.03",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Conversa centralizada na OS",
+    "status": "Ausente",
+    "delivery": "Não foi identificada caixa de entrada bidirecional completa.",
+    "gap": "Integrar mensagens recebidas e enviadas ao histórico do atendimento.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C10.04",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Aprovação automática a partir do WhatsApp",
+    "status": "Ausente",
+    "delivery": "A conversa externa não vira automaticamente prova estruturada.",
+    "gap": "Implementar autorização vinculada à versão, identidade e evidência da mensagem.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C10.05",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Lista de clientes para contatar",
+    "status": "Presente",
+    "delivery": "Identifica acompanhamentos e pendências, com maior profundidade no automotivo.",
+    "gap": "Validar os motivos e a cobertura disponíveis no ramo apresentado.",
+    "nature": ""
+  },
+  {
+    "id": "C10.06",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Recontato de troca de óleo com IA",
+    "status": "Externo",
+    "delivery": "A previsão e o texto padrão usam dados informados; a IA de texto foi preparada.",
+    "gap": "Ativar e validar a IA externamente. Não há leitura automática da quilometragem real.",
+    "nature": "Ativação externa e validação"
+  },
+  {
+    "id": "C10.07",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Lembretes automáticos",
+    "status": "Externo",
+    "delivery": "Há fluxos de automação preparados.",
+    "gap": "Configurar canais, segredos, planos e destinatários e validar os fluxos suportados.",
+    "nature": "Ativação externa e validação"
+  },
+  {
+    "id": "C10.08",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Mini site da empresa",
+    "status": "Presente",
+    "delivery": "Oferece apresentação e conteúdo personalizável conforme o plano.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C10.09",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Portal do cliente",
+    "status": "Presente",
+    "delivery": "Permite consultar serviços e atualizações com acesso controlado.",
+    "gap": "Exige plano e liberação de acesso.",
+    "nature": ""
+  },
+  {
+    "id": "C10.10",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Agendamento público pelo cliente",
+    "status": "Ausente",
+    "delivery": "Não foi identificado fluxo público completo de escolha de disponibilidade.",
+    "gap": "Implementar horários disponíveis, regras, reserva e confirmação.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C10.11",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Loja virtual completa",
+    "status": "Parcial",
+    "delivery": "Permite exposição de peças e pedidos.",
+    "gap": "Completar carrinho, pagamento, frete e processamento de pedidos.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C10.12",
+    "chapter": 10,
+    "topic": "Comunicação e clientes",
+    "feature": "Solicitação de avaliação pública",
+    "status": "Ausente",
+    "delivery": "Não foi identificada automação universal de avaliações.",
+    "gap": "Criar solicitação e acompanhamento de avaliações pós-serviço.",
+    "nature": "Desenvolvimento e integração"
+  },
+  {
+    "id": "C11.01",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Importar clientes e catálogo",
+    "status": "Presente",
+    "delivery": "Importa CSV com validações e limite por arquivo.",
+    "gap": "Até 500 linhas e 3 MB por arquivo no importador examinado.",
+    "nature": ""
+  },
+  {
+    "id": "C11.02",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Migrar histórico completo",
+    "status": "Parcial",
+    "delivery": "Importadores disponíveis atendem partes dos cadastros.",
+    "gap": "Migrar OS, financeiro, anexos e histórico dos sistemas de origem.",
+    "nature": "Desenvolvimento e implantação"
+  },
+  {
+    "id": "C11.03",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Exportar todos os dados da empresa",
+    "status": "Parcial",
+    "delivery": "Há documentos e consultas exportáveis.",
+    "gap": "Oferecer exportação completa e organizada por empresa, incluindo anexos.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C11.04",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Separação de dados entre empresas",
+    "status": "Presente",
+    "delivery": "Usa autenticação e regras de acesso por empresa.",
+    "gap": "Existência da estrutura não é uma certificação de segurança.",
+    "nature": ""
+  },
+  {
+    "id": "C11.05",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Permissões personalizadas",
+    "status": "Parcial",
+    "delivery": "Oferece perfis de acesso e controle por plano.",
+    "gap": "Criar permissões mais granulares e personalizáveis por função.",
+    "nature": "Desenvolvimento"
+  },
+  {
+    "id": "C11.06",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Autenticação multifator",
+    "status": "Ausente",
+    "delivery": "Não foi encontrado fluxo de multifator na experiência examinada.",
+    "gap": "Implementar ativação, recuperação e uso de autenticação adicional.",
+    "nature": "Desenvolvimento e configuração"
+  },
+  {
+    "id": "C11.07",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Proteção contra operações duplicadas",
+    "status": "Presente",
+    "delivery": "Há mecanismos para evitar repetição de pagamentos e estoque em operações críticas.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C11.08",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Proteção contra edição desatualizada",
+    "status": "Presente",
+    "delivery": "Controla revisões para evitar sobrescrever silenciosamente alterações recentes.",
+    "gap": "",
+    "nature": ""
+  },
+  {
+    "id": "C11.09",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Recuperação após falha grave",
+    "status": "Parcial",
+    "delivery": "Existem ferramentas e procedimentos de backup e restauração.",
+    "gap": "Executar e documentar restauração completa no ambiente operacional, incluindo arquivos.",
+    "nature": "Validação operacional"
+  },
+  {
+    "id": "C11.10",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Offline em todos os ramos",
+    "status": "Parcial",
+    "delivery": "O offline disponível se restringe à entrada automotiva.",
+    "gap": "Ampliar cobertura e validar conflitos e recuperação da sincronização.",
+    "nature": "Desenvolvimento e validação"
+  },
+  {
+    "id": "C11.11",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Escala com concorrência real",
+    "status": "Parcial",
+    "delivery": "Há paginação, índices e evidências de testes locais com muitos registros.",
+    "gap": "Validar concorrência real, rede, fotos, relatórios e limites da infraestrutura.",
+    "nature": "Validação de desempenho"
+  },
+  {
+    "id": "C11.12",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Aprendizado por usuários iniciantes",
+    "status": "Parcial",
+    "delivery": "Há simplificações e recursos de ajuda.",
+    "gap": "Realizar testes de tarefas com iniciantes e corrigir os obstáculos medidos.",
+    "nature": "Validação de usabilidade"
+  },
+  {
+    "id": "C11.13",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Suporte com prazo definido",
+    "status": "Externo",
+    "delivery": "Há acesso à ajuda e diagnóstico para suporte.",
+    "gap": "Definir equipe, canais, horário e prazo de resposta na operação comercial.",
+    "nature": "Operação comercial"
+  },
+  {
+    "id": "C11.14",
+    "chapter": 11,
+    "topic": "Dados, segurança e adoção",
+    "feature": "Processos completos de privacidade",
+    "status": "Parcial",
+    "delivery": "Há proteções técnicas e controle de acesso.",
+    "gap": "Completar retenção, solicitações dos titulares, exportação e procedimentos operacionais.",
+    "nature": "Desenvolvimento e operação"
+  }
+]

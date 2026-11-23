@@ -1,0 +1,67 @@
+.filtros-situacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.filtros-situacao > button,
+.filtros-situacao .filtro-outras {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 9px;
+  color: var(--ui-suave);
+  background: var(--ui-painel);
+  font-size: 13px;
+  font-weight: 650;
+}
+.filtros-situacao > button:hover,
+.filtros-situacao .filtro-outras:hover {
+  background: var(--ui-hover);
+  color: var(--ui-texto);
+}
+.filtros-situacao > [aria-pressed="true"],
+.filtros-situacao .filtro-outras.selecionado {
+  background: var(--ui-ativo);
+  color: var(--ui-texto);
+  border-color: var(--ui-acento, #88a75f);
+}
+.filtro-ponto {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #889cab;
+}
+[data-tom="atencao"] > .filtro-ponto {
+  background: #cb9037;
+}
+[data-tom="andamento"] > .filtro-ponto {
+  background: #3895a7;
+}
+[data-tom="concluido"] > .filtro-ponto {
+  background: #529774;
+}
+.filtros-situacao .filtro-outras select {
+  min-height: 22px;
+  width: auto;
+  max-width: 200px;
+  padding: 0 3px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+@media (pointer: coarse) {
+  .filtros-situacao > button,
+  .filtros-situacao .filtro-outras {
+    min-height: 44px;
+  }
+}

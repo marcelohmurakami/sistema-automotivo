@@ -1,0 +1,377 @@
+.dialogo.dialogo-ficha-cliente {
+  width: min(1040px, calc(100vw - 32px));
+}
+.ficha-cliente {
+  display: grid;
+  gap: 20px;
+  padding-top: 20px;
+}
+.ficha-cliente-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.ficha-cliente-topo > div:first-child {
+  min-width: 0;
+}
+.ficha-cliente-topo h3 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.ficha-cliente-topo p {
+  margin: 7px 0 0;
+  color: var(--ui-suave);
+  font-size: 12px;
+}
+.ficha-cliente-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.ficha-cliente-acoes .botao-secundario,
+.ficha-cliente-acoes .botao-primario {
+  font-size: 12px;
+}
+.ficha-cliente-indicadores {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.ficha-cliente-indicadores > div {
+  display: grid;
+  gap: 7px;
+  padding: 18px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-fundo);
+}
+.ficha-cliente-indicadores span {
+  font-size: 12px;
+  font-weight: 600;
+}
+.ficha-cliente-indicadores strong {
+  font-size: clamp(22px, 2.5vw, 28px);
+  overflow-wrap: anywhere;
+}
+.ficha-cliente-indicadores small,
+.ficha-cliente-legenda {
+  font-size: 11px;
+  color: var(--ui-suave);
+  line-height: 1.6;
+}
+.ficha-cliente .ficha-cliente-legenda {
+  margin: -8px 0 0;
+}
+.ficha-cliente-pagamentos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  border: 1px solid var(--ui-borda);
+  padding: 14px 18px;
+  border-radius: 12px;
+}
+.ficha-cliente-pagamentos > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.ficha-cliente-pagamentos span,
+.ficha-cliente-pagamentos small {
+  color: var(--ui-suave);
+}
+.ficha-cliente-pagamentos small {
+  flex-basis: 100%;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.ficha-cliente-abas {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.ficha-cliente-abas button {
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--ui-suave);
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+}
+.ficha-cliente-abas button[aria-pressed="true"] {
+  border-bottom-color: #88a75f;
+  color: var(--ui-texto);
+  font-weight: 700;
+}
+.ficha-cliente h4 {
+  margin: 0;
+  font-size: 15px;
+}
+.ficha-cliente-filtros {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ficha-cliente-filtros > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ficha-cliente-filtros span {
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.dialogo-ficha-cliente .ficha-cliente-filtros label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.ficha-cliente-filtros select {
+  min-height: 44px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 9px;
+  padding: 10px;
+  background: var(--ui-fundo);
+  color: var(--ui-texto);
+  max-width: 100%;
+}
+.ficha-cliente-atendimentos {
+  display: grid;
+  gap: 12px;
+}
+.ficha-cliente-atendimento {
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ficha-cliente-atendimento > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  gap: 16px;
+}
+.ficha-cliente-atendimento > header > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.ficha-cliente-atendimento > header > div:first-child > span {
+  font-size: 12px;
+  color: var(--ui-suave);
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.ficha-cliente-atendimento > header > div:last-child {
+  text-align: right;
+  flex-shrink: 0;
+  justify-items: end;
+}
+.ficha-cliente-atendimento > header strong {
+  font-size: 14px;
+}
+.estrutura-sistema .ficha-cliente-atendimento > .ficha-cliente-itens {
+  border: 0;
+  border-top: 1px solid var(--ui-borda);
+  margin: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.estrutura-sistema .ficha-cliente-itens > summary {
+  margin: 0;
+  padding: 10px 18px;
+  min-height: 44px;
+  border: 0;
+}
+.ficha-cliente-itens > summary strong {
+  font-size: 12px;
+}
+.ficha-cliente-itens > .secao-recolhivel-conteudo {
+  padding: 0 18px 16px;
+}
+.ficha-cliente-itens ul,
+.ficha-cliente-veiculos {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.ficha-cliente-itens li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ui-borda);
+  font-size: 12px;
+}
+.ficha-cliente-itens li > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ficha-cliente-itens li > span {
+  flex-shrink: 0;
+}
+.ficha-cliente-itens small {
+  color: var(--ui-suave);
+}
+.ficha-cliente-relato {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ficha-cliente-abrir-os {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ficha-cliente-dados {
+  display: grid;
+  gap: 16px;
+}
+.ficha-cliente-bloco {
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  padding: 18px;
+}
+.ficha-cliente-bloco dl {
+  margin: 20px 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.ficha-cliente-bloco dt {
+  font-size: 11px;
+  color: var(--ui-suave);
+  margin-bottom: 6px;
+}
+.ficha-cliente-bloco dd {
+  margin: 0;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.ficha-cliente-largo {
+  grid-column: 1 / -1;
+}
+.ficha-cliente-veiculos li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.ficha-cliente-veiculos li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.ficha-cliente-veiculos svg {
+  flex-shrink: 0;
+  color: var(--ui-suave);
+}
+.ficha-cliente-veiculos li > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.ficha-cliente-veiculos span,
+.ficha-cliente-veiculos small {
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.ficha-cliente-vazio {
+  text-align: center;
+  padding: 32px 16px;
+  background: var(--ui-fundo);
+  border-radius: 12px;
+  color: var(--ui-suave);
+  font-size: 13px;
+}
+.ficha-cliente-paginacao {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 16px;
+}
+.ficha-cliente-paginacao > span {
+  margin-right: auto;
+  color: var(--ui-suave);
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .dialogo.dialogo-ficha-cliente {
+    width: calc(100vw - 16px);
+  }
+  .ficha-cliente-topo {
+    align-items: start;
+    flex-direction: column;
+  }
+  .ficha-cliente-topo h3 {
+    font-size: 20px;
+  }
+  .ficha-cliente-acoes {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .ficha-cliente-indicadores {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ficha-cliente-indicadores > div {
+    padding: 14px 12px;
+  }
+  .ficha-cliente-indicadores > div:last-child {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .ficha-cliente-indicadores > div:last-child small {
+    grid-column: 1 / -1;
+  }
+  .ficha-cliente-indicadores strong {
+    font-size: 21px;
+  }
+  .ficha-cliente-filtros {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ficha-cliente-filtros label {
+    justify-content: space-between;
+  }
+  .ficha-cliente-filtros select {
+    flex: 1;
+    max-width: 220px;
+  }
+  .ficha-cliente-abas button {
+    padding-inline: 9px;
+    font-size: 12px;
+  }
+  .ficha-cliente-atendimento > header {
+    padding: 14px;
+    align-items: start;
+    gap: 10px;
+  }
+  .ficha-cliente-bloco dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

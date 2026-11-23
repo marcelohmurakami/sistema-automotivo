@@ -1,0 +1,65 @@
+.medicao-inicio {
+  max-width: 1120px;
+  margin: 16px auto;
+  padding: 16px;
+}
+.medicao-inicio details > *:not(summary) {
+  margin-top: 12px;
+}
+.medicao-inicio button {
+  margin-right: 8px;
+}
+.medicao-barra {
+  position: fixed;
+  z-index: 1000;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(960px, calc(100% - 24px));
+  box-sizing: border-box;
+  background: var(--superficie, #fff);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px #0004;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.medicao-barra > span {
+  flex: 1;
+  min-width: 160px;
+}
+.medicao-barra small {
+  display: block;
+  margin-top: 5px;
+}
+.medicao-barra label {
+  display: flex;
+  gap: 6px;
+  flex-direction: column;
+}
+.medicao-barra select {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .medicao-barra {
+    padding: 10px;
+    gap: 8px;
+  }
+  .medicao-barra > span {
+    flex-basis: 100%;
+  }
+  .medicao-barra label {
+    flex: 1;
+    min-width: 0;
+  }
+  .medicao-barra button {
+    padding: 10px;
+  }
+  .medicao-inicio {
+    padding: 12px;
+  }
+}

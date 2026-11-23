@@ -1,0 +1,16 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {MemoryRouter} from 'react-router-dom';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {Estoque} from '../../src/pages/Estoque';
+import {especialidades} from '../../src/lib/especialidades';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+import '../../src/pages/Clientes.css';import '../../src/pages/OrdensServico.css';
+const params=new URLSearchParams(location.search),perfil=params.get('perfil')||'retifica';
+document.documentElement.dataset.tema=params.get('tema')||'escuro';
+window.fixturePerfis=Object.keys(especialidades);
+const acesso={demo:false,usuario:'qa',oficina:{id:'empresa-ficticia',nome:'Empresa de teste',especialidade:perfil,ramo:especialidades[perfil].ramo,perfil:params.get('papel')||'owner'},permite:()=>true};
+const qc=new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false},mutations:{retry:false}}});
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={qc}><ContextoAcesso.Provider value={acesso}><MemoryRouter><div className="estrutura-sistema"><main className="qa-estoque"><Estoque/></main></div></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);
+const style=document.createElement('style');style.textContent='.qa-estoque{padding:24px;min-width:0;width:100%} @media(min-width:1000px){.qa-estoque{margin-left:270px;width:calc(100% - 270px)}} @media(max-width:600px){.qa-estoque{padding:14px}}';document.head.appendChild(style);

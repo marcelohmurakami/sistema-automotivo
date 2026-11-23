@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {createHash} from 'node:crypto';
+const root=resolve('output/jornadas-completas-20261112'),old=resolve('output/processos-agilidade-20261112');
+const ler=async p=>JSON.parse(await readFile(p,'utf8'));
+const r=await ler(resolve(root,'resumo.json'));
+assert.equal(r.escopo.familias,37);assert(r.escopo.jornadasMedidas>=130);
+assert(r.medidos.length>=2750);assert(r.medidos.every(x=>x.ok));
+assert.equal(r.documentos.length,112);assert(r.documentos.every(x=>x.ok));
+assert(r.documentos.filter(x=>x.completo).every(x=>x.custoAvulso===2500));
+assert.equal(r.repeticoesDocumentos.length,8);assert(r.repeticoesDocumentos.every(x=>x.ok&&x.custoAvulso===2500));
+assert.equal(r.regressao.aprovadas,228);assert.equal(r.regressao.total,228);
+const real=await ler(resolve(root,'publicado-gravacao/resultados.json'));
+assert(real.ok);assert.equal(real.resultados.length,52);assert.equal(new Set(real.resultados.map(x=>x.id)).size,52);assert.equal(new Set(real.resultados.map(x=>x.perfil)).size,26);assert(real.resultados.every(x=>x.ok&&x.totalCentavos===9500&&x.descontoCentavos===500));
+const telas=await ler(resolve(root,'publicado/conferir-interface-desempenho/resultados.json'));assert(telas.ok);assert.equal(telas.resultados.length,462);
+const portais=await ler(resolve(root,'publicado/conferir-portais-componentes/resultados.json'));assert(portais.ok);assert.equal(portais.resultados.length,25);
+const atalhos=await ler(resolve(old,'atalhos-publicados/resultados.json'));assert(atalhos.ok);assert.equal(atalhos.resultados.length,52);
+const hashes=await ler(resolve(old,'arquivos-publicados.json'));assert(hashes.ok);assert.equal(hashes.resultados.length,330);
+const inventario=await ler(resolve(old,'depois.json'));for(const a of inventario.arquivos){const atual=createHash('sha256').update(await readFile(a.arquivo)).digest('hex');assert.equal(atual,a.sha256,'Código mudou após build: '+a.arquivo)}
+const health=await fetch('https://patio-gestao-peach.vercel.app/health.json',{cache:'no-store'}).then(x=>x.json());assert.equal(health.build,'569643293');assert.equal(hashes.build,health.build);assert.equal(real.build,health.build);
+const resultado={ok:true,geradoEm:new Date().toISOString(),build:health.build,familias:37,jornadas:r.escopo.jornadasMedidas,execucoes:r.medidos.length,documentosLocais:112,documentosBancoReal:52,regressao:228,telas:462,portais:25,atalhosPublicados:52,arquivosPublicados:330,arquivosFonteConferidos:inventario.arquivos.length};
+await writeFile(resolve(root,'entrega-validada.json'),JSON.stringify(resultado,null,2));console.log(JSON.stringify(resultado));

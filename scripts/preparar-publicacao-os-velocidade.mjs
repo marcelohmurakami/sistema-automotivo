@@ -1,0 +1,92 @@
+import assert from "node:assert/strict";
+import { readFile, writeFile, mkdir, cp, readdir } from "node:fs/promises";
+import { resolve, relative } from "node:path";
+import { createHash } from "node:crypto";
+const out = resolve("output/os-velocidade-20261116"),
+  ler = async (f) => JSON.parse(await readFile(f, "utf8"));
+for (const [f, n] of [
+  ["antes/resultados.json", 200],
+  ["antes-completo/resultados.json", 40],
+  ["antes-pronto/resultados.json", 60],
+  ["antes-rapido/resultados.json", 40],
+  ["antes-consulta/resultados.json", 140],
+  ["antes-controlado/resultados.json", 48],
+  ["depois-controlado/resultados.json", 48],
+  ["interface/resultados.json", 74],
+  ["regressao/resultados.json", 16],
+]) {
+  const d = await ler(resolve(out, f));
+  assert(d.ok && d.resultados.length >= n && d.resultados.every((x) => x.ok), f);
+}
+assert((await readFile(resolve(out, "build.log"), "utf8")).includes("built in"));
+const pagamento = await ler(resolve(out, "pagamento/interface.json"));
+assert(
+  pagamento.ok &&
+    pagamento.resultados.length > 0 &&
+    pagamento.resultados.every((x) => x.ok),
+);
+const health = await ler("dist/health.json"),
+  destino = resolve(out, "deploy", "patio-gestao-" + health.build),
+  project = await ler(
+    "output/processos-agilidade-20261112/deploy/patio-gestao-569643293/.vercel/project.json",
+  );
+assert.equal(project.projectId, "prj_AXSmqeI5GqSk4xt8P67S4BqSK35v");
+assert.equal(project.orgId, "team_oN63S4DIgIX5oqq4avVbfx1R");
+await mkdir(destino, { recursive: true });
+await cp("dist", destino, { recursive: true });
+await mkdir(resolve(destino, ".vercel"), { recursive: true });
+await writeFile(resolve(destino, ".vercel/project.json"), JSON.stringify(project));
+const config = await ler("vercel.json");
+await writeFile(
+  resolve(destino, "vercel.json"),
+  JSON.stringify({
+    framework: null,
+    buildCommand: "",
+    installCommand: "",
+    outputDirectory: ".",
+    rewrites: config.rewrites,
+    headers: config.headers,
+  }),
+);
+const arquivos = [];
+async function conferir(dir) {
+  for (const x of await readdir(dir, { withFileTypes: true })) {
+    assert(!x.isSymbolicLink());
+    const f = resolve(dir, x.name);
+    if (x.isDirectory()) await conferir(f);
+    else {
+      const arquivo = relative(destino, f).replaceAll("\\", "/"),
+        bytes = await readFile(f),
+        texto = bytes.toString("utf8");
+      assert(
+        !/(^|\/)(\.env|credenciais|admin\.env|node_modules|supabase|src|acessos)([./]|$)/.test(
+          arquivo,
+        ),
+      );
+      assert(!/(?:sb_secret_|sk-proj-)[A-Za-z0-9_-]{20,}/.test(texto));
+      for (const m of texto.matchAll(
+        /eyJ[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g,
+      )) {
+        let p;
+        try {
+          p = JSON.parse(Buffer.from(m[1], "base64url").toString());
+        } catch {
+          continue;
+        }
+        assert.notEqual(p.role, "service_role");
+      }
+      arquivos.push({
+        arquivo,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+      });
+    }
+  }
+}
+await conferir(destino);
+await writeFile(
+  resolve(out, "pacote.json"),
+  JSON.stringify({ build: health.build, destino, arquivos }, null, 2),
+);
+console.log(
+  JSON.stringify({ build: health.build, destino, arquivos: arquivos.length }),
+);

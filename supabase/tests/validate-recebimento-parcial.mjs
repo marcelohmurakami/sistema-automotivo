@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {randomUUID as uuid} from 'node:crypto';
+import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {criarCenarioSubsistemas} from './subsistemas-fixture.mjs';
+process.env.DB_VALIDATION_RUNTIME ||= resolve('node_modules/@electric-sql/pglite/dist/index.js');
+process.env.DB_VALIDATION_MIGRATION_LIMIT ||= '99999999999999';
+const c=await criarCenarioSubsistemas(),{db}=c;const resultados=[];let sucesso=false;
+const one=async(s,a=[])=>Object.values((await db.query(s,a)).rows[0])[0];
+const call=(n,a)=>one(`select public.${n}(${a.map((_,i)=>'$'+(i+1)).join(',')})`,a);
+try{for(const [perfil,r] of Object.entries(c.registros)){
+ await c.login(c.ids[perfil]);const {w,produto,hoje}=r,checks=[];
+ const b=uuid(),pedido=uuid(),fornecedor=await call('salvar_fornecedor',[w,uuid(),{nome:'Fornecedor entregas QA'}]);
+ await call('salvar_produto_estoque',[w,{descricao:'Segundo produto QA',unidade:'un',custo_centavos:1500},b]);
+ await call('salvar_pedido_compra',[w,pedido,{fornecedor_id:fornecedor,referencia:'Entregas parciais QA'},[{produto_id:produto,quantidade:10,custo_centavos:2000},{produto_id:b,quantidade:5,custo_centavos:1500}]]);
+ const ler=()=>call('consultar_pedidos_compra',[w,'',0,pedido]);let p=await ler();const aId=p.itens.find(i=>i.produto_id===produto).id,bId=p.itens.find(i=>i.produto_id===b).id;
+ const saldo=id=>one('select saldo from public.estoque_produtos where oficina_id=$1 and item_catalogo_id=$2',[w,id]);const antes=Number(await saldo(produto));
+ const receber=async(itens,tipo='compra')=>{p=await ler();const args=[w,pedido,uuid(),p.revisao,tipo,hoje,hoje,'',itens,null,'Conferência de avaria'];await call('receber_pedido_deposito',args);return args;};
+ const primeira=await receber([{item_id:aId,quantidade:6,recusado:4}]);p=await ler();
+ assert.equal(p.itens.find(i=>i.id===aId).pendente,4);assert.equal(p.itens.find(i=>i.id===bId).pendente,5);assert.equal(Number(await saldo(produto)),antes+6);assert.equal(Number(await saldo(b)),0);checks.push('10 entregues, 4 rejeitadas: 6 no estoque; segundo produto ausente preservado');
+ const compra=p.entregas.find(e=>e.id===primeira[2]).compra_id;assert.equal(Number(await one('select valor_centavos from public.titulos_financeiros where compra_id=$1',[compra])),12000);checks.push('cobrança somente das 6 aceitas');
+ await call('receber_pedido_deposito',primeira);assert.equal(Number(await saldo(produto)),antes+6);checks.push('reenvio não duplica estoque nem entrega');
+ await assert.rejects(()=>call('receber_pedido_deposito',[w,pedido,uuid(),primeira[3],'compra',hoje,hoje,'',[{item_id:bId,quantidade:1}],null,'']),e=>e.code==='PT409');checks.push('conferência antiga exige atualizar');
+ for(const item of [{item_id:aId,quantidade:5},{item_id:aId,quantidade:3,recusado:2},{item_id:bId,quantidade:1.5}])await assert.rejects(()=>call('receber_pedido_deposito',[w,pedido,uuid(),p.revisao,'compra',hoje,hoje,'',[item],null,'Avaria']));checks.push('saldo excedido, recusa excessiva e unidade fracionada bloqueados');
+ await receber([{item_id:bId,quantidade:2,recusado:0}]);p=await ler();assert.equal(p.itens.find(i=>i.id===bId).pendente,3);assert.equal(p.itens.find(i=>i.id===aId).pendente,4);assert.equal(Number(await saldo(b)),2);checks.push('segunda entrega parcial de outro produto mantém os dois saldos');
+ const recusa=await receber([{item_id:aId,quantidade:0,recusado:4}]);p=await ler();assert.equal(p.entregas.find(e=>e.id===recusa[2]).compra_id,null);assert.equal(p.itens.find(i=>i.id===aId).pendente,4);assert.equal(Number(await saldo(produto)),antes+6);checks.push('recusa total preserva saldo sem cobrança');
+ await receber([{item_id:aId,quantidade:4},{item_id:bId,quantidade:3}]);p=await ler();assert(p.itens.every(i=>i.pendente===0));assert.equal(Number(await saldo(produto)),antes+10);assert.equal(Number(await saldo(b)),5);checks.push('entrega do restante fecha pedido sem excesso');
+ await receber([{item_id:aId,quantidade:2}],'devolucao');p=await ler();assert.equal(p.itens.find(i=>i.id===aId).pendente,2);
+ await receber([{item_id:aId,quantidade:1,recusado:1}],'reposicao');p=await ler();assert.equal(p.itens.find(i=>i.id===aId).pendente,1);assert.equal(Number(await saldo(produto)),antes+9);checks.push('reposição parcial desconta rejeitadas e não gera nova compra');
+ await receber([{item_id:aId,quantidade:1}],'reposicao');assert((await ler()).itens.every(i=>i.pendente===0));checks.push('última reposição encerra pendência');
+ resultados.push({perfil,checks});console.log('PASS',perfil,checks.length);
+}sucesso=true;}finally{await mkdir('output/recebimento-parcial-20261103',{recursive:true});await writeFile('output/recebimento-parcial-20261103/banco.json',JSON.stringify({sucesso,resultados},null,2));await db.close();}

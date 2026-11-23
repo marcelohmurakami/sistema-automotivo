@@ -1,5 +1,19 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { componenteSobDemanda } from "../lib/componenteSobDemanda";
+const ImportarCadastros = componenteSobDemanda(async () => ({
+  default: (await import("../components/ImportarCadastros")).ImportarCadastros,
+}));
+const FichaCliente = componenteSobDemanda(async () => ({
+  default: (await import("../components/FichaCliente")).FichaCliente,
+}));
+import { SecaoRecolhivel } from "../components/SecaoRecolhivel";
+
+import { useRef, useState, type FormEvent } from "react";
+import { useBuscaDebounced } from "../lib/useBuscaDebounced";
+import { atualizarConsultas } from "../lib/atualizarConsultas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useSearchParams } from "react-router-dom";
+import { AssistenteContextual } from "../components/AtalhoAssistente";
+
 import {
   Building2,
   ChevronLeft,
@@ -11,7 +25,6 @@ import {
   RotateCcw,
   Search,
   Trash2,
-  UserRound,
   Users,
 } from "lucide-react";
 import { Dialogo } from "../components/Dialogo";
@@ -25,6 +38,7 @@ import {
   type Cliente,
   type DadosCliente,
 } from "../services/clientes";
+import "./Clientes.css";
 function FormularioCliente({
   cliente,
   salvando,
@@ -66,7 +80,7 @@ function FormularioCliente({
       </p>
       <fieldset disabled={salvando}>
         <label>
-          Nome ou razão social <span>*</span>
+          Nome ou razão social (obrigatório)
           <input
             name="nome"
             required
@@ -98,37 +112,42 @@ function FormularioCliente({
             />
           </label>
         </div>
-        <label>
-          E-mail
-          <input
-            name="email"
-            type="email"
-            maxLength={254}
-            defaultValue={cliente?.email ?? ""}
-            placeholder="cliente@email.com"
-            autoComplete="email"
-          />
-        </label>
-        <label>
-          Endereço
-          <input
-            name="endereco"
-            maxLength={1000}
-            defaultValue={cliente?.endereco}
-            placeholder="Rua, número, bairro e cidade"
-            autoComplete="street-address"
-          />
-        </label>
-        <label>
-          Observações
-          <textarea
-            name="observacoes"
-            maxLength={2000}
-            rows={3}
-            defaultValue={cliente?.observacoes}
-            placeholder="Preferências e informações úteis para o atendimento"
-          />
-        </label>
+        <SecaoRecolhivel
+          titulo="Mais dados do cliente"
+          descricao="E-mail, endereço e observações · opcional"
+        >
+          <label>
+            E-mail
+            <input
+              name="email"
+              type="email"
+              maxLength={254}
+              defaultValue={cliente?.email ?? ""}
+              placeholder="cliente@email.com"
+              autoComplete="email"
+            />
+          </label>
+          <label>
+            Endereço
+            <input
+              name="endereco"
+              maxLength={1000}
+              defaultValue={cliente?.endereco}
+              placeholder="Rua, número, bairro e cidade"
+              autoComplete="street-address"
+            />
+          </label>
+          <label>
+            Observações
+            <textarea
+              name="observacoes"
+              maxLength={2000}
+              rows={3}
+              defaultValue={cliente?.observacoes}
+              placeholder="Preferências e informações úteis para o atendimento"
+            />
+          </label>
+        </SecaoRecolhivel>
       </fieldset>
       {(erro || validacao) && (
         <p role="alert" className="erro-formulario">
@@ -145,11 +164,7 @@ function FormularioCliente({
           Cancelar
         </button>
         <button className="botao-primario" disabled={salvando}>
-          {salvando
-            ? "Salvando…"
-            : cliente
-              ? "Salvar alterações"
-              : "Cadastrar cliente"}
+          {salvando ? "Salvando…" : cliente ? "Salvar alterações" : "Cadastrar cliente"}
         </button>
       </div>
     </form>
@@ -158,30 +173,30 @@ function FormularioCliente({
 export function Clientes() {
   const acesso = useAcesso();
   const cache = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const clienteSelecionado = params.get("cliente");
   const [busca, setBusca] = useState("");
-  const [filtro, setFiltro] = useState("");
+  const filtro = useBuscaDebounced(busca.trim());
   const [arquivados, setArquivados] = useState(false);
   const [pagina, setPagina] = useState(0);
   const [editor, setEditor] = useState<Cliente | "novo" | null>(null);
   const [exclusao, setExclusao] = useState<Cliente | null>(null);
   const [aviso, setAviso] = useState("");
+  const gravando = useRef(false);
+  const arquivando = useRef(false);
   const oficina = acesso.oficina!;
   const gerencia = ["owner", "manager"].includes(oficina.perfil);
-  useEffect(() => {
-    const tempo = setTimeout(() => {
-      setFiltro(busca.trim());
-      setPagina(0);
-    }, 250);
-    return () => clearTimeout(tempo);
-  }, [busca]);
   const chave = ["clientes", acesso.demo ? "demo" : acesso.usuario, oficina.id];
   const consulta = useQuery({
     queryKey: [...chave, filtro, arquivados, pagina],
-    queryFn: () =>
-      listarClientes(acesso.demo, oficina.id, filtro, arquivados, pagina),
+    queryFn: ({ signal }) =>
+      listarClientes(acesso.demo, oficina.id, filtro, arquivados, pagina, signal),
     retry: false,
   });
   const gravacao = useMutation({
+    onSettled: () => {
+      gravando.current = false;
+    },
     mutationFn: (dados: DadosCliente) =>
       salvarCliente(
         acesso.demo,
@@ -190,9 +205,13 @@ export function Clientes() {
         editor && editor !== "novo" ? editor : undefined,
       ),
     onSuccess: async () => {
-      await cache.invalidateQueries({ queryKey: chave });
       setEditor(null);
       setAviso("Cliente salvo com sucesso.");
+      await atualizarConsultas(
+        cache,
+        [chave, ["ficha-cliente"], ["selecao-operacao"]],
+        [chave, ["ficha-cliente"]],
+      );
     },
     onError: () => {
       void cache.invalidateQueries({ queryKey: chave });
@@ -200,11 +219,18 @@ export function Clientes() {
     },
   });
   const arquivamento = useMutation({
+    onSettled: () => {
+      arquivando.current = false;
+    },
     mutationFn: (cliente: Cliente) =>
       arquivarCliente(acesso.demo, oficina.id, cliente, !cliente.arquivado_em),
     onSuccess: async () => {
       setPagina(0);
-      await cache.invalidateQueries({ queryKey: chave });
+      await atualizarConsultas(
+        cache,
+        [chave, ["ficha-cliente"], ["selecao-operacao"]],
+        [chave, ["ficha-cliente"]],
+      );
       setExclusao(null);
       setAviso(
         arquivados
@@ -218,6 +244,7 @@ export function Clientes() {
     },
   });
   function editar(cliente: Cliente | "novo") {
+    if (gravando.current || arquivando.current) return;
     gravacao.reset();
     setEditor(cliente);
     setAviso("");
@@ -234,10 +261,13 @@ export function Clientes() {
           </h1>
           <p>Um cadastro rápido. Um atendimento mais próximo.</p>
         </div>
-        <button className="botao-primario" onClick={() => editar("novo")}>
-          <Plus size={20} />
-          Novo cliente
-        </button>
+        <div className="acoes-titulo">
+          <ImportarCadastros tipo="clientes" />
+          <button className="botao-primario" onClick={() => editar("novo")}>
+            <Plus size={20} />
+            Novo cliente
+          </button>
+        </div>
       </div>
       {acesso.demo && (
         <div className="nota-demo">
@@ -248,15 +278,13 @@ export function Clientes() {
         <div className="registros-cabecalho">
           <div>
             <h2>
-              Sua carteira{" "}
-              <span className="contagem-total">
-                {consulta.data?.total ?? "—"}
-              </span>
+              Clientes cadastrados{" "}
+              <span className="contagem-total">{consulta.data?.total ?? "—"}</span>
             </h2>
             <p>
               {arquivados
                 ? "Cadastros excluídos, com o histórico preservado."
-                : "Pessoas e empresas que confiam na sua oficina."}
+                : "Encontre um cliente para consultar ou editar."}
             </p>
           </div>
           <label className="campo-busca">
@@ -266,7 +294,10 @@ export function Clientes() {
               placeholder="Buscar nome, telefone ou e-mail"
               maxLength={200}
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPagina(0);
+              }}
             />
           </label>
         </div>
@@ -339,83 +370,83 @@ export function Clientes() {
             )}
           </div>
         ) : (
-          <div className="grade-clientes">
+          <ul className="lista-clientes" aria-label="Clientes cadastrados">
             {consulta.data.itens.map((cliente) => (
-              <article className="cartao-cliente" key={cliente.id}>
-                <div className="cliente-identidade">
-                  <span
-                    className={`avatar-cliente ${cliente.tipo === "pessoa_juridica" ? "empresa" : ""}`}
-                  >
-                    {cliente.tipo === "pessoa_juridica" ? (
-                      <Building2 size={22} />
-                    ) : (
-                      cliente.nome
-                        .split(" ")
-                        .filter(Boolean)
-                        .slice(0, 2)
-                        .map((n) => n[0])
-                        .join("")
-                    )}
-                  </span>
-                  <div>
-                    <h3>{cliente.nome}</h3>
-                    <small>
-                      {cliente.tipo === "pessoa_juridica"
-                        ? "Empresa"
-                        : "Pessoa física"}
-                    </small>
+              <li className="linha-cliente" key={cliente.id}>
+                <Link
+                  className="abrir-ficha-cliente"
+                  to={`?cliente=${cliente.id}`}
+                  aria-label={`Ver ficha de ${cliente.nome}`}
+                >
+                  <div className="linha-cliente-identidade">
+                    <span
+                      className={`avatar-cliente ${cliente.tipo === "pessoa_juridica" ? "empresa" : ""}`}
+                      aria-hidden="true"
+                    >
+                      {cliente.tipo === "pessoa_juridica" ? (
+                        <Building2 size={22} />
+                      ) : (
+                        cliente.nome
+                          .split(" ")
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((n) => n[0])
+                          .join("")
+                      )}
+                    </span>
+                    <div>
+                      <h3>{cliente.nome}</h3>
+                      <small>
+                        {cliente.tipo === "pessoa_juridica"
+                          ? "Empresa"
+                          : "Pessoa física"}
+                      </small>
+                    </div>
                   </div>
-                </div>
-                <div className="cliente-contatos">
-                  <span>
-                    <Phone size={15} />
-                    {cliente.telefone_e164 || "Telefone não informado"}
-                  </span>
-                  <span>
-                    <Mail size={15} />
-                    {cliente.email || "E-mail não informado"}
-                  </span>
-                </div>
-                <div className="cliente-rodape">
-                  <span>
-                    <UserRound size={14} />
-                    {arquivados ? "Na lixeira" : "Cliente ativo"}
-                  </span>
-                  <div>
-                    {!arquivados && (
-                      <button
-                        className="botao-icone"
-                        aria-label={`Editar ${cliente.nome}`}
-                        title="Editar cliente"
-                        onClick={() => editar(cliente)}
-                      >
-                        <Pencil size={18} />
-                      </button>
-                    )}
-                    {gerencia && (
-                      <button
-                        className="botao-icone"
-                        aria-label={`${arquivados ? "Restaurar" : "Excluir"} ${cliente.nome}`}
-                        title={
-                          arquivados ? "Restaurar cliente" : "Excluir cliente"
-                        }
-                        onClick={() => {
-                          arquivamento.reset();
-                          setExclusao(cliente);
-                        }}
-                      >
-                        {arquivados ? (
-                          <RotateCcw size={18} />
-                        ) : (
-                          <Trash2 size={18} />
-                        )}
-                      </button>
-                    )}
+                  <div className="linha-cliente-contatos">
+                    <span>
+                      <Phone size={15} aria-hidden="true" />
+                      <span>{cliente.telefone_e164 || "Telefone não informado"}</span>
+                    </span>
+                    <span>
+                      <Mail size={15} aria-hidden="true" />
+                      <span>{cliente.email || "E-mail não informado"}</span>
+                    </span>
                   </div>
+                  <ChevronRight
+                    size={18}
+                    aria-hidden="true"
+                    className="linha-cliente-seta"
+                  />
+                </Link>
+                <div className="linha-cliente-acoes">
+                  {!arquivados && (
+                    <button
+                      className="botao-icone"
+                      aria-label={`Editar ${cliente.nome}`}
+                      title="Editar cliente"
+                      onClick={() => editar(cliente)}
+                    >
+                      <Pencil size={18} />
+                    </button>
+                  )}
+                  {gerencia && (
+                    <button
+                      className={`botao-icone ${arquivados ? "" : "excluir-cliente"}`}
+                      aria-label={`${arquivados ? "Restaurar" : "Excluir"} ${cliente.nome}`}
+                      title={arquivados ? "Restaurar cliente" : "Excluir cliente"}
+                      onClick={() => {
+                        arquivamento.reset();
+                        setExclusao(cliente);
+                      }}
+                    >
+                      {arquivados ? <RotateCcw size={18} /> : <Trash2 size={18} />}
+                    </button>
+                  )}
                 </div>
-              </article>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
         <div className="paginacao-clientes">
           <span>
@@ -446,6 +477,33 @@ export function Clientes() {
         </div>
       </section>
       <Dialogo
+        aberto={!!clienteSelecionado && editor === null && exclusao === null}
+        fechar={() =>
+          setParams((atuais) => {
+            const novos = new URLSearchParams(atuais);
+            novos.delete("cliente");
+            return novos;
+          })
+        }
+        titulo="Ficha do cliente"
+        acoesCabecalho={
+          clienteSelecionado && (
+            <AssistenteContextual
+              contexto={{ cliente: clienteSelecionado, titulo: "Cliente selecionado" }}
+            />
+          )
+        }
+        classe="dialogo-ficha-cliente"
+      >
+        {clienteSelecionado && (
+          <FichaCliente
+            key={`${oficina.id}-${clienteSelecionado}`}
+            id={clienteSelecionado}
+            editar={editar}
+          />
+        )}
+      </Dialogo>
+      <Dialogo
         aberto={editor !== null}
         fechar={() => {
           if (!gravacao.isPending) setEditor(null);
@@ -458,7 +516,11 @@ export function Clientes() {
             cliente={editor === "novo" ? undefined : editor}
             salvando={gravacao.isPending}
             erro={gravacao.isError ? erroPublico(gravacao.error) : ""}
-            salvar={(dados) => gravacao.mutate(dados)}
+            salvar={(dados) => {
+              if (gravando.current) return;
+              gravando.current = true;
+              gravacao.mutate(dados);
+            }}
             cancelar={() => setEditor(null)}
           />
         )}
@@ -495,7 +557,11 @@ export function Clientes() {
             <button
               className={arquivados ? "botao-primario" : "botao-perigo"}
               disabled={arquivamento.isPending}
-              onClick={() => exclusao && arquivamento.mutate(exclusao)}
+              onClick={() => {
+                if (!exclusao || arquivando.current) return;
+                arquivando.current = true;
+                arquivamento.mutate(exclusao);
+              }}
             >
               {arquivamento.isPending
                 ? "Salvando…"

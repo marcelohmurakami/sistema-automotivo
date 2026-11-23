@@ -8,7 +8,7 @@
 - Configurações: logo PNG/JPG reduzido no navegador, cor e rodapé. Notinhas e orçamentos preservam a identidade da emissão; a OS usa a identidade atual ao gerar o documento.
 - `/meu-site`: configuração do site, publicação de peças do catálogo, habilitação do portal, liberação/revogação do cliente e gestão de pedidos.
 - `/oficina/:slug`: site público e área autenticada. O cliente cria/confirma a conta; o responsável libera o cadastro cujo e-mail corresponde ao usuário confirmado. Dados e históricos são filtrados por acesso e oficina no servidor. Pedidos não cobram nem reservam estoque.
-- `/automacoes`: fila de avisos de andamento e lembretes, autorização individual de envio, sugestão de texto com IA e histórico das próprias sugestões. A IA não diagnostica nem altera uma OS automaticamente.
+- A tela legada `/automacoes` ("Assistente e automações") foi removida do frontend em 09/11/2026 a pedido do usuário, junto com sua entrada no menu e componentes exclusivos. As orientações de integração abaixo descrevem a entrega original; não indicam que essa tela continua disponível. O assistente operacional de texto e áudio é um componente separado.
 
 Migrations `20261001000100` a `20261001000500` aplicadas no projeto `hzihxtjirttetnfdujcx`. Funções `fotos-proposta`, `assistente-oficina` e `automacoes-oficina` publicadas. A autenticação fica no código: token da proposta, usuário Supabase + plano, e segredo do agendador, respectivamente. O verificador de JWT legado está desligado para aceitar esse modelo e as chaves publicáveis novas.
 

@@ -1,11 +1,11 @@
+import { dinheiro } from "../lib/formatacao";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Plus, Star } from "lucide-react";
 import { useAcesso } from "../auth/contexto";
-import { listarCatalogo } from "../services/catalogo";
-import { filtrarCatalogo } from "../lib/catalogo";
-import { dinheiro } from "../services/orcamentos";
+import { useCatalogoBusca } from "../lib/useCatalogoBusca";
+import { interfaceRamo } from "../lib/interfaceRamo";
+
 import { erroPublico } from "../lib/supabase";
 import type { OrdemServico } from "../services/ordensServico";
 export function ServicosNaOS({
@@ -21,24 +21,21 @@ export function ServicosNaOS({
 }) {
   const a = useAcesso(),
     [busca, setBusca] = useState("");
-  const q = useQuery({
-    queryKey: ["catalogo", a.demo, a.oficina!.id],
-    queryFn: () => listarCatalogo(a.demo, a.oficina!.id),
-    enabled: a.permite("catalog"),
-  });
+  const q = useCatalogoBusca(
+    busca,
+    "service",
+    !["ready", "delivered", "cancelled"].includes(os.situacao) &&
+      !os.orcamento_origem_id &&
+      !os.orcamento_aguardando_id,
+  );
   if (
     !a.permite("catalog") ||
     ["ready", "delivered", "cancelled"].includes(os.situacao) ||
-    os.orcamento_origem_id
+    os.orcamento_origem_id ||
+    os.orcamento_aguardando_id
   )
     return null;
-  const itens = filtrarCatalogo(
-    q.data ?? [],
-    busca,
-    "service",
-    "ativos",
-    false,
-  );
+  const itens = q.aguardando ? [] : q.data || [];
   return (
     <section className="estoque-os">
       <div className="os-linha">
@@ -49,7 +46,7 @@ export function ServicosNaOS({
         Encontrar serviço
         <input
           aria-label="Buscar serviço para OS"
-          placeholder="Ex.: alinhamento…"
+          placeholder={`Ex.: ${interfaceRamo(a.oficina?.ramo, os.ficha_especialidade?.especialidade || a.oficina?.especialidade).exemploServico}`}
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
@@ -62,7 +59,7 @@ export function ServicosNaOS({
         </p>
       )}
       <div className="catalogo-rapido">
-        {itens.slice(0, 8).map((i) => (
+        {itens.slice(0, busca.trim() ? 8 : 4).map((i) => (
           <button
             key={i.id}
             disabled={ocupado || os.itens.length >= 100}
@@ -85,11 +82,13 @@ export function ServicosNaOS({
           </button>
         ))}
       </div>
-      {itens.length > 8 && <p>Digite o nome para encontrar outros serviços.</p>}
+      {itens.length > (busca.trim() ? 8 : 4) && (
+        <p>Digite o nome para encontrar outros serviços.</p>
+      )}
       {q.isSuccess && !itens.length && (
         <p>
-          Nenhum serviço encontrado. Cadastre no catálogo ou adicione um item
-          avulso abaixo.
+          Nenhum serviço encontrado. Cadastre no catálogo ou adicione um item avulso
+          abaixo.
         </p>
       )}
     </section>

@@ -1,0 +1,75 @@
+.campo-desconto {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  text-align: left;
+}
+.campo-desconto-nota {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+  min-width: 0;
+}
+.campo-desconto-nota > span {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.campo-desconto-nota > small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.campo-desconto-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.campo-desconto .campo-desconto-cabecalho > label {
+  display: block;
+  margin: 0;
+  max-width: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+.campo-desconto-unidade {
+  display: inline-flex;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.campo-desconto-unidade > button {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 0;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--superficie);
+  color: inherit;
+}
+.campo-desconto-unidade > button[aria-pressed="true"] {
+  background: #d5f675;
+  color: #27351b;
+}
+.campo-desconto > input {
+  width: 100%;
+  min-width: 0;
+}
+.campo-desconto .campo-desconto-ajuda {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+@media (pointer: coarse) {
+  .campo-desconto-unidade > button {
+    min-height: 44px;
+  }
+}

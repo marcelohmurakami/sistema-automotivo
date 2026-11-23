@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir,cp,readdir} from 'node:fs/promises';
+import {resolve,relative} from 'node:path';
+import {createHash} from 'node:crypto';
+const out=resolve('output/agilidade-20261111'),ler=async p=>JSON.parse(await readFile(p,'utf8'));
+const ui=await ler(resolve(out,'interface/resultados.json'));
+assert(ui.ok && new Set(ui.resultados.map(x=>x.perfil)).size===26);
+for(const f of ['banco-painel.json','interacoes-depois.json','pagamento-final/interface.json','atualizacao-cache.json'])assert((await ler(resolve(out,f))).ok,f);
+const regressao=await ler(resolve(out,'regressao.json'));assert(regressao.resultados.length===224 && regressao.resultados.every(x=>x.sucesso));
+assert((await readFile(resolve(out,'prioridade.log'),'utf8')).startsWith('PASS:'));
+for(const f of ['types-confirmacao.log','lint-confirmacao.log'])assert(!(await readFile(resolve(out,f),'utf8')).trim(),f);
+assert((await readFile(resolve(out,'build-final.log'),'utf8')).includes('built in'));
+const health=await ler('dist/health.json');assert.equal((await ler(resolve(out,'atualizacao-cache.json'))).cache,'patio-static-'+health.build);
+const destino=resolve(out,'deploy','patio-gestao-'+health.build);
+const projeto=await ler('output/sites-demonstracao-20261110/deploy/patio-gestao-1275801211/.vercel/project.json');
+assert.equal(projeto.projectId,'prj_AXSmqeI5GqSk4xt8P67S4BqSK35v');assert.equal(projeto.orgId,'team_oN63S4DIgIX5oqq4avVbfx1R');
+await mkdir(destino,{recursive:true});await cp('dist',destino,{recursive:true});await mkdir(resolve(destino,'.vercel'),{recursive:true});await writeFile(resolve(destino,'.vercel/project.json'),JSON.stringify(projeto,null,2));
+const config=await ler('vercel.json');await writeFile(resolve(destino,'vercel.json'),JSON.stringify({framework:null,buildCommand:'',installCommand:'',outputDirectory:'.',rewrites:config.rewrites,headers:config.headers},null,2));
+const arquivos=[];
+async function conferir(dir){for(const item of await readdir(dir,{withFileTypes:true})){assert(!item.isSymbolicLink());const path=resolve(dir,item.name);if(item.isDirectory())await conferir(path);else{const arquivo=relative(destino,path).replaceAll('\\','/');assert(!/(^|\/)(\.env|credenciais|admin\.env|node_modules|supabase|src|acessos)([./]|$)/.test(arquivo));const bytes=await readFile(path),texto=bytes.toString('utf8');assert(!/(?:sb_secret_|sk-proj-)[A-Za-z0-9_-]{20,}/.test(texto),'Credencial privada no pacote: '+arquivo);for(const m of texto.matchAll(/eyJ[A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g)){let payload;try{payload=JSON.parse(Buffer.from(m[1],'base64url').toString())}catch{continue}assert.notEqual(payload.role,'service_role','Token administrativo no pacote: '+arquivo);}arquivos.push({arquivo,sha256:createHash('sha256').update(bytes).digest('hex')});}}}
+await conferir(destino);await writeFile(resolve(out,'pacote-publicacao.json'),JSON.stringify({destino,build:health.build,arquivos},null,2));console.log(JSON.stringify({destino,build:health.build,arquivos:arquivos.length}));

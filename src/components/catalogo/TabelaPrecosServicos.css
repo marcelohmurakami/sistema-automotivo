@@ -1,0 +1,108 @@
+.dialogo.dialogo-tabela-precos {
+  width: min(820px, calc(100vw - 24px));
+}
+.tabela-precos-selecao {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.tabela-precos-selecao > p {
+  margin: 0;
+}
+.estrutura-sistema .dialogo .tabela-precos-selecao .tabela-precos-busca {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 0 12px;
+  min-width: 0;
+}
+.tabela-precos-busca svg {
+  flex-shrink: 0;
+}
+.estrutura-sistema
+  .dialogo
+  .tabela-precos-selecao
+  .tabela-precos-busca
+  .tabela-precos-termo {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 12px 0;
+  font-weight: 400;
+}
+.tabela-precos-busca:focus-within {
+  outline: 2px solid var(--lima);
+  outline-offset: 2px;
+}
+.tabela-precos-comandos,
+.tabela-precos-paginacao {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.tabela-precos-comandos > span {
+  margin-left: auto;
+  color: var(--ui-suave);
+  font-size: 13px;
+}
+.tabela-precos-lista {
+  max-height: min(44svh, 420px);
+  overflow-y: auto;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+}
+.estrutura-sistema .dialogo .tabela-precos-linha {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  margin: 0;
+  border-bottom: 1px solid var(--ui-borda);
+  cursor: pointer;
+}
+.tabela-precos-linha:last-child {
+  border-bottom: 0;
+}
+.tabela-precos-linha > input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--lima);
+}
+.tabela-precos-linha > span {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.tabela-precos-linha > strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tabela-precos-linha:has(input:checked) {
+  background: var(--gestao-suave);
+}
+.tabela-precos-paginacao {
+  justify-content: center;
+  font-size: 12px;
+}
+.tabela-precos-imprimir {
+  width: 100%;
+}
+@media (max-width: 480px) {
+  .tabela-precos-comandos > span {
+    width: 100%;
+    margin: 0;
+  }
+  .estrutura-sistema .dialogo .tabela-precos-linha {
+    gap: 8px;
+    padding: 12px 10px;
+  }
+  .tabela-precos-linha > strong {
+    grid-column: 2 / -1;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "data": "2026-10-06",
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migration": "supabase/migrations/20261006000200_movimentacao_rapida_mapa.sql",
+  "aplicada_no_supabase": true,
+  "resultado_supabase": "Success. No rows returned",
+  "validacoes": {
+    "banco_local": "18 suites aprovadas, 568 verificações, incluindo 37 de movimentação rápida",
+    "build": "aprovado",
+    "eslint_arquivos_alterados": "aprovado",
+    "fluxo_ui": "OS fictícia #7 avançou de Recebida para Em execução e Conferência pelo card, sem diálogo. Tentativa de liberar com item pendente foi bloqueada e exibiu motivo no card. Retorno Conferência → Em execução → Recebida confirmado.",
+    "mobile": "Lista testada em 390 × 844; botões abaixo da entrega, avanço registrado, sem transbordamento horizontal. Viewport restaurado.",
+    "falha_conexao": "Houve falha transitória em uma tentativa no navegador; o card exibiu aviso. Página recarregada e retorno da OS à etapa Recebida confirmado em seguida.",
+    "dados_finais": "OS #7 da oficina de validação devolvida à situação Recebida; histórico de mudanças preservado.",
+    "concorrencia": "Revisão obsoleta e clique repetido cobertos no banco local; sem teste com dois usuários simultâneos nesta etapa."
+  },
+  "evidencias": ["mapa-movimentacao-banco.png", "mapa-acoes-desktop.png", "mapa-acoes-mobile.png"]
+}

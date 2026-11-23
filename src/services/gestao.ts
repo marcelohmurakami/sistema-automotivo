@@ -1,6 +1,9 @@
-import { rpc, lerPropostasDemo } from "./orcamentos";
+import { lerOrdensDemo } from "../lib/ordensDemo";
+import { rpc } from "../lib/rpc";
+import { lerPropostasDemo } from "./orcamentos";
 import type { OrdemServico } from "./ordensServico";
 import { lerEstoqueDemo } from "./estoque";
+import { motivosParada } from "../lib/mapaOficina";
 export type ConfiguracoesOficina = {
   nome: string;
   telefone: string;
@@ -10,13 +13,26 @@ export type ConfiguracoesOficina = {
 export async function consultarConfiguracoes(
   demo: boolean,
   oficina: string,
+  signal?: AbortSignal,
 ): Promise<ConfiguracoesOficina> {
   return demo
     ? JSON.parse(
-        localStorage.getItem("patio_configuracoes_demo") ||
-          '{"nome":"Oficina do Marcelo","telefone":"","endereco":{},"revisao":1}',
+        localStorage.getItem(
+          oficina === "demo-assistencia_tecnica"
+            ? `patio_configuracoes_demo:${oficina}`
+            : "patio_configuracoes_demo",
+        ) ||
+          JSON.stringify({
+            nome:
+              oficina === "demo-assistencia_tecnica"
+                ? "Assistência técnica · Demonstração"
+                : "Oficina do Marcelo",
+            telefone: "",
+            endereco: {},
+            revisao: 1,
+          }),
       )
-    : rpc("consultar_configuracoes_oficina", { p_oficina: oficina });
+    : rpc("consultar_configuracoes_oficina", { p_oficina: oficina }, signal);
 }
 export async function salvarConfiguracoes(
   demo: boolean,
@@ -35,7 +51,9 @@ export async function salvarConfiguracoes(
   if (d.revisao !== anterior.revisao)
     throw new Error("Configurações alteradas. Atualize a página.");
   localStorage.setItem(
-    "patio_configuracoes_demo",
+    oficina === "demo-assistencia_tecnica"
+      ? `patio_configuracoes_demo:${oficina}`
+      : "patio_configuracoes_demo",
     JSON.stringify({ ...d, revisao: d.revisao + 1 }),
   );
   window.dispatchEvent(new Event("oficina-demo-alterada"));
@@ -73,7 +91,10 @@ export type Relatorio = {
     entrega_prevista_em: string | null;
     situacao: string;
     motivo: string | null;
+    parada: boolean;
+    atrasada: boolean;
   }[];
+  paradas_motivos: { motivo: string; quantidade: number }[];
   clientes: {
     cliente_id: string;
     nome: string;
@@ -100,34 +121,32 @@ export async function consultarRelatorios(
   oficina: string,
   inicio: string,
   fim: string,
+  signal?: AbortSignal,
 ): Promise<Relatorio> {
   validarDatas(inicio, fim);
   if (!demo)
-    return rpc("consultar_relatorios", {
-      p_oficina: oficina,
-      p_inicio: inicio,
-      p_fim: fim,
-    });
-  const ordens: OrdemServico[] = JSON.parse(
-    localStorage.getItem("patio_os_v1") || "[]",
-  );
+    return rpc(
+      "consultar_relatorios",
+      {
+        p_oficina: oficina,
+        p_inicio: inicio,
+        p_fim: fim,
+      },
+      signal,
+    );
+  const ordens: OrdemServico[] = lerOrdensDemo();
   const dias = (Date.parse(fim) - Date.parse(inicio)) / 86400000 + 1,
     inicioAnterior = new Date(Date.parse(inicio) - dias * 86400000)
       .toISOString()
       .slice(0, 10),
-    fimAnterior = new Date(Date.parse(inicio) - 86400000)
-      .toISOString()
-      .slice(0, 10);
+    fimAnterior = new Date(Date.parse(inicio) - 86400000).toISOString().slice(0, 10);
   const entregues = (i: string, f: string) =>
     ordens.filter((o) => {
       const data = o.historico.find(
         (h) => h.descricao === "Situação: Entregue",
       )?.ocorrido_em;
       return (
-        o.situacao === "delivered" &&
-        data &&
-        dataSP(data) >= i &&
-        dataSP(data) <= f
+        o.situacao === "delivered" && data && dataSP(data) >= i && dataSP(data) <= f
       );
     });
   const indicadores = (i: string, f: string): Indicadores => {
@@ -146,9 +165,8 @@ export async function consultarRelatorios(
                 (s, o) =>
                   s +
                   (Date.parse(
-                    o.historico.find(
-                      (h) => h.descricao === "Situação: Entregue",
-                    )!.ocorrido_em,
+                    o.historico.find((h) => h.descricao === "Situação: Entregue")!
+                      .ocorrido_em,
                   ) -
                     Date.parse(o.recebido_em!)) /
                     86400000,
@@ -161,8 +179,8 @@ export async function consultarRelatorios(
       no_prazo: os.filter(
         (o) =>
           o.entrega_prevista_em &&
-          o.historico.find((h) => h.descricao === "Situação: Entregue")!
-            .ocorrido_em <= o.entrega_prevista_em,
+          o.historico.find((h) => h.descricao === "Situação: Entregue")!.ocorrido_em <=
+            o.entrega_prevista_em,
       ).length,
       com_previsao: os.filter((o) => o.entrega_prevista_em).length,
       orcamentos: 0,
@@ -171,9 +189,7 @@ export async function consultarRelatorios(
       recusados: 0,
     };
   };
-  const ativas = ordens.filter(
-      (o) => !["delivered", "cancelled"].includes(o.situacao),
-    ),
+  const ativas = ordens.filter((o) => !["delivered", "cancelled"].includes(o.situacao)),
     atrasada = (o: OrdemServico) =>
       !!o.entrega_prevista_em && Date.parse(o.entrega_prevista_em) < Date.now(),
     parada = (o: OrdemServico) => o.paradas.some((p) => !p.encerrado_em),
@@ -208,8 +224,26 @@ export async function consultarRelatorios(
         (q) => q.situacao === "awaiting_approval",
       ).length,
     },
+    paradas_motivos: Object.keys(motivosParada)
+      .map((motivo) => ({
+        motivo,
+        quantidade: ativas.filter((o) =>
+          o.paradas.some((p) => !p.encerrado_em && p.motivo === motivo),
+        ).length,
+      }))
+      .filter((p) => p.quantidade > 0)
+      .sort((a, b) => b.quantidade - a.quantidade || a.motivo.localeCompare(b.motivo)),
     atencao: ativas
-      .filter((o) => atrasada(o) || parada(o))
+      .filter((o) => atrasada(o) || parada(o) || o.situacao === "ready")
+      .sort(
+        (a, b) =>
+          Number(atrasada(b)) - Number(atrasada(a)) ||
+          Number(parada(b)) - Number(parada(a)) ||
+          (a.entrega_prevista_em || "9999").localeCompare(
+            b.entrega_prevista_em || "9999",
+          ) ||
+          a.id.localeCompare(b.id),
+      )
       .slice(0, 15)
       .map((o) => ({
         id: o.id,
@@ -218,14 +252,14 @@ export async function consultarRelatorios(
         veiculo: o.dados_veiculo.modelo,
         entrega_prevista_em: o.entrega_prevista_em,
         situacao: o.situacao,
+        parada: parada(o),
+        atrasada: atrasada(o),
         motivo: o.paradas
           .filter((p) => !p.encerrado_em)
-          .map((p) => p.detalhes)
+          .map((p) => p.detalhes || motivosParada[p.motivo] || "Outra pendência")
           .join("; "),
       })),
-    clientes: [...clientes.values()]
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10),
+    clientes: [...clientes.values()].sort((a, b) => b.total - a.total).slice(0, 10),
     estoque: {
       baixo: produtos.filter((p) => (p.saldo ?? 0) <= p.minimo).length,
       sem_custo: produtos.filter((p) => p.custo_centavos === 0).length,
@@ -240,9 +274,56 @@ export type EventoGestao = {
   tipo: string;
   descricao: string;
   autor: string | null;
+  autor_nome?: string;
   entidade: string | null;
   numero: string | null;
 };
+export type DetalheEventoGestao = EventoGestao & {
+  detalhes: Record<string, unknown>;
+  contexto_atual: {
+    cliente?: string;
+    identificacao?: string;
+    numero?: number;
+    campos?: Record<string, unknown>;
+  };
+};
+export async function consultarEventoHistorico(
+  demo: boolean,
+  oficina: string,
+  evento: EventoGestao,
+  signal?: AbortSignal,
+): Promise<DetalheEventoGestao> {
+  if (!demo)
+    return rpc(
+      "consultar_evento_historico",
+      {
+        p_oficina: oficina,
+        p_origem: evento.origem,
+        p_id: evento.id,
+      },
+      signal,
+    );
+  const ordem = lerOrdensDemo().find((o) => o.id === evento.entidade);
+  const h = ordem?.historico.find((h) => h.id === evento.id);
+  const movimento =
+    evento.origem === "estoque"
+      ? lerEstoqueDemo().movimentos.find((m) => m.id === evento.id)
+      : undefined;
+  return {
+    ...evento,
+    autor_nome: "Demonstração",
+    detalhes: movimento
+      ? {
+          tipo: movimento.tipo,
+          quantidade: movimento.quantidade,
+          saldo_apos: movimento.saldo_apos,
+          custo_centavos: movimento.custo_centavos,
+          motivo: movimento.motivo,
+        }
+      : h?.metadados || {},
+    contexto_atual: {},
+  };
+}
 export async function consultarHistorico(
   demo: boolean,
   oficina: string,
@@ -251,20 +332,23 @@ export async function consultarHistorico(
   tipo: string,
   busca: string,
   pagina: number,
+  signal?: AbortSignal,
 ): Promise<{ itens: EventoGestao[]; total: number }> {
   validarDatas(inicio, fim);
   if (!demo)
-    return rpc("consultar_historico_gestao", {
-      p_oficina: oficina,
-      p_inicio: inicio,
-      p_fim: fim,
-      p_tipo: tipo,
-      p_busca: busca,
-      p_pagina: pagina,
-    });
-  const os: OrdemServico[] = JSON.parse(
-    localStorage.getItem("patio_os_v1") || "[]",
-  );
+    return rpc(
+      "consultar_historico_gestao",
+      {
+        p_oficina: oficina,
+        p_inicio: inicio,
+        p_fim: fim,
+        p_tipo: tipo,
+        p_busca: busca,
+        p_pagina: pagina,
+      },
+      signal,
+    );
+  const os: OrdemServico[] = lerOrdensDemo();
   const eventos: EventoGestao[] = os.flatMap((o) =>
     o.historico.map((h) => ({
       id: h.id,
@@ -294,9 +378,7 @@ export async function consultarHistorico(
         dataSP(e.data) >= inicio &&
         dataSP(e.data) <= fim &&
         (!tipo || e.tipo === tipo) &&
-        `${e.descricao} ${e.numero ?? ""}`
-          .toLowerCase()
-          .includes(busca.toLowerCase()),
+        `${e.descricao} ${e.numero ?? ""}`.toLowerCase().includes(busca.toLowerCase()),
     )
     .sort((a, b) => b.data.localeCompare(a.data) || a.id.localeCompare(b.id));
   return {

@@ -1,0 +1,181 @@
+{
+  "ambiente": "Vite local + Supabase remoto; relógio na automação inclui overhead; sem tempo de digitação. Navegação aquecida mede tela já visitada com cache. Recarga mantém cache HTTP e sessão existente.",
+  "amostras": [
+    {
+      "acao": "Salvar cliente mínimo",
+      "ms": 1028
+    },
+    {
+      "acao": "Salvar empresa",
+      "ms": 610
+    },
+    {
+      "acao": "Salvar orçamento avulso",
+      "ms": 502
+    },
+    {
+      "acao": "Salvar revisão do orçamento",
+      "ms": 1285
+    },
+    {
+      "acao": "Emitir revisão e preparar link",
+      "ms": 719
+    },
+    {
+      "acao": "Criar OS direta",
+      "ms": 720
+    },
+    {
+      "acao": "Registrar sinal OS",
+      "ms": 813
+    },
+    {
+      "acao": "Adicionar serviço OS",
+      "ms": 715
+    },
+    {
+      "acao": "Entregar OS peça do cliente",
+      "ms": 542
+    },
+    {
+      "acao": "Salvar serviço favorito",
+      "ms": 536
+    },
+    {
+      "acao": "Salvar orçamento catálogo",
+      "ms": 1252
+    },
+    {
+      "acao": "Emitir orçamento catálogo",
+      "ms": 572
+    },
+    {
+      "acao": "Registrar compra estoque e pagamento",
+      "ms": 1232
+    },
+    {
+      "acao": "Entregar OS com baixa de estoque",
+      "ms": 689
+    },
+    {
+      "acao": "Quitar OS com taxa cartão",
+      "ms": 1090
+    },
+    {
+      "acao": "Salvar cliente repetição",
+      "ms": 652
+    },
+    {
+      "acao": "Salvar cliente repetição",
+      "ms": 515
+    },
+    {
+      "acao": "Salvar cliente repetição",
+      "ms": 612
+    },
+    {
+      "acao": "Salvar cliente repetição",
+      "ms": 539
+    },
+    {
+      "acao": "Salvar cliente repetição",
+      "ms": 549
+    },
+    {
+      "acao": "Buscar cliente repetição",
+      "ms": 715
+    },
+    {
+      "acao": "Buscar cliente repetição",
+      "ms": 539
+    },
+    {
+      "acao": "Buscar cliente repetição",
+      "ms": 565
+    },
+    {
+      "acao": "Buscar cliente repetição",
+      "ms": 520
+    },
+    {
+      "acao": "Buscar cliente repetição",
+      "ms": 574
+    },
+    {
+      "acao": "Salvar orçamento no layout celular",
+      "ms": 1255
+    },
+    {
+      "acao": "Navegação aquecida Clientes",
+      "ms": 865
+    },
+    {
+      "acao": "Navegação aquecida Financeiro",
+      "ms": 588
+    },
+    {
+      "acao": "Navegação aquecida Orçamentos",
+      "ms": 658
+    },
+    {
+      "acao": "Navegação aquecida Clientes",
+      "ms": 499
+    },
+    {
+      "acao": "Navegação aquecida Financeiro",
+      "ms": 526
+    },
+    {
+      "acao": "Navegação aquecida Orçamentos",
+      "ms": 568
+    },
+    {
+      "acao": "Navegação aquecida Clientes",
+      "ms": 580
+    },
+    {
+      "acao": "Navegação aquecida Financeiro",
+      "ms": 498
+    },
+    {
+      "acao": "Navegação aquecida Orçamentos",
+      "ms": 496
+    },
+    {
+      "acao": "Navegação aquecida Clientes",
+      "ms": 523
+    },
+    {
+      "acao": "Navegação aquecida Financeiro",
+      "ms": 652
+    },
+    {
+      "acao": "Navegação aquecida Orçamentos",
+      "ms": 455
+    },
+    {
+      "acao": "Navegação aquecida Clientes",
+      "ms": 502
+    },
+    {
+      "acao": "Navegação aquecida Financeiro",
+      "ms": 533
+    },
+    {
+      "acao": "Navegação aquecida Orçamentos",
+      "ms": 489
+    },
+    {
+      "acao": "Recarregar orçamentos com sessão existente",
+      "ms": 3546
+    },
+    {
+      "acao": "Recarregar orçamentos com sessão existente",
+      "ms": 2247
+    },
+    {
+      "acao": "Recarregar orçamentos com sessão existente",
+      "ms": 2071
+    }
+  ]
+}

@@ -1,6 +1,23 @@
+import { classificarEntrega, fusoEntrega } from "./entregaPrometida.ts";
+
+const formatoEntrada = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: fusoEntrega,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+const horaEntrada = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: fusoEntrega,
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
 export type OrdemNoMapa = {
+  tipo_servico?: string | null;
   id: string;
   numero: number;
+  revisao: number;
   situacao: string;
   veiculo_id: string;
   dados_cliente: { nome?: string };
@@ -9,6 +26,13 @@ export type OrdemNoMapa = {
   queixa_cliente: string | null;
   recebido_em: string | null;
   entrega_prevista_em: string | null;
+  etapas_execucao?: {
+    nome: string;
+    situacao: string;
+    prazo: string | null;
+    responsavel: string;
+    posicao: number;
+  }[];
   paradas: {
     id: string;
     motivo: string;
@@ -25,12 +49,16 @@ export const motivosParada: Record<string, string> = {
   other: "Outra pendência",
 };
 export const etapasMapa = [
-  { id: "recepcao", nome: "Recebidas", descricao: "Aguardando início" },
-  { id: "execucao", nome: "Em execução", descricao: "Serviços em andamento" },
+  {
+    id: "recepcao",
+    nome: "Recebidas / Diagnóstico",
+    descricao: "Recebido na oficina e aguardando diagnóstico",
+  },
   { id: "aguardando", nome: "Paradas", descricao: "Pendências abertas" },
+  { id: "execucao", nome: "Em execução", descricao: "Serviços em andamento" },
   {
     id: "conferencia",
-    nome: "Conferência",
+    nome: "Conferência e testes",
     descricao: "Verificação do serviço",
   },
   { id: "pronto", nome: "Prontas", descricao: "Aguardando entrega" },
@@ -41,41 +69,44 @@ export const normalizarBuscaMapa = (s: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-zA-Z0-9]/g, "")
     .toLowerCase();
-const dia = (d: Date) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Sao_Paulo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d);
 export function prepararMapa(ordens: OrdemNoMapa[], agora = new Date()) {
   return ordens
     .filter((o) =>
       ["open", "in_progress", "quality_check", "ready"].includes(o.situacao),
     )
     .map((o) => {
-      const paradas = o.paradas.filter((p) => !p.encerrado_em),
-        data = o.entrega_prevista_em ? new Date(o.entrega_prevista_em) : null;
-      const valida = data && !Number.isNaN(data.getTime()) ? data : null,
-        hoje = !!valida && dia(valida) === dia(agora);
+      const paradas = o.paradas.filter((p) => !p.encerrado_em);
+      const prazoEntrega = classificarEntrega(o.entrega_prevista_em, o.situacao, agora);
       const tecnico = o.responsavel?.trim() || "Sem responsável";
+      const instanteEntrada = o.recebido_em ? Date.parse(o.recebido_em) : NaN;
+      const entradaValida = Number.isFinite(instanteEntrada);
       return {
+        tipoServico: o.tipo_servico,
         id: o.numero,
         osId: o.id,
+        revisao: o.revisao,
+        situacao: o.situacao,
         veiculoId: o.veiculo_id,
         presente: !!o.recebido_em,
+        entrada: entradaValida ? o.recebido_em : null,
+        entradaInstante: entradaValida ? instanteEntrada : null,
+        entradaTexto: entradaValida
+          ? `${formatoEntrada.format(instanteEntrada)} às ${horaEntrada.format(instanteEntrada)}`
+          : "",
         modelo: o.dados_veiculo.modelo || "Veículo não informado",
         placa: o.dados_veiculo.placa || "Sem placa",
         cliente: o.dados_cliente.nome || "Cliente não informado",
-        versao: (
-          {
-            open: "Recebida",
-            in_progress: "Em execução",
-            quality_check: "Conferência",
-            ready: "Pronta para entrega",
-          } as Record<string, string>
-        )[o.situacao],
-        servico: o.queixa_cliente || "Relato não informado",
+        versao: paradas.length
+          ? "Parada"
+          : (
+              {
+                open: "Recebida",
+                in_progress: "Em execução",
+                quality_check: "Conferência",
+                ready: "Pronta para entrega",
+              } as Record<string, string>
+            )[o.situacao],
+        servico: o.queixa_cliente?.trim() || "",
         etapa: paradas.length
           ? "aguardando"
           : o.situacao === "ready"
@@ -86,9 +117,23 @@ export function prepararMapa(ordens: OrdemNoMapa[], agora = new Date()) {
                 ? "execucao"
                 : "recepcao",
         motivo: paradas
-          .map((p) => `${motivosParada[p.motivo] ?? p.motivo}: ${p.detalhes}`)
+          .map((p) => {
+            const motivo = motivosParada[p.motivo] ?? p.motivo;
+            return p.detalhes && p.detalhes !== motivo
+              ? `${motivo}: ${p.detalhes}`
+              : motivo;
+          })
           .join(" · "),
         tecnico,
+        etapaExecucaoAtrasada: o.etapas_execucao?.some(
+          (e) =>
+            !["concluida", "cancelada"].includes(e.situacao) &&
+            e.prazo &&
+            Date.parse(e.prazo) < +agora,
+        ),
+        etapaExecucao: o.etapas_execucao
+          ?.filter((e) => !["concluida", "cancelada"].includes(e.situacao))
+          .sort((a, b) => a.posicao - b.posicao)[0],
         iniciais:
           tecnico === "Sem responsável"
             ? "—"
@@ -98,20 +143,53 @@ export function prepararMapa(ordens: OrdemNoMapa[], agora = new Date()) {
                 .map((s) => s[0])
                 .join(""),
         cor: "azul",
-        hoje,
-        semPrazo: !valida,
-        atrasado: !!valida && valida.getTime() < agora.getTime(),
-        prazo: valida
-          ? `${hoje ? "Hoje" : new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(valida)}, ${new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }).format(valida)}`
-          : "Sem previsão",
+        prazoEntrega,
+        hoje: prazoEntrega.hoje,
+        semPrazo: prazoEntrega.semData,
+        atrasado: prazoEntrega.atrasada,
+        prazo: prazoEntrega.data,
         entrega: o.entrega_prevista_em,
       };
     })
     .sort(
       (a, b) =>
         Number(b.atrasado) - Number(a.atrasado) ||
-        (a.entrega ?? "9999").localeCompare(b.entrega ?? "9999") ||
+        (a.prazoEntrega.instante ?? Infinity) - (b.prazoEntrega.instante ?? Infinity) ||
         a.id - b.id,
     );
 }
 export type VeiculoMapa = ReturnType<typeof prepararMapa>[number];
+
+// Os veículos preparados são imutáveis durante a busca. Reaproveita a normalização
+// entre teclas; uma nova consulta/atualização de prazo produz objetos novos.
+const indiceBusca = new WeakMap<VeiculoMapa, string>();
+function textoParaBusca(v: VeiculoMapa) {
+  let texto = indiceBusca.get(v);
+  if (texto === undefined) {
+    texto = normalizarBuscaMapa(
+      `${v.id} ${v.placa} ${v.modelo} ${v.cliente} ${v.motivo} ${v.tecnico}`,
+    );
+    indiceBusca.set(v, texto);
+  }
+  return texto;
+}
+
+export function filtrarVeiculosMapa(
+  veiculos: VeiculoMapa[],
+  filtro: string,
+  busca: string,
+) {
+  const termo = normalizarBuscaMapa(busca);
+  return veiculos.filter(
+    (v) =>
+      (filtro === "todos" ||
+        (filtro === "presentes" && v.presente) ||
+        (filtro === "execucao" && v.etapa === "execucao") ||
+        (filtro === "prontos" && v.etapa === "pronto") ||
+        (filtro === "atrasados" && v.atrasado) ||
+        (filtro === "hoje" && v.hoje) ||
+        (filtro === "parados" && !!v.motivo) ||
+        (filtro === "sem-prazo" && v.semPrazo)) &&
+      (!termo || textoParaBusca(v).includes(termo)),
+  );
+}

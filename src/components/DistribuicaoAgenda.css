@@ -1,0 +1,138 @@
+.distribuicao-agenda,
+.distribuicao-config {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--borda, #506052);
+  border-radius: 12px;
+  min-width: 0;
+}
+.distribuicao-cabecalho,
+.distribuicao-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.distribuicao-agenda label,
+.distribuicao-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 600;
+}
+.distribuicao-agenda label,
+.distribuicao-form label,
+.distribuicao-form details,
+.distribuicao-agenda details {
+  margin: 12px 0;
+}
+.distribuicao-agenda
+  input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+.distribuicao-form input:not([type="checkbox"]),
+.distribuicao-form select {
+  width: 100%;
+  min-width: 0;
+}
+.distribuicao-agenda button,
+.distribuicao-config button,
+.estrutura-sistema .distribuicao-agenda button {
+  min-height: 38px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.distribuicao-agenda button svg {
+  flex-shrink: 0;
+}
+.distribuicao-candidato {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--borda, #506052);
+  min-width: 0;
+}
+.distribuicao-candidato > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.distribuicao-candidato span,
+.distribuicao-candidato small,
+.distribuicao-agenda .texto-apoio,
+.distribuicao-form .texto-apoio {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+.distribuicao-candidato.escolhido {
+  border-left: 3px solid var(--destaque, #a4c46e);
+  padding-left: 12px;
+}
+.distribuicao-form fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  display: block;
+}
+.distribuicao-form .distribuicao-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.distribuicao-turno {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 8px;
+}
+.distribuicao-turno label {
+  margin: 0;
+}
+.distribuicao-bloqueio {
+  border-bottom: 1px solid var(--borda, #506052);
+  padding-bottom: 14px;
+}
+.distribuicao-config summary,
+.distribuicao-agenda summary,
+.distribuicao-form summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 0;
+}
+.distribuicao-impedimento {
+  border-left: 3px solid #d9a34b;
+  padding-left: 12px;
+}
+@media (max-width: 600px) {
+  .distribuicao-agenda,
+  .distribuicao-config {
+    padding: 12px;
+  }
+  .distribuicao-turno {
+    grid-template-columns: 1fr 1fr;
+  }
+  .distribuicao-candidato {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .distribuicao-cabecalho {
+    align-items: flex-start;
+  }
+  .distribuicao-linha > label {
+    flex: 1 1 180px;
+  }
+}

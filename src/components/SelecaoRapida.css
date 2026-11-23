@@ -1,0 +1,72 @@
+.selecao-rapida {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.selecao-rapida > label {
+  font-size: 14px;
+  font-weight: 650;
+  margin: 0 !important;
+}
+.selecao-rapida-campo {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.selecao-rapida-campo > svg {
+  position: absolute;
+  left: 13px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.selecao-rapida-campo > svg:last-child {
+  left: auto;
+  right: 13px;
+}
+.selecao-rapida .selecao-rapida-campo input {
+  width: 100%;
+  padding-left: 38px;
+  padding-right: 34px;
+  margin: 0;
+}
+.selecao-rapida-opcoes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px #0002;
+  padding: 5px;
+}
+.selecao-rapida-opcoes button {
+  display: grid;
+  width: 100%;
+  text-align: left;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--grafite);
+  font: inherit;
+  cursor: pointer;
+}
+.selecao-rapida-opcoes button:hover,
+.selecao-rapida-opcoes button[aria-selected="true"] {
+  background: var(--gestao-suave);
+}
+.selecao-rapida-opcoes small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.selecao-rapida-opcoes p {
+  padding: 10px;
+  font-size: 12px;
+}

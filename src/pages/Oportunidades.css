@@ -1,0 +1,235 @@
+.contatos-pagina {
+  gap: 22px;
+}
+.contatos-pagina .agil-cabecalho p {
+  margin: 8px 0 0;
+}
+.contatos-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.contatos-abas button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.contatos-abas button[aria-pressed="true"] {
+  color: var(--grafite);
+  border-color: var(--primaria, #8da75f);
+  background: var(--gestao-suave, #34472b);
+}
+.contatos-abas button span {
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--grafite);
+  font-variant-numeric: tabular-nums;
+}
+.contatos-filtros {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  align-items: end;
+  gap: 18px;
+}
+.contatos-busca {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.contatos-busca > svg {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.contatos-busca input {
+  padding-left: 43px;
+}
+.contatos-lista {
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  background: var(--superficie);
+  border-radius: 16px;
+}
+.contatos-linha {
+  display: grid;
+  grid-template-columns: 44px minmax(180px, 1fr) minmax(170px, 0.65fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+}
+.contatos-linha + .contatos-linha {
+  border-top: 1px solid var(--borda);
+}
+.contatos-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  color: var(--muted);
+}
+.contatos-identidade {
+  min-width: 0;
+}
+.contatos-identidade h2 {
+  margin: 0;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.contatos-identidade > p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 5px 0 0;
+}
+.contatos-motivo {
+  display: grid;
+  gap: 7px;
+  justify-items: start;
+  font-size: 12px;
+}
+.contatos-motivo > span {
+  color: var(--muted);
+}
+.contatos-etiqueta {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: color-mix(in srgb, #dda72e 12%, var(--superficie));
+  color: var(--grafite);
+  font-size: 12px;
+}
+.contatos-etiqueta--retirada {
+  background: color-mix(in srgb, #48b58d 16%, var(--superficie));
+}
+.contatos-etiqueta--manutencao {
+  background: color-mix(in srgb, #6495de 16%, var(--superficie));
+}
+.contatos-motivo small {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.contatos-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+.contatos-pagina .contatos-acoes :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.contatos-detalhes {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.contatos-detalhes summary,
+.contatos-ajuda summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.contatos-detalhes p {
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.contatos-detalhes :is(a, button) {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  font-size: 12px;
+  cursor: pointer;
+}
+.contatos-pagina .contatos-detalhes button {
+  min-height: 32px;
+}
+.contatos-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 50px 22px;
+  gap: 12px;
+  color: var(--muted);
+}
+.contatos-vazio h2 {
+  font-size: 18px;
+  color: var(--grafite);
+  margin: 0;
+}
+.contatos-vazio p {
+  margin: 0;
+  max-width: 540px;
+  line-height: 1.7;
+  font-size: 13px;
+}
+.contatos-ajuda {
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 850px;
+}
+.contatos-ajuda p {
+  color: var(--muted);
+  margin-top: 12px;
+}
+.contatos-caso {
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+@media (max-width: 1150px) {
+  .contatos-linha {
+    grid-template-columns: minmax(150px, 1fr) minmax(170px, 0.7fr);
+    gap: 16px;
+  }
+  .contatos-avatar {
+    display: none;
+  }
+  .contatos-acoes {
+    grid-column: 1 / -1;
+    justify-content: start;
+  }
+}
+@media (max-width: 600px) {
+  .contatos-filtros {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .contatos-linha {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .contatos-acoes {
+    flex-wrap: wrap;
+  }
+  .contatos-abas {
+    gap: 6px;
+  }
+  .contatos-abas button {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+}

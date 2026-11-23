@@ -1,0 +1,440 @@
+/* Papel comercial compartilhado pela central e pela janela de impressão. */
+.folha-cliente.folha-orcamento {
+  padding: clamp(20px, 4vw, 48px);
+  font:
+    12px/1.5 Arial,
+    sans-serif;
+  color: #24332e;
+  background: #fff;
+  min-width: 0;
+  container-type: inline-size;
+}
+.folha-orcamento *,
+.folha-orcamento *::before,
+.folha-orcamento *::after {
+  box-sizing: border-box;
+}
+.folha-orcamento :is(h2, h3, p) {
+  margin: 0;
+  color: inherit;
+}
+.orc-doc-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  border-top: 5px solid var(--cor-documento);
+  padding: 24px 0 22px;
+}
+.orc-doc-empresa {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.orc-doc-empresa > div {
+  min-width: 0;
+}
+.orc-doc-empresa img {
+  width: 66px;
+  max-height: 68px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.orc-doc-empresa h2 {
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+.orc-doc-empresa p {
+  font-size: 10px;
+  color: #5c6b65;
+  margin-top: 3px;
+}
+.orc-doc-numero {
+  text-align: right;
+  flex: 0 0 auto;
+  display: grid;
+  gap: 2px;
+}
+.orc-doc-numero > span {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+.orc-doc-numero > strong {
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.orc-doc-numero > small {
+  font-size: 10px;
+  color: #5c6b65;
+}
+.orc-doc-emissao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 13px 0;
+  border-block: 1px solid #d8e0dc;
+}
+.orc-doc-emissao > div {
+  display: grid;
+  gap: 2px;
+}
+.orc-doc-emissao > div > span {
+  color: #5c6b65;
+  font-size: 9px;
+}
+.orc-doc-emissao > div > strong {
+  font-size: 10px;
+}
+.orc-doc-status {
+  display: inline-block;
+  border: 1px solid #d4e3da;
+  background: #edf4ef;
+  color: #2d5940;
+  border-radius: 4px;
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  max-width: 100%;
+}
+.orc-doc-status.orc-doc-status-alerta {
+  color: #7a4123;
+  background: #fff4e9;
+  border-color: #edd9c8;
+}
+.orc-doc-destinatario {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 22px 0 26px;
+}
+.orc-doc-destinatario > div {
+  min-width: 0;
+}
+.orc-doc-destinatario > div + div {
+  border-left: 1px solid #d8e0dc;
+  padding-left: 24px;
+}
+.orc-doc-rotulo {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+  font-size: 9px;
+  color: #5c6b65;
+  margin-bottom: 6px;
+}
+.orc-doc-destinatario h3 {
+  font-size: 15px;
+  line-height: 1.3;
+  margin-bottom: 5px;
+}
+.orc-doc-destinatario p {
+  font-size: 10px;
+  color: #5c6b65;
+  margin-top: 3px;
+}
+.orc-doc-itens {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 11px;
+}
+.orc-doc-itens caption {
+  text-align: left;
+  padding: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.orc-doc-itens caption small {
+  float: right;
+  font-size: 10px;
+  font-weight: 400;
+  color: #5c6b65;
+}
+.orc-doc-col-descricao {
+  width: 52%;
+}
+.orc-doc-col-qtd {
+  width: 10%;
+}
+.orc-doc-itens th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: right;
+  background: #eaf0ec;
+  padding: 9px 10px;
+  border-block: 1px solid #cdd8d1;
+  color: #3e5147;
+}
+.orc-doc-itens td {
+  text-align: right;
+  padding: 10px;
+  border-bottom: 1px solid #dce3de;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.orc-doc-itens :is(th, td):first-child {
+  text-align: left;
+}
+.orc-doc-itens :is(th, td):nth-child(2) {
+  text-align: center;
+}
+.orc-doc-itens tbody tr:nth-child(even) {
+  background: #f5f7f5;
+}
+.orc-doc-itens td strong {
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.orc-doc-itens td small {
+  display: block;
+  font-size: 9px;
+  color: #68766e;
+  margin-top: 3px;
+}
+.orc-doc-itens td b {
+  font-weight: 700;
+}
+.orc-doc-sem-itens {
+  padding: 15px 10px;
+  color: #5c6b65;
+  border-bottom: 1px solid #dce3de;
+}
+.orc-doc-fechamento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 43%);
+  gap: 28px;
+  margin: 18px 0 24px;
+}
+.orc-doc-condicoes {
+  padding-top: 8px;
+}
+.orc-doc-condicoes h3,
+.orc-doc-secao h3 {
+  font-size: 11px;
+  margin-bottom: 7px;
+  font-weight: 700;
+}
+.orc-doc-condicoes p {
+  display: grid;
+  margin-top: 8px;
+  font-size: 10px;
+}
+.orc-doc-condicoes p > span {
+  color: #68766e;
+  font-size: 9px;
+}
+.orc-doc-condicoes p > strong {
+  font-weight: 500;
+}
+.orc-doc-totais > p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 12px;
+  font-size: 11px;
+}
+.orc-doc-totais > div {
+  margin-top: 8px;
+  border-left: 3px solid var(--cor-documento);
+  padding: 13px 14px;
+  background: #eaf0ec;
+  display: grid;
+  gap: 3px;
+}
+.orc-doc-totais > div > span {
+  font-size: 10px;
+  color: #43564a;
+}
+.orc-doc-totais > div > strong {
+  font-size: 25px;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+}
+.orc-doc-secao {
+  border-top: 1px solid #e0e5e1;
+  padding: 12px 0;
+}
+.orc-doc-secao p {
+  white-space: pre-wrap;
+  font-size: 10px;
+  line-height: 1.6;
+  color: #4d5e54;
+}
+.folha-orcamento .orc-doc-confirmacao {
+  background: #edf4ef;
+  border-left: 3px solid var(--cor-documento);
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 10px;
+}
+.folha-orcamento .orc-doc-mensagem {
+  font-size: 10px;
+  color: #5c6b65;
+  margin-top: 16px;
+}
+.orc-doc-assinaturas {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 36px;
+  margin-top: 38px;
+  font-size: 9px;
+  color: #5c6b65;
+}
+.orc-doc-assinaturas > div:first-child {
+  border-top: 1px solid #88998f;
+  padding-top: 7px;
+}
+.folha-cliente.folha-orcamento > .orc-doc-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  border-top: 1px solid #dce3de;
+  padding-top: 12px;
+  margin-top: 22px;
+  font-size: 8px;
+  color: #5c6b65;
+}
+.orc-doc-rodape > span:last-child {
+  flex-shrink: 0;
+}
+@media screen {
+  @container (max-width: 480px) {
+    .orc-doc-cabecalho {
+      gap: 14px;
+      padding-top: 18px;
+    }
+    .orc-doc-empresa {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .orc-doc-empresa img {
+      width: 48px;
+      max-height: 48px;
+    }
+    .orc-doc-empresa h2 {
+      font-size: 17px;
+    }
+    .orc-doc-numero > strong {
+      font-size: 25px;
+    }
+    .orc-doc-numero > span {
+      font-size: 8px;
+      letter-spacing: 1px;
+    }
+    .orc-doc-emissao {
+      gap: 12px 18px;
+    }
+    .orc-doc-destinatario {
+      gap: 16px;
+    }
+    .orc-doc-destinatario > div + div {
+      padding-left: 16px;
+    }
+    .orc-doc-destinatario h3 {
+      font-size: 13px;
+    }
+    .orc-doc-col-descricao {
+      width: 42%;
+    }
+    .orc-doc-col-qtd {
+      width: 12%;
+    }
+    .orc-doc-itens :is(th, td) {
+      padding: 8px 4px;
+      font-size: 10px;
+    }
+    .orc-doc-itens th {
+      font-size: 8px;
+      letter-spacing: 0;
+    }
+    .orc-doc-fechamento {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    .orc-doc-totais {
+      width: 100%;
+    }
+    .orc-doc-totais > div {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .orc-doc-assinaturas {
+      gap: 18px;
+    }
+    .folha-cliente.folha-orcamento > .orc-doc-rodape {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+}
+@media print {
+  .folha-cliente.folha-orcamento {
+    padding: 0;
+    font-size: 9pt;
+    container-type: normal;
+  }
+  .orc-doc-cabecalho {
+    padding: 4mm 0;
+  }
+  .orc-doc-emissao {
+    padding: 3mm 0;
+  }
+  .orc-doc-destinatario {
+    margin: 4mm 0 5mm;
+  }
+  .orc-doc-itens thead {
+    display: table-header-group;
+  }
+  .orc-doc-itens tr,
+  .orc-doc-cabecalho,
+  .orc-doc-emissao,
+  .orc-doc-destinatario,
+  .orc-doc-fechamento,
+  .orc-doc-confirmacao,
+  .orc-doc-assinaturas {
+    break-inside: avoid;
+  }
+  .orc-doc-itens caption,
+  .orc-doc-secao h3 {
+    break-after: avoid;
+  }
+  .orc-doc-itens :is(th, td) {
+    padding: 1.8mm 2.2mm;
+  }
+  .orc-doc-itens td {
+    font-size: 8.5pt;
+  }
+  .orc-doc-secao p {
+    orphans: 3;
+    widows: 3;
+  }
+  .orc-doc-fechamento {
+    margin: 4mm 0;
+  }
+  .orc-doc-secao {
+    padding: 2mm 0;
+  }
+  .orc-doc-assinaturas {
+    margin-top: 8mm;
+    break-after: avoid;
+  }
+  .folha-cliente.folha-orcamento > .orc-doc-rodape {
+    margin-top: 4mm;
+    padding-top: 2mm;
+    break-inside: avoid;
+  }
+}

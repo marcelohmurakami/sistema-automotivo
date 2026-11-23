@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import{resolve}from'node:path';
+import{build,preview}from'./lib/vite-conferencia.mjs';import react from'@vitejs/plugin-react';import{chromium}from'playwright';
+const out=resolve(process.env.QA_OUTPUT||'output/regressao-mapa-orcamentos-os-20261116/compartilhado/acesso-resiliencia');await mkdir(out,{recursive:true});
+const config={configFile:false,envDir:false,logLevel:'error',plugins:[{name:'acesso-qa',enforce:'pre',resolveId(id){if(id.endsWith('/lib/supabase'))return'\0qa-acesso';},load(id){if(id==='\0qa-acesso')return `export const erroPublico=e=>e.message||'Erro de consulta';export const supabase={auth:{onAuthStateChange:fn=>{window.qa.sessao=fn;queueMicrotask(()=>fn('INITIAL_SESSION',{user:{id:'qa',email:'qa@example.invalid'}}));return{data:{subscription:{unsubscribe(){}}}}},mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel:'aal1',nextLevel:'aal1'},error:null})}},rpc(){const x={abortSignal(){return x},retry(){return x},then(ok,no){window.qa.calls++;const f=window.qa.falhas.shift();return Promise.resolve(f?{data:null,error:{code:f.code??'XX000',message:f.message||'Falha QA'},status:f.status??500}:{data:window.qa.revogado?[]:[{id:'qa-oficina',nome:'QA',ramo:'automotivo',especialidade:'mecanica',perfil:'owner',codigo_plano:'complete',recursos:[]}],error:null,status:200}).then(ok,no)}};return x}};`; }},react()],build:{outDir:resolve(out,'build'),rollupOptions:{input:'scripts/fixtures/acesso-resiliencia.html'}}};
+await build(config);const server=await preview({...config,preview:{host:'127.0.0.1',port:0}}),browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'}),resultados=[],erros=[];let p;
+try{for(const largura of[390,1920]){
+ const ctx=await browser.newContext({viewport:{width:largura,height:900}});p=await ctx.newPage();p.on('pageerror',e=>erros.push(e.message));p.setDefaultTimeout(15000);
+ const abrir=async()=>{await p.goto(server.resolvedUrls.local[0]+'scripts/fixtures/acesso-resiliencia.html',{waitUntil:'domcontentloaded'});await p.getByLabel('Rascunho').fill('Texto que não pode desaparecer');};
+ const pass=nome=>resultados.push({nome,largura,ok:true});
+ try{
+  await abrir();
+  for(const status of[500,503,429,{status:0,code:'',message:'TimeoutError: signal timed out'},{status:0,code:'',message:'AbortError: The operation was aborted.'}]){
+   const antes=await p.evaluate(()=>window.qa.calls);
+   await p.evaluate(s=>{window.qa.falhas=[typeof s==='number'?{status:s}:s];void window.qa.atualizar()},status);await p.waitForFunction(n=>window.qa.calls===n+2,antes);
+   assert.equal(await p.getByLabel('Rascunho').inputValue(),'Texto que não pode desaparecer');assert.equal(await p.evaluate(()=>window.qa.montagens),1);assert.equal(await p.getByRole('alert').count(),0);pass('Falha transitória '+JSON.stringify(status)+' recupera sem desmontar o formulário');
+  }
+  await p.screenshot({path:resolve(out,'recuperado-'+largura+'.png')});
+  for(const erro of[{status:403,code:'42501'},{status:401,code:'PGRST301'},{status:400,code:'PT403'}]){
+   await abrir();const antes=await p.evaluate(()=>window.qa.calls);await p.evaluate(e=>{window.qa.falhas=[e];void window.qa.atualizar()},erro);await p.getByText('Não conseguimos validar seu acesso.',{exact:true}).waitFor();assert.equal(await p.getByLabel('Rascunho').count(),0);assert.equal(await p.evaluate(()=>window.qa.calls),antes+1);pass('Recusa '+erro.code+' bloqueia imediatamente sem repetir');
+  }
+  await abrir();let antes=await p.evaluate(()=>window.qa.calls);await p.evaluate(()=>{window.qa.falhas=[{status:500},{status:500},{status:500}];void window.qa.atualizar()});await p.getByText('Não conseguimos validar seu acesso.',{exact:true}).waitFor();assert.equal(await p.evaluate(()=>window.qa.calls),antes+3);assert.equal(await p.getByLabel('Rascunho').count(),0);pass('Falha persistente esgota duas retentativas e bloqueia');
+  await p.getByRole('button',{name:'Tentar novamente',exact:true}).click();await p.getByLabel('Rascunho').waitFor();pass('Retentativa explícita restaura acesso depois de normalizar');
+  await abrir();await p.evaluate(()=>{window.qa.revogado=true;void window.qa.atualizar()});await p.getByText('Sem empresa autorizada',{exact:true}).waitFor();assert.equal(await p.getByLabel('Rascunho').count(),0);pass('Vínculo revogado não mantém empresa anterior');
+  await abrir();await p.evaluate(()=>{window.qa.semearCache();window.qa.sessao('TOKEN_REFRESHED',{user:{id:'qa',email:'qa@example.invalid'}})});assert.deepEqual(await p.evaluate(()=>window.qa.lerCache()),{origem:'usuario-anterior'});assert.equal(await p.getByLabel('Rascunho').inputValue(),'Texto que não pode desaparecer');pass('Renovação da mesma conta preserva cache e formulário');
+  await p.evaluate(()=>window.qa.sessao('SIGNED_IN',{user:{id:'outro-qa',email:'outro@example.invalid'}}));await p.getByText('Acesso ativo QA',{exact:true}).waitFor();assert.equal(await p.evaluate(()=>window.qa.lerCache()),null);pass('Troca de usuário pela autenticação limpa cache privado anterior');
+  await abrir();await p.evaluate(()=>{window.qa.semearCache();window.qa.sessao('SIGNED_OUT',null)});await p.getByText('Login obrigatório',{exact:true}).waitFor();assert.equal(await p.getByLabel('Rascunho').count(),0);assert.equal(await p.evaluate(()=>window.qa.lerCache()),null);pass('Fim externo da sessão exige novo login e descarta cache');
+  console.log('PASS acesso e recuperação',largura);
+ }finally{await ctx.close();}
+}assert.deepEqual(erros,[]);}catch(e){process.exitCode=1;console.error(e.stack);if(p&&!p.isClosed())await p.screenshot({path:resolve(out,'falha.png')});}finally{await browser.close();await server.httpServer.close();await writeFile(resolve(out,'resultados.json'),JSON.stringify({ok:!process.exitCode,componenteReal:true,servidorSimulado:true,resultados,erros},null,2));}

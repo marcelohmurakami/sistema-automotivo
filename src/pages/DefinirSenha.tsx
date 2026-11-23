@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LockKeyhole } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAcesso } from "../auth/contexto";
+import { parametroRetorno, retornoPortal } from "../lib/retornoPortal";
 
 export function DefinirSenha() {
+  const retorno = retornoPortal(useLocation().search);
   const acesso = useAcesso();
   const navegar = useNavigate();
   const [verificando, setVerificando] = useState(true);
@@ -16,15 +18,13 @@ export function DefinirSenha() {
     async function conferir() {
       try {
         const resultado = await supabase?.auth.getSession();
-        if (ativo)
-          setSessaoValida(!!resultado?.data.session && !resultado.error);
+        if (ativo) setSessaoValida(!!resultado?.data.session && !resultado.error);
       } finally {
         if (ativo) setVerificando(false);
       }
     }
     void conferir().catch(() => {
-      if (ativo)
-        setErro("Não foi possível validar o link. Verifique sua conexão.");
+      if (ativo) setErro("Não foi possível validar o link. Verifique sua conexão.");
     });
     return () => {
       ativo = false;
@@ -56,7 +56,9 @@ export function DefinirSenha() {
         return;
       }
       acesso.usarContaReal();
-      navegar("/clientes", { replace: true });
+      navegar(retorno ? retorno + "#area-cliente" : "/clientes", {
+        replace: true,
+      });
     } catch {
       setErro("Não foi possível conectar. Tente novamente.");
     } finally {
@@ -79,17 +81,19 @@ export function DefinirSenha() {
               {erro ||
                 "Abra o link recebido por e-mail. Se ele expirou ou já foi usado, solicite um novo link de recuperação."}
             </p>
-            <Link className="botao-secundario" to="/entrar">
+            <Link
+              className="botao-secundario"
+              to={retorno ? retorno + "#area-cliente" : "/entrar"}
+            >
               Voltar para o acesso
             </Link>
-            <Link to="/recuperar-senha">Solicitar novo link</Link>
+            <Link to={"/recuperar-senha" + parametroRetorno(retorno)}>
+              Solicitar novo link
+            </Link>
           </>
         ) : (
           <>
-            <p>
-              Crie uma senha com pelo menos 12 caracteres para entrar na sua
-              oficina.
-            </p>
+            <p>Crie uma senha com pelo menos 12 caracteres para entrar na sua conta.</p>
             <form className="formulario-cliente" onSubmit={salvar}>
               <label>
                 Nova senha

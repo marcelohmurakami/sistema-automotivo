@@ -1,0 +1,12 @@
+.os-pronta-criacao {
+  padding: 14px 16px;
+  margin: 12px 0;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  display: grid;
+  gap: 8px;
+}
+.os-pronta-criacao h3,
+.os-pronta-criacao p {
+  margin: 0;
+}

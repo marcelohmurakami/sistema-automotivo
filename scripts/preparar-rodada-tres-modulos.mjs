@@ -1,0 +1,3 @@
+import {build} from 'vite';import react from '@vitejs/plugin-react';import tailwindcss from '@tailwindcss/vite';import {resolve} from 'node:path';
+await build({configFile:false,envDir:false,logLevel:'error',plugins:[react(),tailwindcss()],define:{'import.meta.env.VITE_SUPABASE_URL':'""','import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY':'""'},build:{outDir:resolve('output/regressao-mapa-orcamentos-os-20261116/fixtures-build'),rollupOptions:{input:['scripts/fixtures/mapa-velocidade.html','scripts/fixtures/orcamentos-velocidade.html','scripts/fixtures/os-velocidade.html']}}});
+console.log('Fixtures atuais dos três módulos preparadas.');

@@ -1,3 +1,5 @@
+import { novoId } from "../lib/uuid.ts";
+import { especialidades } from "../lib/especialidades";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -7,7 +9,9 @@ import { supabase } from "../lib/supabase";
 import { erroEquipe } from "../services/equipe";
 import { equipeRpc, perfisEquipe } from "../services/equipe";
 import { normalizarTelefone } from "../services/clientes";
+import { ramos, type Ramo } from "../lib/ramos";
 import "./Equipe.css";
+import { documentosPublicos, versaoTermos } from "../lib/configuracaoPublica";
 
 export function CadastroConta() {
   const a = useAcesso(),
@@ -18,9 +22,7 @@ export function CadastroConta() {
   if (a.usuario && !a.demo)
     return (
       <Navigate
-        to={
-          sessionStorage.getItem("patio_convite") ? "/convite" : "/nova-oficina"
-        }
+        to={sessionStorage.getItem("patio_convite") ? "/convite" : "/nova-oficina"}
         replace
       />
     );
@@ -40,7 +42,17 @@ export function CadastroConta() {
       const { error } = await supabase.auth.signUp({
         email: String(f.get("email")).trim(),
         password: String(f.get("senha")),
-        options: { emailRedirectTo: `${window.location.origin}/entrar` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/entrar`,
+          ...(documentosPublicos.termos && documentosPublicos.privacidade
+            ? {
+                data: {
+                  termos_versao: versaoTermos,
+                  termos_aceitos_em: new Date().toISOString(),
+                },
+              }
+            : {}),
+        },
       });
       if (error) throw error;
       setEnviado(true);
@@ -66,8 +78,8 @@ export function CadastroConta() {
             <Mail />
             <h2>Confira seu e-mail</h2>
             <p>
-              Se o cadastro foi aceito, você receberá um link de confirmação.
-              Depois, entre para configurar sua oficina ou aceitar o convite.
+              Se o cadastro foi aceito, você receberá um link de confirmação. Depois,
+              entre para configurar sua empresa ou aceitar o convite.
             </p>
             <Link className="botao-primario" to="/entrar">
               Ir para o login
@@ -75,9 +87,7 @@ export function CadastroConta() {
           </div>
         ) : (
           <form className="formulario-cliente" onSubmit={cadastrar}>
-            <p>
-              Use seu próprio e-mail. Cada pessoa da equipe terá seu acesso.
-            </p>
+            <p>Use seu próprio e-mail. Cada pessoa da equipe terá seu acesso.</p>
             <label>
               E-mail
               <input
@@ -100,8 +110,8 @@ export function CadastroConta() {
               />
             </label>
             <small>
-              Use pelo menos 8 caracteres. O serviço de acesso pode exigir uma
-              senha mais forte.
+              Use pelo menos 8 caracteres. O serviço de acesso pode exigir uma senha
+              mais forte.
             </small>
             <label>
               Confirme a senha
@@ -118,6 +128,24 @@ export function CadastroConta() {
               <p role="alert" className="erro-formulario">
                 {erro}
               </p>
+            )}
+            {documentosPublicos.termos && documentosPublicos.privacidade && (
+              <label className="aceite-termos">
+                <input name="aceite" type="checkbox" required />
+                Li os{" "}
+                <a href={documentosPublicos.termos} target="_blank" rel="noreferrer">
+                  termos de uso
+                </a>{" "}
+                e a{" "}
+                <a
+                  href={documentosPublicos.privacidade}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  política de privacidade
+                </a>
+                .
+              </label>
             )}
             <button disabled={ocupado || !supabase} className="botao-primario">
               {ocupado ? "Criando conta…" : "Criar conta"}
@@ -139,10 +167,12 @@ export function NovaOficina() {
   const [chave] = useState(() => {
     const anterior = sessionStorage.getItem("patio_cadastro_oficina");
     if (anterior) return anterior;
-    const id = crypto.randomUUID();
+    const id = novoId();
     sessionStorage.setItem("patio_cadastro_oficina", id);
     return id;
   });
+  const [especialidade, setEspecialidade] = useState("");
+  const [ramo, setRamo] = useState<Ramo | "">("");
   const [erro, setErro] = useState(""),
     [ocupado, setOcupado] = useState(false);
   const [etapa, setEtapa] = useState(1),
@@ -170,6 +200,10 @@ export function NovaOficina() {
       return;
     }
     setErro("");
+    if (!ramo || !especialidade || especialidades[especialidade]?.ramo !== ramo) {
+      setErro("Selecione o ramo e a especialidade da empresa.");
+      return;
+    }
     if (etapa === 1) {
       setEtapa(2);
       return;
@@ -177,7 +211,9 @@ export function NovaOficina() {
     trava.current = true;
     setOcupado(true);
     try {
-      const id = await equipeRpc<string>("configurar_nova_oficina", {
+      const id = await equipeRpc<string>("configurar_nova_empresa", {
+        p_ramo: ramo,
+        p_especialidade: especialidade,
         p_chave: chave,
         p_nome: nome.trim(),
         p_telefone: normalizado || "",
@@ -201,7 +237,7 @@ export function NovaOficina() {
           <Building2 />
         </span>
         <div className="sobretitulo">PASSO {etapa} DE 2</div>
-        <h1>Sua oficina no Pátio.</h1>
+        <h1>Sua empresa no Pátio.</h1>
         <p>
           {etapa === 1
             ? "Alguns dados e você já pode começar a atender."
@@ -211,7 +247,43 @@ export function NovaOficina() {
           {etapa === 1 ? (
             <>
               <label>
-                Nome da oficina
+                Ramo da empresa
+                <select
+                  required
+                  value={ramo}
+                  onChange={(e) => {
+                    setRamo(e.target.value as Ramo);
+                    setEspecialidade("");
+                  }}
+                >
+                  <option value="">Selecione antes de cadastrar</option>
+                  {Object.entries(ramos).map(([id, r]) => (
+                    <option key={id} value={id}>
+                      {r.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Especialidade da empresa
+                <select
+                  required
+                  value={especialidade}
+                  onChange={(e) => setEspecialidade(e.target.value)}
+                  disabled={!ramo}
+                >
+                  <option value="">Selecione a especialidade</option>
+                  {Object.entries(especialidades)
+                    .filter(([, v]) => v.ramo === ramo)
+                    .map(([id, v]) => (
+                      <option key={id} value={id}>
+                        {v.nome}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Nome da empresa
                 <input
                   required
                   minLength={2}
@@ -276,6 +348,9 @@ export function NovaOficina() {
             <section className="equipe-resumo">
               <CheckCircle2 />
               <h2>{nome}</h2>
+              <p>
+                {ramo && ramos[ramo].nome} · {especialidades[especialidade]?.nome}
+              </p>
               <p>{telefone || "Telefone não informado"}</p>
               <p>
                 {[logradouro, cidade, uf, cep].filter(Boolean).join(" · ") ||
@@ -283,8 +358,8 @@ export function NovaOficina() {
               </p>
               <strong>Plano Básico</strong>
               <p>
-                Clientes, peças e serviços e notinhas. Você será o proprietário.
-                Nenhum plano pago será contratado nesta etapa.
+                Clientes, peças e serviços e notinhas. Você será o proprietário. Nenhum
+                plano pago será contratado nesta etapa.
               </p>
             </section>
           )}
@@ -295,10 +370,10 @@ export function NovaOficina() {
           )}
           <button className="botao-primario" disabled={ocupado}>
             {ocupado
-              ? "Preparando oficina…"
+              ? "Preparando empresa…"
               : etapa === 1
                 ? "Conferir dados"
-                : "Criar minha oficina"}
+                : "Criar minha empresa"}
           </button>
           {etapa === 2 && (
             <button
@@ -311,17 +386,13 @@ export function NovaOficina() {
             </button>
           )}
         </form>
-        <p>
-          Você é funcionário? Abra o link de convite enviado pelo proprietário.
-        </p>
+        <p>Você é funcionário? Abra o link de convite enviado pelo proprietário.</p>
         {a.oficina ? (
-          <Link to="/">Voltar à minha oficina</Link>
+          <Link to="/">Voltar à minha empresa</Link>
         ) : (
           <button
             className="botao-secundario"
-            onClick={() =>
-              void a.sair().catch(() => setErro("Não foi possível sair."))
-            }
+            onClick={() => void a.sair().catch(() => setErro("Não foi possível sair."))}
           >
             Sair da conta
           </button>
@@ -389,29 +460,19 @@ export function AceitarConvite() {
         </span>
         <h1>Vamos trabalhar juntos.</h1>
         <p>
-          Entre com o e-mail que recebeu o convite. O acesso só será liberado
-          após sua confirmação abaixo.
+          Entre com o e-mail que recebeu o convite. O acesso só será liberado após sua
+          confirmação abaixo.
         </p>
         {!token ? (
-          <p role="alert">
-            Abra o link completo enviado pelo proprietário da oficina.
-          </p>
+          <p role="alert">Abra o link completo enviado pelo proprietário da empresa.</p>
         ) : a.carregando ? (
           <p role="status">Verificando sua conta…</p>
         ) : !a.usuario || a.demo ? (
           <>
-            <Link
-              className="botao-primario"
-              to="/entrar"
-              onClick={a.usarContaReal}
-            >
+            <Link className="botao-primario" to="/entrar" onClick={a.usarContaReal}>
               Já tenho conta · Entrar
             </Link>
-            <Link
-              className="botao-secundario"
-              to="/cadastro"
-              onClick={a.usarContaReal}
-            >
+            <Link className="botao-secundario" to="/cadastro" onClick={a.usarContaReal}>
               Criar minha conta
             </Link>
           </>
@@ -436,8 +497,7 @@ export function AceitarConvite() {
               <section className="equipe-resumo">
                 <h2>{convite.data.oficina}</h2>
                 <p>
-                  Você entrará como{" "}
-                  {perfisEquipe[convite.data.perfil].toLowerCase()}.
+                  Você entrará como {perfisEquipe[convite.data.perfil].toLowerCase()}.
                 </p>
               </section>
             )}

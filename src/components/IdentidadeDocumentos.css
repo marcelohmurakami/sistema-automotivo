@@ -1,0 +1,150 @@
+.identidade-documentos {
+  min-width: 0;
+}
+.identidade-documentos > h2 {
+  margin-bottom: 20px;
+}
+.identidade-form,
+.identidade-form fieldset {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.identidade-form fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.identidade-arquivos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.identidade-arquivo {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  min-width: 0;
+}
+.identidade-arquivo h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.identidade-arquivo h3 small {
+  font: inherit;
+  color: var(--ui-suave);
+}
+.identidade-arquivo p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ui-suave);
+  line-height: 1.6;
+  min-height: 3.2em;
+}
+.identidade-previa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 128px;
+  padding: 12px;
+  border: 1px dashed var(--ui-borda);
+  border-radius: 8px;
+  color: var(--ui-suave);
+  font-size: 12px;
+  text-align: center;
+}
+.identidade-previa img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: 104px;
+  object-fit: contain;
+  background: white;
+  border-radius: 6px;
+}
+.identidade-form label {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 650;
+}
+.identidade-form :is(input, textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--ui-fundo);
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+}
+.identidade-form textarea {
+  resize: vertical;
+}
+.identidade-form input[type="file"] {
+  padding: 8px;
+  font-size: 11px;
+}
+.identidade-form input::file-selector-button {
+  cursor: pointer;
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-right: 8px;
+  color: inherit;
+  background: var(--gestao-suave);
+  font: inherit;
+  font-weight: 650;
+}
+.identidade-form input[type="color"] {
+  width: 72px;
+  height: 48px;
+  padding: 6px;
+  cursor: pointer;
+}
+.identidade-arquivo button {
+  align-self: start;
+  min-height: 40px;
+  font-size: 12px;
+}
+.identidade-personalizacao {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 20px;
+}
+.identidade-rodape {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 24px;
+  border-top: 1px solid var(--ui-borda);
+}
+.identidade-form :is(.aviso-cliente, .erro-formulario) {
+  margin: 0;
+}
+@media (max-width: 1100px) {
+  .identidade-arquivos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 540px) {
+  .identidade-arquivo {
+    padding: 16px;
+  }
+  .identidade-personalizacao {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .identidade-rodape button {
+    width: 100%;
+  }
+}

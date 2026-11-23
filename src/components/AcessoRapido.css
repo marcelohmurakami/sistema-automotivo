@@ -1,0 +1,54 @@
+.dialogo-acesso-rapido {
+  max-width: 560px !important;
+}
+.acesso-campo {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.acesso-campo input {
+  width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  padding: 12px;
+  background: var(--superficie);
+  color: var(--grafite);
+  font: inherit;
+}
+.acesso-opcoes {
+  display: grid;
+  gap: 5px;
+  margin: 14px 0;
+  max-height: min(52vh, 430px);
+  overflow: auto;
+}
+.acesso-opcoes button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--grafite);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.acesso-opcoes button:hover,
+.acesso-opcoes button[aria-selected="true"] {
+  background: var(--gestao-suave);
+  border-color: var(--borda);
+}
+.acesso-ajuda {
+  font-size: 11px;
+  color: var(--muted);
+}
+@media (max-width: 650px) {
+  .cabecalho .acoes-cabecalho {
+    gap: 6px;
+  }
+}

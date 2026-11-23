@@ -1,32 +1,94 @@
-import { PdfOS } from "../components/PdfOS";
-import { ServicosNaOS } from "../components/ServicosNaOS";
-import { FinanceiroNaOS } from "../components/PagamentosIntegrados";
+import { componenteSobDemanda } from "../lib/componenteSobDemanda";
+const FormularioOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/ordens-servico/FormularioOS")).FormularioOS,
+}));
+const ProdutividadeOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/ProdutividadeOS")).ProdutividadeOS,
+}));
+const PdfOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/PdfOS")).PdfOS,
+}));
+const FinanceiroNaOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/PagamentosIntegrados")).FinanceiroNaOS,
+}));
+const LucroServico = componenteSobDemanda(async () => ({
+  default: (await import("../components/LucroServico")).LucroServico,
+}));
+const ComissoesNaOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/ComissoesNaOS")).ComissoesNaOS,
+}));
+const EstoqueNaOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/EstoqueNaOS")).EstoqueNaOS,
+}));
+import { novoId } from "../lib/uuid.ts";
+import { FiltrosSituacao } from "../components/FiltrosSituacao";
+
+import { ResumoOS } from "../components/ordens-servico/ResumoOS";
+import {
+  ConfirmarAutorizacao,
+  type ManifestacaoEquipe,
+} from "../components/ConfirmarAutorizacao";
+import { CobrancaDiagnostico } from "../components/CobrancaDiagnostico";
+import { obterProposta } from "../services/orcamentos";
+import { abatimentoDiagnostico } from "../lib/diagnosticoOrcamento";
+import { ImprimirNotaOS } from "../components/ordens-servico/ImprimirNotaOS";
+import { FerramentasAtendimento } from "../components/FerramentasAtendimento";
+import { ResumoFichaEspecialidade } from "../components/FichaEspecialidade";
+import { dinheiro } from "../lib/formatacao";
+import { dataServicoDoCampo } from "../lib/dataServico";
+import { useBuscaDebounced } from "../lib/useBuscaDebounced";
+import { DesistenciaAtendimento } from "../components/DesistenciaAtendimento";
+import { IconeTipoServico } from "../components/TipoServico";
+import { SecaoRecolhivel } from "../components/SecaoRecolhivel";
+import { EtapasExecucao } from "../components/EtapasExecucao";
+
+import { EntregaPrometidaOS } from "../components/EntregaPrometidaOS";
+import { IndicadorEntrega, LegendaEntrega } from "../components/PrazoEntrega";
+import { classificarEntrega } from "../lib/entregaPrometida";
+import { useAgora } from "../lib/useAgora";
+import "./OrdensServico.css";
+import "../components/ordens-servico/ResumoOS.css";
+
+import { abrirJanelaNotaOS, imprimirNotaOS } from "../services/impressaoNotaOS";
+import { dataDocumento } from "../lib/documentoCliente";
+
+import {
+  devePerguntarPagamentoOS,
+  usePagamentoAposRegistro,
+} from "../lib/pagamentoAposRegistro";
+
 import { atualizarIntegracoes } from "../lib/atualizarIntegracoes";
-import { SelecaoClienteVeiculo } from "../components/SelecaoClienteVeiculo";
-import { EstoqueNaOS } from "../components/EstoqueNaOS";
-import { useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+
+import { PecasNaEntrega } from "../components/PecasNaEntrega";
+import { faltaOrigemPeca } from "../lib/origemPecas";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { AssistenteContextual } from "../components/AtalhoAssistente";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
   Search,
   Camera,
-  Clock3,
   CheckCircle2,
   ArrowRight,
   Car,
-  RefreshCw,
+  ChevronRight,
+  Pencil,
+  Trash2,
+  RotateCcw,
+  Printer,
+  CalendarDays,
+  X,
 } from "lucide-react";
 import { useAcesso } from "../auth/contexto";
 import { Dialogo } from "../components/Dialogo";
 import { erroPublico } from "../lib/supabase";
-import {
-  auxiliaresOrcamento,
-  dinheiro,
-  type Auxiliares,
-} from "../services/orcamentos";
+import { auxiliaresOrcamento } from "../services/orcamentos";
 import {
   listarOS,
+  autorizarServicoOS,
+  excluirOS,
+  restaurarOS,
   consultarOS,
   salvarOS,
   operarOS,
@@ -43,24 +105,26 @@ const data = (v: string | null | undefined) =>
         timeStyle: "short",
       })
     : "Não informada";
-const entradaData = (v: string | null | undefined) =>
-  v
-    ? new Date(new Date(v).getTime() - new Date(v).getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16)
-    : "";
 const fases: Record<string, string> = {
   before: "Antes",
   during: "Durante",
   after: "Depois",
 };
-const checklistBase = [
-  "Avarias de entrada registradas",
-  "Pertences conferidos",
-  "Peças substituídas conferidas",
-  "Teste de funcionamento realizado",
-  "Veículo limpo para entrega",
-];
+
+function BlocoDetalhesOS({
+  titulo,
+  children,
+}: {
+  titulo: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="os-bloco">
+      <h3 className="os-bloco-titulo">{titulo}</h3>
+      <div className="os-bloco-conteudo">{children}</div>
+    </section>
+  );
+}
 function Alteracoes({ metadados }: { metadados?: Record<string, unknown> }) {
   const antes = metadados?.antes as Record<string, unknown> | undefined;
   const depois = metadados?.depois as Record<string, unknown> | undefined;
@@ -72,11 +136,12 @@ function Alteracoes({ metadados }: { metadados?: Record<string, unknown> }) {
     resumo_cliente: "Resumo",
     responsavel: "Responsável",
     prioridade: "Prioridade",
+    data_servico: "Data do serviço",
     quilometragem_entrada: "KM de entrada",
     quilometragem_saida: "KM de saída",
     combustivel_percentual: "Combustível",
     pertences: "Pertences",
-    entrega_prevista_em: "Entrega prevista",
+    entrega_prevista_em: "Entrega prometida",
     condicoes_garantia: "Garantia",
     garantia_ate: "Garantia até",
     descricao: "Descrição do item",
@@ -119,18 +184,13 @@ function Foto({ foto }: { foto: OrdemServico["fotos"][number] }) {
         <a href={consulta.data} target="_blank" rel="noreferrer">
           <img
             src={consulta.data}
-            alt={
-              foto.legenda ||
-              `Foto ${fases[foto.fase].toLowerCase()} do serviço`
-            }
+            alt={foto.legenda || `Foto ${fases[foto.fase].toLowerCase()} do serviço`}
             loading="lazy"
           />
         </a>
       ) : (
         <p>
-          {consulta.isError
-            ? "Não foi possível carregar a foto."
-            : "Carregando foto…"}
+          {consulta.isError ? "Não foi possível carregar a foto." : "Carregando foto…"}
         </p>
       )}
       <figcaption>
@@ -141,211 +201,180 @@ function Foto({ foto }: { foto: OrdemServico["fotos"][number] }) {
     </figure>
   );
 }
-function FormularioOS({
-  aux,
-  anterior,
-  ocupado,
-  salvar,
-}: {
-  aux: Auxiliares;
-  anterior?: OrdemServico;
-  ocupado: boolean;
-  salvar: (d: Record<string, unknown>) => void;
-}) {
-  const [criando, setCriando] = useState(false);
-  const [cliente, setCliente] = useState(anterior?.cliente_id ?? "");
-  const [veiculo, setVeiculo] = useState(anterior?.veiculo_id ?? "");
-  function enviar(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const d: Record<string, unknown> = Object.fromEntries(f);
-    d.cliente_id = cliente;
-    d.veiculo_id = veiculo;
-    d.entrega_prevista_em = d.entrega_prevista_em
-      ? new Date(String(d.entrega_prevista_em)).toISOString()
-      : null;
-    d.checklist = Object.fromEntries(
-      checklistBase.map((c, i) => [c, f.get("check-" + i) === "on"]),
-    );
-    salvar(d);
-  }
-  const campo = (nome: keyof OrdemServico, titulo: string, tipo = "text") => (
-    <label>
-      {titulo}
-      <input
-        name={nome}
-        type={tipo}
-        min={tipo === "number" ? 0 : undefined}
-        max={nome === "combustivel_percentual" ? 100 : undefined}
-        maxLength={160}
-        defaultValue={String(anterior?.[nome] ?? "")}
-      />
-    </label>
-  );
-  const texto = (nome: keyof OrdemServico, titulo: string) => (
-    <label>
-      {titulo}
-      <textarea
-        name={nome}
-        maxLength={5000}
-        rows={3}
-        defaultValue={String(anterior?.[nome] ?? "")}
-      />
-    </label>
-  );
-  return (
-    <form className="formulario-cliente" onSubmit={enviar}>
-      <fieldset disabled={ocupado || criando}>
-        {!anterior ? (
-          <SelecaoClienteVeiculo
-            aux={aux}
-            cliente={cliente}
-            veiculo={veiculo}
-            selecionarCliente={setCliente}
-            selecionarVeiculo={setVeiculo}
-            aoProcessar={setCriando}
-          />
-        ) : (
-          <p className="aviso-cliente">
-            {anterior.dados_cliente.nome} · {anterior.dados_veiculo.modelo} ·{" "}
-            {anterior.dados_veiculo.placa || "Sem placa"}
-          </p>
-        )}
-        {texto("queixa_cliente", "O que o cliente relatou?")}
-        <div className="dupla-campos">
-          {campo("responsavel", "Responsável pelo serviço")}
-          <label>
-            Previsão de entrega
-            <input
-              type="datetime-local"
-              name="entrega_prevista_em"
-              defaultValue={entradaData(anterior?.entrega_prevista_em)}
-            />
-          </label>
-        </div>
-        <label>
-          Prioridade
-          <select
-            name="prioridade"
-            defaultValue={anterior?.prioridade ?? "normal"}
-          >
-            <option value="low">Baixa</option>
-            <option value="normal">Normal</option>
-            <option value="high">Alta</option>
-            <option value="urgent">Urgente</option>
-          </select>
-        </label>
-        <details className="os-detalhes" open={!!anterior}>
-          <summary>Entrada, diagnóstico e garantia</summary>
-          <div className="dupla-campos">
-            {campo(
-              "quilometragem_entrada",
-              "Quilometragem de entrada",
-              "number",
-            )}
-            {campo("combustivel_percentual", "Combustível (%)", "number")}
-          </div>
-          {texto("pertences", "Pertences e condições de entrada")}
-          {texto("diagnostico", "Diagnóstico técnico")}
-          {texto("observacoes_internas", "Observações internas")}
-          {texto("resumo_cliente", "Resumo do serviço para o cliente")}
-          <div className="dupla-campos">
-            {campo("quilometragem_saida", "Quilometragem de saída", "number")}
-            {campo("garantia_ate", "Garantia até", "date")}
-          </div>
-          {texto("condicoes_garantia", "Condições da garantia")}
-        </details>
-        <details className="os-detalhes">
-          <summary>Checklist de conferência</summary>
-          {checklistBase.map((c, i) => (
-            <label className="os-check" key={c}>
-              <input
-                type="checkbox"
-                name={"check-" + i}
-                defaultChecked={anterior?.checklist?.[c] ?? false}
-              />
-              {c}
-            </label>
-          ))}
-        </details>
-        <button className="botao-primario" type="submit">
-          {ocupado
-            ? "Salvando…"
-            : anterior
-              ? "Salvar atendimento"
-              : "Abrir ordem de serviço"}
-        </button>
-      </fieldset>
-    </form>
-  );
-}
+
 export function OrdensServico() {
+  const perguntarPagamento = usePagamentoAposRegistro();
+  const agora = useAgora();
   const [parametros, setParametros] = useSearchParams();
+  const local = useLocation();
+  const [ultimoNovo, setUltimoNovo] = useState<string | null>(null);
+  const [autorizacao, setAutorizacao] = useState<{
+    os: OrdemServico;
+    total: number;
+  } | null>(null);
   const acesso = useAcesso(),
     qc = useQueryClient(),
     oficina = acesso.oficina?.id ?? "";
   const [busca, setBusca] = useState(""),
     [filtro, setFiltro] = useState(""),
     [pagina, setPagina] = useState(0);
-  const [id, setId] = useState<string | null>(parametros.get("os")),
-    [editor, setEditor] = useState(parametros.get("nova") === "1"),
+  const [buscaConfirmada, setBuscaConfirmada] = useState<string | null>(null);
+  const emExecucao = useRef(false);
+  const id = parametros.get("os");
+  const setId = (valor: string | null) => setParametros(valor ? { os: valor } : {});
+  const [editor, setEditor] = useState(parametros.get("nova") === "1"),
     [edicao, setEdicao] = useState<OrdemServico | undefined>(),
-    [chave, setChave] = useState(() => crypto.randomUUID());
+    [chave, setChave] = useState(() => novoId());
   const [aba, setAba] = useState("atendimento"),
     [ocupado, setOcupado] = useState(false),
     [erro, setErro] = useState(""),
     [aviso, setAviso] = useState("");
   const [novaSituacao, setNovaSituacao] = useState(""),
     [motivo, setMotivo] = useState("");
+  const [exclusao, setExclusao] = useState<OrdemServico | null>(null),
+    [motivoExclusao, setMotivoExclusao] = useState("");
+  // Um atalho pode abrir outra OS sem sair desta página.
+  if (parametros.get("nova") === "1" && ultimoNovo !== local.key) {
+    setUltimoNovo(local.key);
+    setEdicao(undefined);
+    setChave(novoId());
+    setErro("");
+    setEditor(true);
+  }
+  const buscaDebounced = useBuscaDebounced(busca);
+  const buscaConsulta = buscaConfirmada === busca ? busca : buscaDebounced;
   const lista = useQuery({
-    queryKey: ["os", acesso.demo, oficina, busca, filtro, pagina],
-    queryFn: () => listarOS(acesso.demo, oficina, busca, filtro, pagina),
-    refetchInterval: 30000,
+    queryKey: ["os", acesso.demo, oficina, buscaConsulta, filtro, pagina],
+    queryFn: ({ signal }) =>
+      listarOS(acesso.demo, oficina, buscaConsulta, filtro, pagina, signal),
+    refetchInterval: editor || id ? false : 30000,
   });
   const detalhe = useQuery({
     queryKey: ["os-detalhe", acesso.demo, oficina, id],
-    queryFn: () => consultarOS(acesso.demo, oficina, id!),
+    queryFn: ({ signal }) => consultarOS(acesso.demo, oficina, id!, signal),
     enabled: !!id,
-    refetchInterval: 30000,
+    staleTime: 5000,
+    refetchInterval: editor ? false : 30000,
   });
   const aux = useQuery({
     queryKey: ["aux-orcamento", acesso.demo, oficina],
     queryFn: () => auxiliaresOrcamento(acesso.demo, oficina),
     enabled: editor,
   });
-  const [itemEdicao, setItemEdicao] = useState<
-    OrdemServico["itens"][number] | null
-  >(null);
   const o = detalhe.data;
+  const [conferirPecas, setConferirPecas] = useState(false);
+  const [pagamentoDaCriacao, setPagamentoDaCriacao] = useState<string | null>(null);
   const encerrada = !!o && ["delivered", "cancelled"].includes(o.situacao);
-  async function executar(fn: () => Promise<unknown>) {
+  async function executar(fn: () => Promise<unknown>, alterou = true) {
+    if (emExecucao.current) return;
+    emExecucao.current = true;
     setOcupado(true);
     setErro("");
     setAviso("");
     try {
       await fn();
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["os"] }),
-        qc.invalidateQueries({ queryKey: ["estoque"] }),
-        qc.invalidateQueries({ queryKey: ["os-detalhe"] }),
-        qc.invalidateQueries({ queryKey: ["financeiro"] }),
-        atualizarIntegracoes(qc),
-      ]);
+      if (alterou) await atualizarIntegracoes(qc, ["os-detalhe"]);
     } catch (e) {
       setErro(erroPublico(e));
+      const conflito =
+        (typeof e === "object" &&
+          e !== null &&
+          "code" in e &&
+          ["PT409", "40001"].includes(String(e.code))) ||
+        (acesso.demo && e instanceof Error && e.message.startsWith("OS alterada."));
+      const idAlterado = editor ? (edicao?.id ?? id) : id;
+      if (conflito && idAlterado) {
+        // Preserva o formulário digitado. Ao fechar e reabrir, usa a revisão atual,
+        // sem esperar a próxima consulta periódica nem sobrescrever outro usuário.
+        const queryKey = ["os-detalhe", acesso.demo, oficina, idAlterado];
+        await qc.cancelQueries({ queryKey, exact: true });
+        await qc
+          .fetchQuery({
+            queryKey,
+            queryFn: ({ signal }) =>
+              consultarOS(acesso.demo, oficina, idAlterado, signal),
+            staleTime: 0,
+          })
+          .catch(() => {});
+      }
     } finally {
+      emExecucao.current = false;
       setOcupado(false);
     }
   }
+  function autorizar(os: OrdemServico, manifestacao?: ManifestacaoEquipe) {
+    if (!manifestacao) {
+      void executar(async () => {
+        const q = await obterProposta(acesso.demo, oficina, os.orcamento_pendente!.id);
+        setAutorizacao({
+          os,
+          total:
+            q.versao.total_centavos -
+            abatimentoDiagnostico(q.versao.taxa_diagnostico, q.versao.total_centavos),
+        });
+      }, false);
+      return;
+    }
+    void executar(async () => {
+      await autorizarServicoOS(acesso.demo, oficina, os, manifestacao);
+      setAutorizacao(null);
+      await qc.invalidateQueries({ queryKey: ["orcamentos"] });
+      setAviso(
+        `OS #${os.numero} autorizada. Serviços incluídos e prontos para iniciar.`,
+      );
+    });
+  }
+  function botaoAutorizar(os: OrdemServico) {
+    return os.orcamento_pendente?.pode_autorizar &&
+      !os.arquivado_em &&
+      !["cancelled", "delivered"].includes(os.situacao) ? (
+      <button
+        className="botao-secundario autorizar-os"
+        disabled={ocupado}
+        aria-label={`Autorizar serviço da OS #${os.numero}`}
+        title="Autorizar todos os itens do orçamento pela oficina"
+        onClick={() => autorizar(os)}
+      >
+        <CheckCircle2 size={17} /> {ocupado ? "Aguarde…" : "Autorizar serviço"}
+      </button>
+    ) : null;
+  }
   function abrirEditor(atual?: OrdemServico) {
     setEdicao(atual);
-    setChave(crypto.randomUUID());
+    setChave(novoId());
     setErro("");
+    setAviso("");
     setEditor(true);
+  }
+  async function editarNaLista(idOS: string) {
+    await executar(async () => {
+      const atual = await consultarOS(acesso.demo, oficina, idOS);
+      if (atual.arquivado_em || ["delivered", "cancelled"].includes(atual.situacao))
+        throw new Error(
+          "OS encerrada: histórico preservado. Consulte os detalhes do atendimento.",
+        );
+      qc.setQueryData(["os-detalhe", acesso.demo, oficina, atual.id], atual);
+      abrirEditor(atual);
+    }, false);
   }
   async function operar(acao: string, dados: Record<string, unknown>) {
     if (!o) return;
     await operarOS(acesso.demo, oficina, o, acao, dados);
+  }
+  async function alterarSituacao(atual: OrdemServico, destino: string) {
+    await operarOS(acesso.demo, oficina, atual, "atualizar_mapa_ordem_servico", {
+      p_revisao_esperada: atual.revisao,
+      p_situacao: destino,
+      p_etapa: atual.etapa_id ?? null,
+      p_local: atual.local_id ?? null,
+      p_entrega_prevista_em: atual.entrega_prevista_em,
+      p_recebido_em: atual.recebido_em ?? new Date().toISOString(),
+      p_motivo_cancelamento: motivo || null,
+    });
+    setNovaSituacao("");
+    setAviso("Situação atualizada.");
+    if (devePerguntarPagamentoOS(atual.situacao, destino))
+      perguntarPagamento({ tipo: "os", id: atual.id, contexto: "entrega" });
   }
   function formulario(
     e: FormEvent<HTMLFormElement>,
@@ -373,61 +402,109 @@ export function OrdensServico() {
           </h1>
           <p>Menos papelada. Mais clareza sobre cada carro.</p>
         </div>
-        <button className="botao-primario" onClick={() => abrirEditor()}>
+        <button
+          className="botao-primario"
+          data-preparar-modulo="formularioOS"
+          onClick={() => abrirEditor()}
+        >
           <Plus size={18} />
           Nova OS
         </button>
       </div>
       {acesso.demo && (
-        <p className="aviso-cliente">
+        <p className="nota-demo">
           Demonstração · Dados e fotos ficam somente neste navegador.
         </p>
       )}
-      {!id && !editor && erro && (
+      {!id && !editor && !exclusao && erro && (
         <p role="alert" className="erro-formulario">
           {erro}
         </p>
       )}
-      <section className="painel-clientes os-painel">
-        <div className="os-filtros">
-          <label className="busca-clientes">
+      {!id && !editor && !exclusao && aviso && (
+        <p role="status" className="aviso-cliente">
+          {aviso}
+        </p>
+      )}
+      <section className="painel-registros painel-listagem-os">
+        <div className="registros-cabecalho">
+          <div>
+            <h2>
+              Suas ordens{" "}
+              <span className="contagem-total">{lista.data?.total ?? "—"}</span>
+            </h2>
+            <p>Acompanhe o andamento e a entrega.</p>
+          </div>
+          <label className="campo-busca">
             <Search size={18} />
             <input
               aria-label="Buscar ordens de serviço"
-              placeholder="Cliente, placa, veículo ou número"
+              placeholder={
+                acesso.oficina?.especialidade === "retifica"
+                  ? "Cliente, carro, motor ou número"
+                  : "Cliente, placa, veículo ou número"
+              }
               value={busca}
+              maxLength={200}
               onChange={(e) => {
                 setBusca(e.target.value);
+                setBuscaConfirmada(null);
                 setPagina(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  setBuscaConfirmada(busca);
+                }
               }}
             />
-          </label>
-          <label>
-            Situação
-            <select
-              value={filtro}
-              onChange={(e) => {
-                setFiltro(e.target.value);
-                setPagina(0);
-              }}
-            >
-              <option value="">Todas</option>
-              {Object.entries(situacoesOS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-            </select>
+            {busca && (
+              <button
+                type="button"
+                className="botao-icone"
+                aria-label="Limpar busca de ordens de serviço"
+                onClick={() => {
+                  setBusca("");
+                  setBuscaConfirmada("");
+                  setPagina(0);
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
           </label>
         </div>
+        <div className="filtros-propostas filtros-listagem-os">
+          <FiltrosSituacao
+            rotulo="Filtrar ordens de serviço"
+            valor={filtro}
+            alterar={(valor) => {
+              setFiltro(valor);
+              setPagina(0);
+            }}
+            principais={[
+              { valor: "", nome: "Todas" },
+              { valor: "open", nome: "Recebidas", tom: "atencao" },
+              { valor: "in_progress", nome: "Em execução", tom: "andamento" },
+              { valor: "ready", nome: "Prontas", tom: "concluido" },
+            ]}
+            outras={[
+              { valor: "quality_check", nome: "Conferência" },
+              { valor: "delivered", nome: "Entregues" },
+              { valor: "cancelled", nome: "Canceladas" },
+              { valor: "excluidas", nome: "Excluídas" },
+            ]}
+          />
+          <LegendaEntrega />
+        </div>
         {lista.isPending ? (
-          <p role="status">Carregando ordens…</p>
+          <p className="estado-lista" role="status">
+            Carregando ordens…
+          </p>
         ) : lista.isError ? (
-          <p role="alert">
+          <p className="estado-lista" role="alert">
             {erroPublico(lista.error)}{" "}
-            <button onClick={() => void lista.refetch()}>
-              Tentar novamente
-            </button>
+            <button onClick={() => void lista.refetch()}>Tentar novamente</button>
           </p>
         ) : !lista.data.itens.length ? (
           <div className="estado-lista">
@@ -437,71 +514,291 @@ export function OrdensServico() {
                 ? "Nenhuma OS encontrada"
                 : "Seu próximo atendimento começa aqui"}
             </h2>
-            <p>Abra uma OS ou converta um orçamento aprovado.</p>
+            {busca || filtro ? (
+              <>
+                <p>Tente outro termo ou volte à lista completa.</p>
+                <button
+                  type="button"
+                  className="botao-secundario"
+                  onClick={() => {
+                    setBusca("");
+                    setFiltro("");
+                    setPagina(0);
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              </>
+            ) : (
+              <>
+                <p>
+                  Cliente, serviço e valor. O restante você completa quando precisar.
+                </p>
+                <button
+                  type="button"
+                  className="botao-primario"
+                  onClick={() => abrirEditor()}
+                >
+                  <Plus size={17} />
+                  Criar primeira OS
+                </button>
+              </>
+            )}
           </div>
         ) : (
-          <div className="os-grade">
-            {lista.data.itens.map((w) => (
-              <button
-                className="os-cartao"
-                key={w.id}
-                onClick={() => {
-                  setId(w.id);
-                  setAba("atendimento");
-                  setErro("");
-                  setAviso("");
-                }}
-              >
-                <div className="os-linha">
-                  <strong>OS #{String(w.numero).padStart(4, "0")}</strong>
-                  <span className={"os-status " + w.situacao}>
-                    {situacoesOS[w.situacao]}
-                  </span>
-                </div>
-                <h2>{w.dados_veiculo.modelo}</h2>
-                <p>
-                  {w.dados_veiculo.placa || "Placa não informada"} ·{" "}
-                  {w.dados_cliente.nome}
-                </p>
-                {(w.paradas_abertas ??
-                  w.paradas?.filter((p) => !p.encerrado_em).length) > 0 && (
-                  <span className="os-parada">
-                    Aguardando resolução de parada
-                  </span>
-                )}
-                <div className="os-linha">
-                  <span
-                    className={
-                      w.entrega_prevista_em &&
-                      new Date(w.entrega_prevista_em) < new Date() &&
-                      !["delivered", "cancelled"].includes(w.situacao)
-                        ? "os-atrasada"
-                        : ""
+          <div className="lista-ordens-servico">
+            {lista.data.itens.map((w) => {
+              const dataServico = dataServicoDoCampo(w);
+              const dataServicoFormatada = dataDocumento(dataServico, false);
+              return (
+                <article className="registro-os" key={w.id}>
+                  <button
+                    className="linha-ordem-servico"
+                    aria-label={`Abrir OS #${w.numero} de ${w.dados_cliente.nome}, data do serviço ${dataServicoFormatada}`}
+                    data-prazo={
+                      classificarEntrega(w.entrega_prevista_em, w.situacao, agora).tipo
                     }
+                    onClick={() => {
+                      setId(w.id);
+                      setAba("atendimento");
+                      setErro("");
+                      setAviso("");
+                    }}
                   >
-                    <Clock3 size={14} /> {data(w.entrega_prevista_em)}
-                  </span>
-                  <strong>{dinheiro(w.total_centavos)}</strong>
-                </div>
-              </button>
-            ))}
+                    <span className="os-lista-numero" aria-hidden="true">
+                      <small>OS</small>
+                      <strong>#{String(w.numero).padStart(4, "0")}</strong>
+                    </span>
+                    <span className="os-lista-identificacao">
+                      <IconeTipoServico tipo={w.tipo_servico} />{" "}
+                      <strong>{w.dados_veiculo.modelo}</strong>
+                      <small>
+                        {w.dados_cliente.nome}
+                        {acesso.oficina?.especialidade === "retifica"
+                          ? w.dados_veiculo.motor
+                            ? ` · ${w.dados_veiculo.motor}`
+                            : ""
+                          : w.dados_veiculo.placa
+                            ? ` · ${w.dados_veiculo.placa}`
+                            : ""}
+                      </small>
+                      <span className="os-lista-data-servico">
+                        <CalendarDays size={14} aria-hidden="true" />
+                        <span>
+                          Data do serviço:{" "}
+                          <time dateTime={dataServico}>{dataServicoFormatada}</time>
+                        </span>
+                      </span>
+                    </span>
+                    <span className="os-lista-situacao">
+                      <span className={"os-status " + w.situacao}>
+                        {w.arquivado_em ? "Excluída" : situacoesOS[w.situacao]}
+                      </span>
+                      {!w.arquivado_em &&
+                        (w.paradas_abertas ??
+                          w.paradas?.filter((p) => !p.encerrado_em).length) > 0 && (
+                          <span className="os-parada">Serviço parado</span>
+                        )}
+                    </span>
+                    <span className="os-lista-entrega">
+                      <IndicadorEntrega
+                        prazo={classificarEntrega(
+                          w.entrega_prevista_em,
+                          w.situacao,
+                          agora,
+                        )}
+                      />
+                    </span>
+                    <strong className="os-lista-total">
+                      {dinheiro(w.total_centavos)}
+                    </strong>
+                    <ChevronRight
+                      className="os-lista-seta"
+                      size={18}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  <div className="acoes-linha-os">
+                    <Link
+                      className="botao-icone"
+                      to={`/documentos?tipo=os&id=${w.id}&origem=os`}
+                      title="Baixar ou imprimir a OS"
+                      aria-label={`Imprimir ou baixar PDF da OS #${w.numero}`}
+                    >
+                      <Printer size={18} />
+                    </Link>
+                    {w.arquivado_em ? (
+                      <button
+                        className="botao-icone"
+                        title="Restaurar OS"
+                        aria-label={`Restaurar OS #${w.numero}`}
+                        disabled={ocupado}
+                        onClick={() =>
+                          void executar(async () => {
+                            await restaurarOS(acesso.demo, oficina, w);
+                            setAviso(
+                              `OS #${w.numero} restaurada como ${situacoesOS[w.situacao].toLowerCase()}.`,
+                            );
+                            setPagina(0);
+                          })
+                        }
+                      >
+                        <RotateCcw size={18} />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          className="botao-icone"
+                          title={
+                            ["delivered", "cancelled"].includes(w.situacao)
+                              ? "OS encerrada: histórico preservado"
+                              : "Editar OS"
+                          }
+                          aria-label={`Editar OS #${w.numero}`}
+                          disabled={
+                            ocupado || ["delivered", "cancelled"].includes(w.situacao)
+                          }
+                          onClick={() => void editarNaLista(w.id)}
+                        >
+                          <Pencil size={18} />
+                        </button>
+                        <button
+                          className="botao-icone excluir-os"
+                          title="Excluir OS"
+                          aria-label={`Excluir OS #${w.numero}`}
+                          disabled={ocupado}
+                          onClick={() => {
+                            setExclusao(w);
+                            setMotivoExclusao("");
+                            setErro("");
+                            setAviso("");
+                          }}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {!w.arquivado_em &&
+                    w.orcamento_aguardando_id &&
+                    w.situacao !== "cancelled" && (
+                      <div className="autorizacao-linha-os">
+                        <span>
+                          Aguardando aprovação
+                          {w.orcamento_pendente && (
+                            <>
+                              {" "}
+                              · Orçamento #{w.orcamento_pendente.numero} ·{" "}
+                              <strong>
+                                {dinheiro(w.orcamento_pendente.total_centavos)}
+                              </strong>
+                            </>
+                          )}
+                        </span>
+                        {botaoAutorizar(w)}
+                      </div>
+                    )}
+                  {w.arquivado_em && (
+                    <p className="motivo-exclusao-os">Motivo: {w.motivo_exclusao}</p>
+                  )}
+                </article>
+              );
+            })}
           </div>
         )}
-        <div className="os-paginacao">
+        <div className="paginacao-clientes">
           <span>
             {lista.data?.total ?? 0} OS · Página {pagina + 1}
           </span>
-          <button disabled={!pagina} onClick={() => setPagina((p) => p - 1)}>
-            Anterior
-          </button>
-          <button
-            disabled={(pagina + 1) * 24 >= (lista.data?.total ?? 0)}
-            onClick={() => setPagina((p) => p + 1)}
-          >
-            Próxima
-          </button>
+          <div>
+            <button
+              className="botao-secundario"
+              disabled={!pagina}
+              onClick={() => setPagina((p) => p - 1)}
+            >
+              Anterior
+            </button>
+            <button
+              className="botao-secundario"
+              disabled={(pagina + 1) * 24 >= (lista.data?.total ?? 0)}
+              onClick={() => setPagina((p) => p + 1)}
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       </section>
+      <Dialogo
+        aberto={!!exclusao}
+        titulo={`Excluir OS #${exclusao?.numero ?? ""}?`}
+        fechar={() => {
+          if (!ocupado) {
+            setExclusao(null);
+            setErro("");
+          }
+        }}
+      >
+        <form
+          className="formulario-cliente"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!exclusao) return;
+            void executar(async () => {
+              await excluirOS(acesso.demo, oficina, exclusao, motivoExclusao);
+              setAviso(
+                `OS #${exclusao.numero} excluída. Você pode restaurá-la em Mais situações → Excluídas.`,
+              );
+              setExclusao(null);
+              setPagina(0);
+            });
+          }}
+        >
+          <p className="texto-suave">
+            A OS sairá da lista. Itens, fotos, histórico e lançamentos já realizados
+            serão preservados.
+            {exclusao && !["delivered", "cancelled"].includes(exclusao.situacao)
+              ? " O atendimento em andamento será cancelado. Se houver valores recebidos, será necessário estorná-los antes. Ao restaurar, a OS continuará cancelada."
+              : " Ao restaurar, a situação atual será mantida."}
+          </p>
+          <label>
+            Motivo da exclusão
+            <textarea
+              required
+              minLength={3}
+              maxLength={1000}
+              rows={3}
+              value={motivoExclusao}
+              disabled={ocupado}
+              placeholder="Ex.: OS duplicada ou atendimento aberto por engano"
+              onChange={(e) => setMotivoExclusao(e.target.value)}
+            />
+          </label>
+          {erro && (
+            <p className="erro-formulario" role="alert">
+              {erro}
+            </p>
+          )}
+          <div className="acoes-formulario">
+            <button
+              type="button"
+              className="botao-secundario"
+              disabled={ocupado}
+              onClick={() => {
+                setExclusao(null);
+                setErro("");
+              }}
+            >
+              Voltar
+            </button>
+            <button
+              className="botao-perigo"
+              disabled={ocupado || motivoExclusao.trim().length < 3}
+            >
+              {ocupado ? "Excluindo…" : "Excluir OS"}
+            </button>
+          </div>
+        </form>
+      </Dialogo>
       <Dialogo
         aberto={editor}
         fechar={() => {
@@ -510,9 +807,7 @@ export function OrdensServico() {
             if (parametros.has("nova")) setParametros({});
           }
         }}
-        titulo={
-          edicao ? `Editar OS #${edicao.numero}` : "Nova ordem de serviço"
-        }
+        titulo={edicao ? `Editar OS #${edicao.numero}` : "Nova ordem de serviço"}
         classe="dialogo-orcamento"
       >
         {erro && (
@@ -525,32 +820,81 @@ export function OrdensServico() {
         ) : aux.data && editor ? (
           <FormularioOS
             key={chave}
+            clienteInicial={parametros.get("cliente") || ""}
             aux={aux.data}
             anterior={edicao}
             ocupado={ocupado}
-            salvar={(d) =>
+            salvar={(d) => {
+              if (emExecucao.current) return;
+              const prontoNaCriacao = !edicao && d.servico_pronto === true;
+              const podeRegistrarPagamento =
+                acesso.permite("finance") && acesso.oficina?.perfil !== "staff";
+              // Quem não acessa o financeiro mantém a impressão direta, no clique inicial.
+              const janela =
+                prontoNaCriacao && !podeRegistrarPagamento
+                  ? abrirJanelaNotaOS()
+                  : undefined;
               void executar(async () => {
-                const salvo = await salvarOS(
-                  acesso.demo,
-                  oficina,
-                  d,
-                  chave,
-                  edicao,
-                );
+                let salvo: OrdemServico;
+                try {
+                  salvo = await salvarOS(acesso.demo, oficina, d, chave, edicao);
+                } catch (e) {
+                  janela?.close();
+                  throw e;
+                }
+                // A RPC já devolve a ficha completa e a revisão confirmada.
+                await qc.cancelQueries({
+                  queryKey: ["os-detalhe", acesso.demo, oficina, salvo.id],
+                  exact: true,
+                });
+                qc.setQueryData(["os-detalhe", acesso.demo, oficina, salvo.id], salvo);
+                void atualizarIntegracoes(
+                  qc,
+                  [],
+                  [["os-detalhe", acesso.demo, oficina, salvo.id]],
+                ).catch(() => {});
                 setEditor(false);
-                setParametros({ os: salvo.id });
                 setId(salvo.id);
                 setAba("atendimento");
-                setAviso("Atendimento salvo.");
-              })
-            }
+                setAviso(
+                  d.servico_pronto
+                    ? "OS salva como pronta para entrega."
+                    : "Atendimento salvo.",
+                );
+                if (prontoNaCriacao) {
+                  // A navegação pode terminar depois que o pagamento abrir. Mantenha
+                  // o resumo fechado para não encobrir a pergunta com outro modal.
+                  setPagamentoDaCriacao(salvo.id);
+                  perguntarPagamento(
+                    { tipo: "os", id: salvo.id },
+                    {
+                      rotulo: "Concluir e imprimir",
+                      rotuloAdiar: "Agora não, só imprimir",
+                      executar: () => {
+                        setPagamentoDaCriacao(null);
+                        void imprimirNotaOS(
+                          acesso.demo,
+                          oficina,
+                          salvo.id,
+                          janela,
+                        ).catch(() =>
+                          setAviso(
+                            "OS salva como pronta. Não foi possível abrir a impressão; use Imprimir nota da OS ou Visualizar / PDF.",
+                          ),
+                        );
+                      },
+                    },
+                  );
+                }
+              }, false);
+            }}
           />
         ) : (
           <p>Carregando clientes e veículos…</p>
         )}
       </Dialogo>
       <Dialogo
-        aberto={!!id && !editor}
+        aberto={!!id && !editor && !pagamentoDaCriacao}
         fechar={() => {
           if (!ocupado) {
             setId(null);
@@ -558,7 +902,18 @@ export function OrdensServico() {
           }
         }}
         titulo={o ? `Ordem de serviço #${o.numero}` : "Ordem de serviço"}
-        classe="dialogo-orcamento"
+        acoesCabecalho={
+          o && (
+            <AssistenteContextual
+              contexto={{
+                os: o.id,
+                cliente: o.cliente_id || undefined,
+                titulo: `OS #${o.numero} · ${o.dados_cliente.nome}`,
+              }}
+            />
+          )
+        }
+        classe="dialogo-orcamento dialogo-detalhes-os"
       >
         {erro && (
           <p role="alert" className="erro-formulario">
@@ -576,34 +931,89 @@ export function OrdensServico() {
           <p>Carregando atendimento…</p>
         ) : (
           <>
-            {acesso.permite("finance") &&
-              acesso.oficina?.perfil !== "staff" && <FinanceiroNaOS os={o} />}
-            <div className="os-cabecalho">
-              <div>
+            <div className="os-cabecalho os-cabecalho-resumo">
+              <div className="os-identificacao-principal">
                 <span className={"os-status " + o.situacao}>
                   {situacoesOS[o.situacao]}
                 </span>
-                <h2>
-                  {o.dados_veiculo.modelo}{" "}
-                  <small>{o.dados_veiculo.placa}</small>
-                </h2>
-                <p>{o.dados_cliente.nome}</p>
+                <span className="os-resumo-rotulo">Cliente</span>
+                <h2>{o.dados_cliente.nome}</h2>
+                <p>
+                  {o.tipo_servico && <IconeTipoServico tipo={o.tipo_servico} />}
+                  {o.dados_veiculo.modelo}
+                  {(acesso.oficina?.especialidade === "retifica"
+                    ? o.dados_veiculo.motor
+                    : o.dados_veiculo.placa) && (
+                    <span>
+                      {" "}
+                      ·{" "}
+                      {acesso.oficina?.especialidade === "retifica"
+                        ? o.dados_veiculo.motor
+                        : o.dados_veiculo.placa}
+                    </span>
+                  )}
+                </p>
               </div>
-              <button
-                className="botao-icone"
-                aria-label="Atualizar OS"
-                onClick={() => void detalhe.refetch()}
-              >
-                <RefreshCw size={18} />
-              </button>
+              <div className="os-data-principal">
+                <CalendarDays size={20} aria-hidden="true" />
+                <div>
+                  <span>Data do serviço</span>
+                  <time dateTime={dataServicoDoCampo(o)}>
+                    {dataDocumento(dataServicoDoCampo(o), false)}
+                  </time>
+                </div>
+              </div>
+              <div className="os-cabecalho-acoes">
+                <ImprimirNotaOS key={o.id} osId={o.id} />
+                {!encerrada && !o.arquivado_em && (
+                  <button
+                    className="botao-secundario os-editar-rapido"
+                    disabled={ocupado}
+                    onClick={() => abrirEditor(o)}
+                  >
+                    <Pencil size={16} /> Editar OS
+                  </button>
+                )}
+              </div>
             </div>
-            <PdfOS os={o} />
-            <nav className="os-abas" aria-label="Seções da ordem de serviço">
+            <FerramentasAtendimento
+              tipo="os"
+              id={o.id}
+              atualizar={() => void detalhe.refetch()}
+            />
+            {o.situacao === "cancelled" && o.motivo_cancelamento && (
+              <p className="aviso-cliente">{o.motivo_cancelamento}</p>
+            )}
+            {o.arquivado_em && (
+              <p className="aviso-cliente">OS excluída. Motivo: {o.motivo_exclusao}</p>
+            )}
+            {!o.arquivado_em && o.orcamento_aguardando_id && !encerrada && (
+              <div className="autorizacao-detalhe-os">
+                <div>
+                  <strong>Aguardando aprovação</strong>
+                  <p>
+                    {o.orcamento_pendente
+                      ? `Orçamento #${o.orcamento_pendente.numero} · ${dinheiro(o.orcamento_pendente.total_centavos)}`
+                      : "Confira o orçamento vinculado."}
+                  </p>
+                  <Link to={`/orcamentos?orcamento=${o.orcamento_aguardando_id}`}>
+                    Conferir orçamento
+                  </Link>
+                </div>
+                {botaoAutorizar(o)}
+              </div>
+            )}
+            <nav
+              className="os-abas os-abas-simples"
+              aria-label="Seções da ordem de serviço"
+            >
               {[
-                ["atendimento", "Atendimento"],
-                ["execucao", "Execução"],
+                ["atendimento", "Resumo"],
+                ["execucao", "Serviços"],
                 ["fotos", "Fotos"],
-                ["historico", "Histórico"],
+                ...(acesso.permite("finance") && acesso.oficina?.perfil !== "staff"
+                  ? [["lucro", "Lucro e custos"]]
+                  : []),
               ].map(([k, v]) => (
                 <button
                   key={k}
@@ -613,507 +1023,556 @@ export function OrdensServico() {
                   {v}
                 </button>
               ))}
+              <label className="os-mais-secoes">
+                <span className="sr-only">Mais seções da OS</span>
+                <select
+                  aria-label="Mais seções da OS"
+                  value={
+                    ["atendimento", "execucao", "fotos", "lucro"].includes(aba)
+                      ? ""
+                      : aba
+                  }
+                  onChange={(e) => e.target.value && setAba(e.target.value)}
+                >
+                  <option value="" disabled>
+                    Mais opções
+                  </option>
+                  <option value="detalhes">Dados do atendimento</option>
+                  {acesso.permite("finance") && acesso.oficina?.perfil !== "staff" && (
+                    <>
+                      <option value="pagamento">Pagamento</option>
+                      <option value="comissoes">Comissões</option>
+                    </>
+                  )}
+                  <option value="documentos">Imprimir / PDF</option>
+                  <option value="historico">Histórico</option>
+                  <option value="produtividade">Vistoria e ferramentas</option>
+                  <option value="etapas">Etapas e terceiros</option>
+                </select>
+              </label>
             </nav>
-            {aba === "atendimento" && (
-              <div className="os-secao">
-                <div className="os-resumo">
-                  <div>
-                    <small>PREVISÃO DE ENTREGA</small>
-                    <strong>{data(o.entrega_prevista_em)}</strong>
-                  </div>
-                  <div>
-                    <small>RESPONSÁVEL</small>
-                    <strong>{o.responsavel || "Não definido"}</strong>
-                  </div>
-                  <div>
-                    <small>VALOR DA OS</small>
-                    <strong>{dinheiro(o.total_centavos)}</strong>
-                  </div>
-                  <div>
-                    <small>ENTRADA</small>
-                    <strong>{data(o.recebido_em)}</strong>
-                  </div>
-                </div>
-                <h3>Relato do cliente</h3>
-                <p className="os-texto">
-                  {o.queixa_cliente || "Não informado"}
-                </p>
-                <h3>Diagnóstico</h3>
-                <p className="os-texto">
-                  {o.diagnostico || "Aguardando avaliação técnica"}
-                </p>
-                <details className="os-detalhes">
-                  <summary>Dados completos do atendimento</summary>
-                  {[
-                    ["KM de entrada", o.quilometragem_entrada],
-                    ["KM de saída", o.quilometragem_saida],
-                    ["Combustível (%)", o.combustivel_percentual],
-                    ["Pertences", o.pertences],
-                    ["Observações internas", o.observacoes_internas],
-                    ["Resumo para o cliente", o.resumo_cliente],
-                    ["Garantia", o.condicoes_garantia],
-                    ["Garantia até", o.garantia_ate],
-                  ].map(([k, v]) => (
-                    <p className="os-texto" key={String(k)}>
-                      <strong>{k}: </strong>
-                      {v ?? "Não informado"}
-                    </p>
-                  ))}
-                </details>
-                {o.orcamento_origem_id && (
-                  <p className="aviso-cliente">
-                    Originada de orçamento aprovado. Os itens e valores
-                    contratados estão preservados.
-                  </p>
-                )}
-                {!encerrada && (
-                  <button
-                    className="botao-secundario"
-                    onClick={() => abrirEditor(o)}
-                  >
-                    Editar atendimento e checklist
-                  </button>
-                )}
-                <div className="os-checklist">
-                  {checklistBase.map((c) => (
-                    <p key={c}>
-                      <CheckCircle2
-                        size={17}
-                        color={o.checklist?.[c] ? "#47732b" : "#a0a6a0"}
-                      />
-                      {c}
-                      <span>{o.checklist?.[c] ? "Conferido" : "Pendente"}</span>
-                    </p>
-                  ))}
-                </div>
-                {!encerrada && (
-                  <div className="os-proximos">
-                    <h3>Próximo passo</h3>
-                    {proximasOS[o.situacao].map((s) => (
-                      <button
-                        className={
-                          s === "cancelled"
-                            ? "botao-secundario"
-                            : "botao-primario"
-                        }
-                        key={s}
-                        disabled={ocupado}
-                        onClick={() => {
-                          setNovaSituacao(s);
-                          setMotivo("");
-                          setErro("");
-                        }}
-                      >
-                        {s === "cancelled" ? "Cancelar OS" : situacoesOS[s]}
-                        <ArrowRight size={16} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            {aba === "execucao" && (
-              <div className="os-secao">
-                <EstoqueNaOS
-                  os={o}
-                  ocupado={ocupado}
-                  executar={executar}
-                  operar={operar}
-                />
-                <ServicosNaOS
-                  os={o}
-                  ocupado={ocupado}
-                  executar={executar}
-                  operar={operar}
-                />
-                <h3>Peças e serviços</h3>
-                {!o.itens.length && (
+            <div className="os-conteudo-aba">
+              {aba === "lucro" &&
+                acesso.permite("finance") &&
+                acesso.oficina?.perfil !== "staff" && <LucroServico id={o.id} />}
+              {aba === "pagamento" &&
+                acesso.permite("finance") &&
+                acesso.oficina?.perfil !== "staff" && <FinanceiroNaOS os={o} />}
+              {aba === "comissoes" && <ComissoesNaOS key={o.id} os={o} />}
+              {aba === "documentos" && (
+                <BlocoDetalhesOS titulo="Documento para o cliente">
                   <p>
-                    Nenhum item incluído. Adicione abaixo ou crie a OS a partir
-                    de um orçamento.
+                    Confira a OS com a identidade da oficina antes de imprimir ou
+                    baixar.
                   </p>
+                  <PdfOS os={o} />
+                </BlocoDetalhesOS>
+              )}
+              {aba === "etapas" && (
+                <EtapasExecucao
+                  key={o.id}
+                  os={o}
+                  atualizar={() => void detalhe.refetch()}
+                />
+              )}
+              {aba === "produtividade" && (
+                <ProdutividadeOS
+                  key={o.id}
+                  os={o}
+                  atualizar={() => void detalhe.refetch()}
+                />
+              )}
+              {aba === "atendimento" && (
+                <ResumoOS
+                  os={o}
+                  ocupado={ocupado}
+                  verSecao={setAba}
+                  avancar={(situacao) => {
+                    setNovaSituacao(situacao);
+                    setMotivo("");
+                    setErro("");
+                  }}
+                  permitePagamento={
+                    acesso.permite("finance") && acesso.oficina?.perfil !== "staff"
+                  }
+                />
+              )}
+              {aba === "atendimento" &&
+                (o.orcamento_origem_id || o.orcamento_aguardando_id) && (
+                  <CobrancaDiagnostico
+                    documento={(o.orcamento_origem_id || o.orcamento_aguardando_id)!}
+                    tipo="automotivo"
+                  />
                 )}
-                {o.itens.map((i) => (
-                  <div className="os-item" key={i.id}>
-                    <div>
-                      <strong>{i.descricao}</strong>
-                      <small>
-                        {i.quantidade} {i.unidade} ·{" "}
-                        {dinheiro(i.preco_unitario_centavos)} · Total{" "}
-                        {dinheiro(
-                          Math.round(i.quantidade * i.preco_unitario_centavos),
+              {aba === "detalhes" && (
+                <div className="os-secao">
+                  <div className="os-resumo-operacao">
+                    {(!encerrada || o.paradas.some((p) => !p.encerrado_em)) && (
+                      <BlocoDetalhesOS titulo="Andamento do serviço">
+                        {!encerrada && (
+                          <div className="os-proximos">
+                            {proximasOS[o.situacao].map((s) => (
+                              <button
+                                className={
+                                  s === "cancelled" ||
+                                  s === "open" ||
+                                  (s === "quality_check" && o.situacao === "ready") ||
+                                  (s === "in_progress" && o.situacao !== "open")
+                                    ? "botao-secundario"
+                                    : "botao-primario"
+                                }
+                                key={s}
+                                disabled={
+                                  ocupado ||
+                                  (!!o.orcamento_aguardando_id && s !== "cancelled")
+                                }
+                                onClick={() => {
+                                  setNovaSituacao(s);
+                                  setMotivo("");
+                                  setErro("");
+                                }}
+                              >
+                                {s === "cancelled"
+                                  ? "Cancelar OS"
+                                  : (
+                                      {
+                                        open: "Voltar à recepção",
+                                        in_progress:
+                                          o.situacao === "open"
+                                            ? "Iniciar serviço"
+                                            : "Retomar serviço",
+                                        quality_check:
+                                          o.situacao === "ready"
+                                            ? "Voltar à conferência"
+                                            : "Conferir serviço",
+                                        ready: "Pronto para entrega",
+                                        delivered: "Registrar entrega",
+                                      } as Record<string, string>
+                                    )[s] || situacoesOS[s]}
+                                <ArrowRight size={16} />
+                              </button>
+                            ))}
+                          </div>
                         )}
-                      </small>
+                        {o.paradas.some((p) => !p.encerrado_em) && (
+                          <button
+                            className="os-bloqueio"
+                            onClick={() => setAba("execucao")}
+                          >
+                            <strong>Serviço parado</strong>
+                            <span>
+                              {o.paradas.find((p) => !p.encerrado_em)?.detalhes}
+                            </span>
+                            <span className="os-link-pendencia">
+                              Ver pendência <ArrowRight size={15} />
+                            </span>
+                          </button>
+                        )}
+                      </BlocoDetalhesOS>
+                    )}
+                    <EntregaPrometidaOS
+                      key={o.id}
+                      os={o}
+                      agora={agora}
+                      demo={acesso.demo}
+                      oficina={oficina}
+                      ocupado={ocupado}
+                      executar={executar}
+                    />
+                  </div>
+                  <div className="os-resumo">
+                    <div>
+                      <small>RESPONSÁVEL</small>
+                      <strong>{o.responsavel || "Não definido"}</strong>
                     </div>
-                    {!encerrada &&
-                      o.situacao !== "ready" &&
-                      !o.orcamento_origem_id && (
-                        <button
-                          className="botao-secundario"
-                          onClick={() => setItemEdicao(i)}
-                        >
-                          Corrigir
-                        </button>
-                      )}
-                    <select
-                      aria-label={`Execução de ${i.descricao}`}
-                      disabled={ocupado || encerrada || o.situacao === "ready"}
-                      value={i.situacao}
-                      onChange={(e) =>
-                        void executar(() =>
-                          operar("salvar_item_os", {
-                            p_revisao: o.revisao,
-                            p_item: i.id,
-                            p_dados: { situacao: e.target.value },
-                          }),
-                        )
+                    <div>
+                      <small>VALOR DA OS</small>
+                      <strong>{dinheiro(o.total_centavos)}</strong>
+                      {acesso.permite("finance") &&
+                        acesso.oficina?.perfil !== "staff" && (
+                          <button
+                            className="link-pagamento-os"
+                            onClick={() => setAba("pagamento")}
+                          >
+                            Ver pagamento →
+                          </button>
+                        )}
+                    </div>
+                    <div>
+                      <small>ENTRADA</small>
+                      <strong>{data(o.recebido_em)}</strong>
+                    </div>
+                  </div>
+                  <ResumoFichaEspecialidade ficha={o.ficha_especialidade} />
+                  <div className="os-relatos">
+                    <BlocoDetalhesOS titulo="Relato do cliente">
+                      <p className="os-texto">{o.queixa_cliente || "Não informado"}</p>
+                    </BlocoDetalhesOS>
+                    <BlocoDetalhesOS titulo="Detalhes do tipo de serviço">
+                      <p className="os-texto">
+                        {o.detalhes_especialidade || "Não informado"}
+                      </p>
+                    </BlocoDetalhesOS>
+                    <BlocoDetalhesOS titulo="Diagnóstico">
+                      <p className="os-texto">
+                        {o.diagnostico || "Diagnóstico não registrado neste campo"}
+                        {o.pecas_a_trocar && (
+                          <span className="texto-documento">
+                            <strong>Relação de peças a trocar</strong>
+                            <br />
+                            {o.pecas_a_trocar}
+                          </span>
+                        )}
+                        {o.codigos_falha && (
+                          <span className="texto-documento">
+                            <strong>Códigos de falha / testes</strong>
+                            <br />
+                            {o.codigos_falha}
+                          </span>
+                        )}
+                      </p>
+                    </BlocoDetalhesOS>
+                  </div>
+                  <SecaoRecolhivel titulo="Dados completos do atendimento">
+                    <dl className="os-dados-atendimento">
+                      {[
+                        ["KM de entrada", o.quilometragem_entrada],
+                        ["KM de saída", o.quilometragem_saida],
+                        ["Combustível (%)", o.combustivel_percentual],
+                        ["Pertences", o.pertences],
+                        ["Observações internas", o.observacoes_internas],
+                        ["Observações", o.resumo_cliente],
+                        ["Garantia", o.condicoes_garantia],
+                        ["Garantia até", o.garantia_ate],
+                      ].map(([k, v]) => (
+                        <div key={String(k)}>
+                          <dt>{k}</dt>
+                          <dd>{v == null || v === "" ? "Não informado" : v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </SecaoRecolhivel>
+                  {o.orcamento_origem_id && (
+                    <p className="aviso-cliente">
+                      Originada de orçamento aprovado. A proposta original permanece
+                      registrada; os serviços atuais estão na aba Serviços.
+                    </p>
+                  )}
+                  {!!Object.keys(o.checklist || {}).length && (
+                    <SecaoRecolhivel
+                      titulo="Conferência do atendimento"
+                      descricao={
+                        Object.values(o.checklist || {}).filter(Boolean).length +
+                        " de " +
+                        Object.keys(o.checklist || {}).length +
+                        " itens conferidos"
                       }
                     >
-                      <option value="pending">Pendente</option>
-                      <option value="in_progress">Em execução</option>
-                      <option value="done">Concluído</option>
-                      <option value="cancelled" disabled>
-                        Cancelado
-                      </option>
-                    </select>
-                  </div>
-                ))}
-                {!encerrada &&
-                  o.situacao !== "ready" &&
-                  !o.orcamento_origem_id && (
-                    <details className="os-detalhes">
-                      <summary>Adicionar peça ou serviço</summary>
-                      <form
-                        className="formulario-cliente"
-                        onSubmit={(e) =>
-                          formulario(e, (f) =>
-                            operar("salvar_item_os", {
-                              p_revisao: o.revisao,
-                              p_dados: {
-                                descricao: f.get("descricao"),
-                                tipo: f.get("tipo"),
-                                quantidade: Number(f.get("quantidade")),
-                                preco_unitario_centavos: Math.round(
-                                  Number(f.get("preco")) * 100,
-                                ),
-                              },
-                            }),
-                          )
-                        }
+                      <div className="os-checklist">
+                        {Object.keys(o.checklist || {}).map((c) => (
+                          <p key={c}>
+                            <CheckCircle2
+                              size={17}
+                              color={o.checklist?.[c] ? "#47732b" : "#a0a6a0"}
+                            />
+                            {c}
+                            <span>{o.checklist?.[c] ? "Conferido" : "Pendente"}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </SecaoRecolhivel>
+                  )}
+                  {!encerrada && (
+                    <div className="os-acoes-rodape">
+                      {!o.arquivado_em && (
+                        <DesistenciaAtendimento
+                          tipo="os"
+                          id={o.id}
+                          revisao={o.revisao}
+                          aprovado={!!o.orcamento_origem_id}
+                          atualizar={async () => {
+                            await detalhe.refetch();
+                          }}
+                        />
+                      )}
+                      <button
+                        className="botao-secundario"
+                        onClick={() => abrirEditor(o)}
                       >
-                        <fieldset disabled={ocupado}>
-                          <label>
-                            Descrição
-                            <input name="descricao" required maxLength={300} />
-                          </label>
-                          <div className="dupla-campos">
+                        Editar OS e serviços
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {aba === "execucao" && (
+                <div className="os-secao">
+                  <BlocoDetalhesOS titulo="Peças e serviços">
+                    {!encerrada && !o.orcamento_aguardando_id && (
+                      <div className="os-editor-acesso">
+                        <button
+                          className="botao-primario"
+                          disabled={ocupado}
+                          onClick={() => abrirEditor(o)}
+                        >
+                          <Pencil size={17} /> Incluir, editar ou remover serviços
+                        </button>
+                      </div>
+                    )}
+                    {!o.itens.length && (
+                      <p className="texto-suave">
+                        {o.orcamento_aguardando_id
+                          ? "Os itens serão incluídos quando o cliente aprovar o orçamento."
+                          : "Nenhum item incluído. Adicione uma peça ou serviço abaixo."}
+                      </p>
+                    )}
+                    {o.itens.map((i) => (
+                      <div className="os-item" key={i.id}>
+                        <div>
+                          <strong>{i.descricao}</strong>
+                          <small>
+                            {i.quantidade} {i.unidade} ·{" "}
+                            {dinheiro(i.preco_unitario_centavos)} · Total{" "}
+                            {dinheiro(
+                              Math.round(i.quantidade * i.preco_unitario_centavos),
+                            )}
+                          </small>
+                        </div>
+                        <select
+                          aria-label={`Execução de ${i.descricao}`}
+                          disabled={ocupado || encerrada || o.situacao === "ready"}
+                          value={i.situacao}
+                          onChange={(e) =>
+                            void executar(() =>
+                              operar("salvar_item_os", {
+                                p_revisao: o.revisao,
+                                p_item: i.id,
+                                p_dados: { situacao: e.target.value },
+                              }),
+                            )
+                          }
+                        >
+                          <option value="pending">Pendente</option>
+                          <option value="in_progress">Em execução</option>
+                          <option value="done">Concluído</option>
+                          <option value="cancelled" disabled>
+                            Cancelado
+                          </option>
+                        </select>
+                      </div>
+                    ))}
+                  </BlocoDetalhesOS>
+                  {!o.orcamento_aguardando_id && (
+                    <SecaoRecolhivel
+                      titulo="Peças do estoque"
+                      descricao="Adicionar peças e informar de onde elas vieram"
+                    >
+                      <EstoqueNaOS
+                        os={o}
+                        ocupado={ocupado}
+                        executar={executar}
+                        operar={operar}
+                      />
+                    </SecaoRecolhivel>
+                  )}
+                  <BlocoDetalhesOS titulo="Paradas e pendências">
+                    {!o.paradas.some((p) => !p.encerrado_em) && (
+                      <p className="texto-suave">Nenhuma pendência em aberto.</p>
+                    )}
+                    {o.paradas
+                      .filter((p) => !p.encerrado_em)
+                      .map((p) => (
+                        <div className="os-bloqueio" key={p.id}>
+                          <p>{p.detalhes}</p>
+                          {!encerrada && (
+                            <button
+                              disabled={
+                                ocupado ||
+                                (!!o.orcamento_aguardando_id && p.motivo === "approval")
+                              }
+                              onClick={() =>
+                                void executar(() =>
+                                  operar("resolver_parada_os", {
+                                    p_parada: p.id,
+                                  }),
+                                )
+                              }
+                            >
+                              Marcar como resolvida
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    {!encerrada && o.situacao !== "ready" && (
+                      <details className="os-detalhes">
+                        <summary>Registrar motivo de parada</summary>
+                        <form
+                          className="formulario-cliente"
+                          onSubmit={(e) =>
+                            formulario(e, (f) =>
+                              operar("registrar_parada_os", {
+                                p_motivo: f.get("motivo"),
+                                p_detalhes: f.get("detalhes"),
+                              }),
+                            )
+                          }
+                        >
+                          <fieldset disabled={ocupado}>
                             <label>
-                              Tipo
-                              <select name="tipo">
-                                <option value="service">Serviço</option>
-                                <option value="part">Peça</option>
+                              Motivo
+                              <select name="motivo">
+                                <option value="parts">Aguardando peças</option>
+                                <option value="approval">Aguardando aprovação</option>
+                                <option value="third_party">
+                                  Serviço de terceiros
+                                </option>
+                                <option value="capacity">Falta de capacidade</option>
+                                <option value="diagnosis">Em diagnóstico</option>
+                                <option value="other">Outro</option>
                               </select>
                             </label>
                             <label>
-                              Quantidade
-                              <input
-                                type="number"
-                                name="quantidade"
-                                min="0.001"
-                                max="100000"
-                                step="0.001"
-                                defaultValue="1"
-                                required
-                              />
+                              O que está impedindo o serviço?
+                              <textarea name="detalhes" required maxLength={2000} />
+                            </label>
+                            <button className="botao-primario">Registrar parada</button>
+                          </fieldset>
+                        </form>
+                      </details>
+                    )}
+                  </BlocoDetalhesOS>
+                </div>
+              )}
+              {aba === "fotos" && (
+                <div className="os-secao">
+                  {!encerrada && acesso.permite("service_media") && (
+                    <BlocoDetalhesOS titulo="Adicionar foto">
+                      <form
+                        className="formulario-cliente os-envio"
+                        onSubmit={(e) =>
+                          formulario(e, async (f) => {
+                            const arquivo = f.get("foto") as File;
+                            if (!arquivo?.size) throw new Error("Selecione uma foto.");
+                            await enviarFotoOS(
+                              acesso.demo,
+                              oficina,
+                              o,
+                              arquivo,
+                              String(f.get("fase")),
+                              String(f.get("legenda")),
+                            );
+                          })
+                        }
+                      >
+                        <fieldset disabled={ocupado}>
+                          <div className="dupla-campos">
+                            <label>
+                              Momento
+                              <select name="fase">
+                                {Object.entries(fases).map(([k, v]) => (
+                                  <option value={k} key={k}>
+                                    {v}
+                                  </option>
+                                ))}
+                              </select>
                             </label>
                             <label>
-                              Preço unitário (R$)
+                              Foto · JPG, PNG ou WebP
                               <input
-                                type="number"
-                                name="preco"
-                                min="0"
-                                max="1000000"
-                                step="0.01"
+                                type="file"
+                                name="foto"
+                                accept="image/jpeg,image/png,image/webp"
                                 required
                               />
                             </label>
                           </div>
+                          <label>
+                            Legenda
+                            <input
+                              name="legenda"
+                              maxLength={500}
+                              placeholder="Ex.: Para-choque dianteiro antes do reparo"
+                            />
+                          </label>
                           <button className="botao-primario">
-                            Adicionar item
+                            <Camera size={18} />
+                            {ocupado ? "Enviando…" : "Salvar foto"}
                           </button>
+                          <small>
+                            Até 10 MB por foto. Arquivos privados da oficina.
+                          </small>
                         </fieldset>
                       </form>
-                    </details>
+                    </BlocoDetalhesOS>
                   )}
-                <h3>Paradas e pendências</h3>
-                {o.paradas
-                  .filter((p) => !p.encerrado_em)
-                  .map((p) => (
-                    <div className="os-bloqueio" key={p.id}>
-                      <p>{p.detalhes}</p>
-                      {!encerrada && (
-                        <button
-                          disabled={ocupado}
-                          onClick={() =>
-                            void executar(() =>
-                              operar("resolver_parada_os", { p_parada: p.id }),
-                            )
-                          }
-                        >
-                          Marcar como resolvida
-                        </button>
+                  {Object.entries(fases).map(([fase, nome]) => (
+                    <BlocoDetalhesOS
+                      key={fase}
+                      titulo={`${nome} (${o.fotos.filter((f) => f.fase === fase).length})`}
+                    >
+                      <div className="os-fotos">
+                        {o.fotos
+                          .filter((f) => f.fase === fase)
+                          .map((f) => (
+                            <Foto key={f.id} foto={f} />
+                          ))}
+                      </div>
+                      {!o.fotos.some((f) => f.fase === fase) && (
+                        <p className="texto-suave">Nenhuma foto nesta etapa.</p>
                       )}
-                    </div>
+                    </BlocoDetalhesOS>
                   ))}
-                {!encerrada && o.situacao !== "ready" && (
-                  <details className="os-detalhes">
-                    <summary>Registrar motivo de parada</summary>
+                </div>
+              )}
+              {aba === "historico" && (
+                <div className="os-secao">
+                  <BlocoDetalhesOS titulo="Adicionar anotação">
                     <form
                       className="formulario-cliente"
                       onSubmit={(e) =>
                         formulario(e, (f) =>
-                          operar("registrar_parada_os", {
-                            p_motivo: f.get("motivo"),
-                            p_detalhes: f.get("detalhes"),
+                          operar("registrar_anotacao_os", {
+                            p_texto: f.get("texto"),
                           }),
                         )
                       }
                     >
                       <fieldset disabled={ocupado}>
                         <label>
-                          Motivo
-                          <select name="motivo">
-                            <option value="parts">Aguardando peças</option>
-                            <option value="approval">
-                              Aguardando aprovação
-                            </option>
-                            <option value="third_party">
-                              Serviço de terceiros
-                            </option>
-                            <option value="capacity">
-                              Falta de capacidade
-                            </option>
-                            <option value="diagnosis">Em diagnóstico</option>
-                            <option value="other">Outro</option>
-                          </select>
+                          Nova anotação
+                          <textarea
+                            name="texto"
+                            required
+                            maxLength={3000}
+                            placeholder="Ex.: Cliente autorizou a retirada amanhã às 10h."
+                          />
                         </label>
-                        <label>
-                          O que está impedindo o serviço?
-                          <textarea name="detalhes" required maxLength={2000} />
-                        </label>
-                        <button className="botao-primario">
-                          Registrar parada
+                        <button className="botao-secundario">
+                          Registrar no histórico
                         </button>
                       </fieldset>
                     </form>
-                  </details>
-                )}
-              </div>
-            )}
-            {aba === "fotos" && (
-              <div className="os-secao">
-                <h3>O serviço em imagens</h3>
-                <p>
-                  Registre a condição de entrada e mostre o resultado do
-                  trabalho.
-                </p>
-                {!encerrada && acesso.permite("service_media") && (
-                  <form
-                    className="formulario-cliente os-envio"
-                    onSubmit={(e) =>
-                      formulario(e, async (f) => {
-                        const arquivo = f.get("foto") as File;
-                        if (!arquivo?.size)
-                          throw new Error("Selecione uma foto.");
-                        await enviarFotoOS(
-                          acesso.demo,
-                          oficina,
-                          o,
-                          arquivo,
-                          String(f.get("fase")),
-                          String(f.get("legenda")),
-                        );
-                      })
-                    }
-                  >
-                    <fieldset disabled={ocupado}>
-                      <div className="dupla-campos">
-                        <label>
-                          Momento
-                          <select name="fase">
-                            {Object.entries(fases).map(([k, v]) => (
-                              <option value={k} key={k}>
-                                {v}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>
-                          Foto · JPG, PNG ou WebP
-                          <input
-                            type="file"
-                            name="foto"
-                            accept="image/jpeg,image/png,image/webp"
-                            required
-                          />
-                        </label>
-                      </div>
-                      <label>
-                        Legenda
-                        <input
-                          name="legenda"
-                          maxLength={500}
-                          placeholder="Ex.: Para-choque dianteiro antes do reparo"
-                        />
-                      </label>
-                      <button className="botao-primario">
-                        <Camera size={18} />
-                        {ocupado ? "Enviando…" : "Salvar foto"}
-                      </button>
-                      <small>
-                        Até 10 MB por foto. Arquivos privados da oficina.
-                      </small>
-                    </fieldset>
-                  </form>
-                )}
-                {Object.entries(fases).map(([fase, nome]) => (
-                  <section key={fase}>
-                    <h3>
-                      {nome}{" "}
-                      <small>
-                        ({o.fotos.filter((f) => f.fase === fase).length})
-                      </small>
-                    </h3>
-                    <div className="os-fotos">
-                      {o.fotos
-                        .filter((f) => f.fase === fase)
-                        .map((f) => (
-                          <Foto key={f.id} foto={f} />
-                        ))}
-                    </div>
-                    {!o.fotos.some((f) => f.fase === fase) && (
-                      <p className="texto-suave">Nenhuma foto nesta etapa.</p>
-                    )}
-                  </section>
-                ))}
-              </div>
-            )}
-            {aba === "historico" && (
-              <div className="os-secao">
-                <h3>Histórico do atendimento</h3>
-                <form
-                  className="formulario-cliente"
-                  onSubmit={(e) =>
-                    formulario(e, (f) =>
-                      operar("registrar_anotacao_os", {
-                        p_texto: f.get("texto"),
-                      }),
-                    )
-                  }
-                >
-                  <fieldset disabled={ocupado}>
-                    <label>
-                      Nova anotação
-                      <textarea
-                        name="texto"
-                        required
-                        maxLength={3000}
-                        placeholder="Ex.: Cliente autorizou a retirada amanhã às 10h."
-                      />
-                    </label>
-                    <button className="botao-secundario">
-                      Registrar no histórico
-                    </button>
-                  </fieldset>
-                </form>
-                <ol className="os-historico">
-                  {o.historico.map((h) => (
-                    <li key={h.id}>
-                      <time>{data(h.ocorrido_em)}</time>
-                      <p>{h.descricao}</p>
-                      <Alteracoes metadados={h.metadados} />
-                      {Boolean(h.metadados?.new_status) && (
-                        <small>
-                          {situacoesOS[String(h.metadados?.new_status)]}
-                        </small>
-                      )}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
+                  </BlocoDetalhesOS>
+                  <BlocoDetalhesOS titulo="Histórico do atendimento">
+                    <ol className="os-historico">
+                      {o.historico.map((h) => (
+                        <li key={h.id}>
+                          <time>{data(h.ocorrido_em)}</time>
+                          <p>{h.descricao}</p>
+                          <Alteracoes metadados={h.metadados} />
+                          {Boolean(h.metadados?.new_status) && (
+                            <small>
+                              {situacoesOS[String(h.metadados?.new_status)]}
+                            </small>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </BlocoDetalhesOS>
+                </div>
+              )}
+            </div>
           </>
-        )}
-      </Dialogo>
-      <Dialogo
-        aberto={!!itemEdicao}
-        fechar={() => !ocupado && setItemEdicao(null)}
-        titulo="Corrigir item da OS"
-      >
-        <p>O histórico preservará os valores anteriores.</p>
-        {erro && (
-          <p role="alert" className="erro-formulario">
-            {erro}
-          </p>
-        )}
-        {itemEdicao && (
-          <form
-            key={itemEdicao.id}
-            className="formulario-cliente"
-            onSubmit={(e) =>
-              formulario(e, async (f) => {
-                await operar("corrigir_item_os", {
-                  p_item: itemEdicao.id,
-                  p_revisao: o!.revisao,
-                  p_dados: {
-                    descricao: f.get("descricao"),
-                    quantidade: Number(f.get("quantidade")),
-                    preco_unitario_centavos: Math.round(
-                      Number(f.get("preco")) * 100,
-                    ),
-                  },
-                });
-                setItemEdicao(null);
-              })
-            }
-          >
-            <fieldset disabled={ocupado}>
-              <label>
-                Descrição
-                <input
-                  name="descricao"
-                  required
-                  maxLength={300}
-                  defaultValue={itemEdicao.descricao}
-                />
-              </label>
-              <label>
-                Quantidade
-                <input
-                  name="quantidade"
-                  type="number"
-                  min="0.001"
-                  max="100000"
-                  step="0.001"
-                  required
-                  defaultValue={itemEdicao.quantidade}
-                />
-              </label>
-              <label>
-                Preço unitário (R$)
-                <input
-                  name="preco"
-                  type="number"
-                  min="0"
-                  max="1000000"
-                  step="0.01"
-                  required
-                  defaultValue={itemEdicao.preco_unitario_centavos / 100}
-                />
-              </label>
-              <button className="botao-primario">Salvar correção</button>
-            </fieldset>
-          </form>
         )}
       </Dialogo>
       <Dialogo
@@ -1122,7 +1581,9 @@ export function OrdensServico() {
         titulo={
           novaSituacao === "cancelled"
             ? "Cancelar esta OS?"
-            : `Alterar para ${situacoesOS[novaSituacao]}?`
+            : novaSituacao
+              ? `Alterar para ${situacoesOS[novaSituacao]}?`
+              : "Situação atualizada"
         }
       >
         <p>
@@ -1151,23 +1612,49 @@ export function OrdensServico() {
           onClick={() =>
             o &&
             void executar(async () => {
-              await operar("atualizar_mapa_ordem_servico", {
-                p_revisao_esperada: o.revisao,
-                p_situacao: novaSituacao,
-                p_etapa: o.etapa_id ?? null,
-                p_local: o.local_id ?? null,
-                p_entrega_prevista_em: o.entrega_prevista_em,
-                p_recebido_em: o.recebido_em ?? new Date().toISOString(),
-                p_motivo_cancelamento: motivo || null,
-              });
-              setNovaSituacao("");
-              setAviso("Situação atualizada.");
+              try {
+                await alterarSituacao(o, novaSituacao);
+              } catch (e) {
+                if (novaSituacao === "delivered" && faltaOrigemPeca(e)) {
+                  setNovaSituacao("");
+                  setConferirPecas(true);
+                } else throw e;
+              }
             })
           }
         >
           {ocupado ? "Atualizando…" : "Confirmar alteração"}
         </button>
       </Dialogo>
+      <Dialogo
+        aberto={!!autorizacao}
+        fechar={() => !ocupado && setAutorizacao(null)}
+        titulo="Registrar autorização do cliente"
+      >
+        {erro && <p role="alert">{erro}</p>}
+        {autorizacao && (
+          <ConfirmarAutorizacao
+            nomeInicial={autorizacao.os.dados_cliente.nome}
+            total={autorizacao.total}
+            ocupado={ocupado}
+            confirmar={(m) => autorizar(autorizacao.os, m)}
+          />
+        )}
+      </Dialogo>
+      {conferirPecas && o && (
+        <PecasNaEntrega
+          osId={o.id}
+          fechar={() => setConferirPecas(false)}
+          continuar={async (atual) => {
+            if (atual.situacao !== "ready")
+              throw new Error(
+                "A situação da OS mudou. Confira o atendimento antes de entregar.",
+              );
+            await alterarSituacao(atual, "delivered");
+            setConferirPecas(false);
+          }}
+        />
+      )}
     </>
   );
 }

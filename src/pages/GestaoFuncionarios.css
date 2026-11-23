@@ -1,0 +1,350 @@
+.eq-pagina,
+.eq-dialogo {
+  --eq-fundo: var(--ui-painel, #fff);
+  --eq-borda: var(--ui-borda, #dfe6df);
+  --eq-suave: var(--ui-suave, #5f6e64);
+  color: var(--ui-texto, #24372d);
+  min-width: 0;
+}
+.eq-pagina,
+.eq-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.eq-pagina h1 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 6px;
+}
+.eq-pagina h2,
+.eq-dialogo h3 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
+}
+.eq-pagina p,
+.eq-dialogo p {
+  margin: 6px 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.eq-ajuda,
+.eq-pagina small,
+.eq-dialogo small {
+  color: var(--eq-suave);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.eq-abas,
+.eq-acoes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.eq-abas {
+  border-bottom: 1px solid var(--eq-borda);
+  padding-bottom: 12px;
+}
+.eq-abas button {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  padding: 10px 14px;
+  font-weight: 700;
+  min-height: 42px;
+}
+.eq-abas button[aria-current] {
+  background: var(--eq-fundo);
+  border-color: var(--eq-borda);
+}
+.eq-caixa {
+  background: var(--eq-fundo);
+  border: 1px solid var(--eq-borda);
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+}
+.eq-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.eq-filtros {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.eq-filtros > label {
+  flex: 1 1 160px;
+  max-width: 320px;
+}
+.eq-secao label,
+.eq-dialogo label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-width: 0;
+}
+.eq-secao input:not([type="checkbox"]),
+.eq-secao select,
+.eq-secao textarea,
+.eq-dialogo input:not([type="checkbox"]),
+.eq-dialogo select,
+.eq-dialogo textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--eq-borda);
+  border-radius: 9px;
+  background: var(--ui-input, var(--ui-fundo, #f7f9f7));
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+}
+.eq-resumo {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  border: 1px solid var(--eq-borda);
+  border-radius: 12px;
+  background: var(--eq-fundo);
+}
+.eq-resumo > div {
+  padding: 16px 20px;
+  flex: 1 1 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.eq-resumo strong {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+.eq-linha {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--eq-borda);
+  min-width: 0;
+}
+.eq-linha:last-child {
+  border-bottom: 0;
+}
+.eq-linha > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.eq-linha strong,
+.eq-linha small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.eq-linha-button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  color: inherit;
+  border: 0;
+  border-bottom: 1px solid var(--eq-borda);
+  font: inherit;
+  cursor: pointer;
+}
+.eq-linha-button:hover {
+  background: var(--ui-hover, #eef3ee);
+}
+.eq-metricas {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  text-align: right;
+}
+.eq-metricas span {
+  min-width: 100px;
+}
+.eq-badge {
+  font-size: 0.78rem;
+  border: 1px solid var(--eq-borda);
+  border-radius: 20px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+.eq-alerta {
+  padding: 12px 14px;
+  border-left: 3px solid #c78a32;
+  background: color-mix(in srgb, #c78a32 10%, transparent);
+  border-radius: 6px;
+}
+.eq-aviso {
+  padding: 12px 14px;
+  border-left: 3px solid #55a77b;
+  background: color-mix(in srgb, #55a77b 10%, transparent);
+  border-radius: 6px;
+}
+.eq-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.eq-edicao {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.eq-campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.eq-dialogo {
+  width: min(960px, calc(100vw - 24px));
+}
+.eq-dialogo .dialogo-interior,
+.estrutura-sistema .dialogo.eq-dialogo .dialogo-interior {
+  --dialogo-recuo: 22px;
+  padding: 22px;
+}
+.estrutura-sistema .dialogo.eq-dialogo:not(.menu-celular) .dialogo-cabecalho {
+  margin-top: calc(-1 * var(--dialogo-recuo));
+}
+.eq-dialogo details {
+  padding: 14px;
+  border: 1px solid var(--eq-borda);
+  border-radius: 10px;
+}
+.eq-dialogo summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.eq-dialogo details[open] > summary {
+  margin-bottom: 14px;
+}
+.eq-percentuais {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.eq-percentuais label {
+  width: 115px;
+}
+.eq-check {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px !important;
+}
+.eq-check input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.eq-vazio {
+  padding: 24px 0;
+  text-align: center;
+  color: var(--eq-suave);
+}
+.eq-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.eq-tabela td,
+.eq-tabela th {
+  text-align: left;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--eq-borda);
+  overflow-wrap: anywhere;
+}
+.eq-scroll {
+  overflow-x: auto;
+}
+.eq-aptidoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 2;
+  min-width: 0;
+}
+.eq-aptidao {
+  padding: 8px 12px;
+  border: 1px solid var(--eq-borda);
+  border-radius: 9px;
+  min-width: 0;
+  flex: 1 1 160px;
+}
+.eq-aptidao[data-valida="true"] {
+  border-left: 3px solid #55a77b;
+}
+.eq-aptidao[data-valida="false"] {
+  border-left: 3px solid #c78a32;
+}
+.eq-tabela th {
+  font-size: 0.8rem;
+  color: var(--eq-suave);
+}
+@media (max-width: 680px) {
+  .eq-caixa .eq-filtros > label {
+    flex-basis: 100%;
+  }
+  .eq-caixa .eq-cabecalho > .eq-filtros {
+    width: 100%;
+  }
+  .eq-caixa {
+    padding: 15px;
+  }
+  .eq-campos {
+    grid-template-columns: 1fr;
+  }
+  .eq-linha {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .eq-linha > div:first-child {
+    flex-basis: 100%;
+  }
+  .eq-metricas {
+    text-align: left;
+    gap: 12px;
+  }
+  .eq-metricas span {
+    min-width: 90px;
+  }
+  .eq-abas {
+    gap: 4px;
+  }
+  .eq-abas button {
+    padding: 9px 11px;
+  }
+  .eq-dialogo .dialogo-interior,
+  .estrutura-sistema .dialogo.eq-dialogo .dialogo-interior {
+    --dialogo-recuo: 16px;
+    padding: 16px;
+  }
+  .eq-filtros > label {
+    max-width: none;
+  }
+  .eq-resumo > div {
+    padding: 14px;
+    flex-basis: 130px;
+  }
+  .eq-percentuais label {
+    flex: 1;
+    min-width: 100px;
+  }
+  .eq-linha-button > .eq-badge {
+    white-space: normal;
+  }
+  .eq-pagina .titulo-pagina {
+    margin-top: 0;
+  }
+}

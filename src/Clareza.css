@@ -1,0 +1,1141 @@
+/* Hierarquia comum do aplicativo. Não altera documentos impressos ou o site público. */
+@media screen {
+  .estrutura-sistema .docs-capa {
+    padding: 20px 24px;
+    gap: 24px;
+    border-radius: 14px;
+    grid-template-columns: 1fr minmax(220px, 0.65fr);
+    background: var(--ui-painel);
+    align-items: center;
+  }
+  .estrutura-sistema .docs-apresentacao h1 {
+    font-size: 28px;
+    margin: 0 0 10px;
+  }
+  .estrutura-sistema .docs-sobretitulo,
+  .estrutura-sistema .docs-cartao-marca > span,
+  .estrutura-sistema .docs-cartao-marca > small {
+    display: none;
+  }
+  .estrutura-sistema .docs-cartao-marca {
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    text-align: left;
+    justify-items: start;
+    gap: 10px;
+    background: var(--ui-fundo);
+  }
+  .estrutura-sistema .docs-logo {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    border-radius: 10px;
+  }
+  .estrutura-sistema .docs-logo img {
+    max-width: 42px;
+    max-height: 42px;
+  }
+  .estrutura-sistema .docs-cartao-marca > strong {
+    font-size: 13px;
+  }
+  .estrutura-sistema .docs-cartao-marca > button {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    width: 100%;
+  }
+}
+:root {
+  --ui-texto: #24372d;
+  --ui-suave: #5f6e64;
+  --ui-painel: #fff;
+  --ui-fundo: #f5f7f5;
+  --ui-hover: #eef3ee;
+  --ui-ativo: #e9f1df;
+  --ui-borda: #dfe6df;
+  --ui-acento: #688c3f;
+  --ui-info: #277988;
+  --ui-atencao: #986414;
+  --ui-perigo: #b34236;
+  --ui-sucesso: #287652;
+}
+:root[data-tema="escuro"] {
+  --ui-texto: #e3ebe5;
+  --ui-suave: #a9b8ae;
+  --ui-painel: #202923;
+  --ui-fundo: #18201b;
+  --ui-hover: #29362d;
+  --ui-ativo: #34452c;
+  --ui-borda: #38483c;
+  --ui-acento: #a8c678;
+  --ui-info: #75c4d0;
+  --ui-atencao: #edbc69;
+  --ui-perigo: #f28c80;
+  --ui-sucesso: #85cba6;
+}
+.estrutura-sistema {
+  color: var(--ui-texto);
+  background: var(--ui-fundo);
+}
+.estrutura-sistema .sidebar-desktop {
+  width: 240px;
+  padding: 24px 16px 18px;
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+}
+.estrutura-sistema .area-sistema {
+  margin-left: 240px;
+}
+.estrutura-sistema .marca {
+  padding-bottom: 28px;
+  font-size: 32px;
+}
+.estrutura-sistema .seletor-oficina {
+  margin: 8px 0 16px;
+  background: var(--ui-fundo);
+  min-height: 64px;
+}
+.estrutura-sistema .seletor-oficina strong {
+  font-size: 12px;
+}
+.estrutura-sistema .seletor-oficina small {
+  font-size: 10px;
+}
+.estrutura-sistema .rotulo-menu {
+  margin: 18px 0 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.estrutura-sistema .menu-principal {
+  gap: 3px;
+}
+.estrutura-sistema .menu-principal a,
+.estrutura-sistema .menu-principal button {
+  min-height: 44px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--ui-suave);
+  gap: 10px;
+}
+.estrutura-sistema .menu-principal a:hover,
+.estrutura-sistema .menu-principal button:hover {
+  background: var(--ui-hover);
+  color: var(--ui-texto);
+}
+.estrutura-sistema .menu-principal a.active {
+  color: var(--ui-texto);
+  background: var(--ui-ativo);
+  box-shadow: inset 3px 0 #88a75f;
+}
+.estrutura-sistema .menu-principal a.active svg {
+  color: inherit;
+}
+.estrutura-sistema .menu-principal button svg:last-child {
+  margin-left: 0;
+}
+.busca-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 9px;
+  padding: 0 10px;
+  min-height: 44px;
+  color: var(--ui-suave);
+}
+.busca-menu input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  min-height: 42px;
+  font-size: 12px;
+  color: var(--ui-texto);
+}
+.grupo-menu {
+  margin-top: 9px;
+}
+.grupo-menu > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  min-height: 44px;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.grupo-menu > summary:hover {
+  background: var(--ui-hover);
+}
+.grupo-menu[open] > summary svg {
+  transform: rotate(180deg);
+}
+.grupo-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.menu-administracao {
+  border-top: 1px solid var(--ui-borda);
+  padding-top: 8px;
+}
+.menu-sem-resultado {
+  font-size: 12px;
+  padding: 16px 8px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .menu-celular .marca {
+  display: none;
+}
+.estrutura-sistema .menu-celular .busca-menu {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+}
+.estrutura-sistema
+  .dialogo.menu-celular
+  label.busca-menu
+  input:not([type="checkbox"]):not([type="radio"]) {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+}
+.estrutura-sistema .menu-celular .busca-menu input {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 400;
+}
+.estrutura-sistema .menu-celular .busca-menu > svg {
+  flex-shrink: 0;
+}
+.sidebar-ajuda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: auto;
+  padding: 18px 8px 0;
+}
+.sidebar-ajuda a,
+.sidebar-ajuda button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 11px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .cabecalho {
+  height: 64px;
+  padding: 0 28px;
+  gap: 12px;
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+}
+.estrutura-sistema .acoes-cabecalho {
+  gap: 14px;
+  flex-shrink: 0;
+}
+.estrutura-sistema .breadcrumb {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  white-space: normal;
+  line-height: 1.35;
+}
+.estrutura-sistema .breadcrumb .botao-menu {
+  flex-shrink: 0;
+}
+.estrutura-sistema .breadcrumb strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.estrutura-sistema .sobretitulo {
+  color: var(--ui-suave);
+}
+.estrutura-sistema .texto-suave {
+  color: var(--ui-suave);
+}
+.estrutura-sistema .formulario-cliente label span {
+  color: var(--ui-texto);
+}
+.estrutura-sistema .navegacao-inferior a,
+.estrutura-sistema .navegacao-inferior button {
+  color: var(--ui-suave);
+  font-size: 11px;
+}
+.estrutura-sistema .navegacao-inferior a.active,
+.estrutura-sistema .navegacao-inferior .atalho-novo {
+  color: var(--ui-texto);
+  font-weight: 800;
+}
+.estrutura-sistema .perfil-cabecalho strong {
+  font-size: 12px;
+}
+.estrutura-sistema .perfil-cabecalho small {
+  font-size: 10px;
+}
+.estrutura-sistema .conteudo-pagina {
+  padding: 28px;
+  max-width: 1550px;
+}
+.estrutura-sistema .titulo-pagina {
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+.estrutura-sistema .titulo-pagina .sobretitulo,
+.estrutura-sistema .agil-cabecalho > div > small {
+  display: none;
+}
+.estrutura-sistema .titulo-pagina h1,
+.estrutura-sistema .agil-cabecalho h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  letter-spacing: -0.8px;
+}
+.estrutura-sistema .titulo-pagina p,
+.estrutura-sistema .agil-cabecalho p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ui-suave);
+  margin-top: 7px;
+  max-width: 65ch;
+}
+.estrutura-sistema .botao-primario,
+.estrutura-sistema .botao-secundario {
+  min-height: 44px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+.estrutura-sistema .botao-primario {
+  background: #d5f675;
+  color: #27351b;
+  border-color: #c6e66a;
+  box-shadow: none;
+}
+.estrutura-sistema .botao-primario:hover:not(:disabled) {
+  background: #c8ec66;
+  transform: none;
+}
+.estrutura-sistema .botao-secundario {
+  background: var(--ui-painel);
+  color: var(--ui-texto);
+  border-color: var(--ui-borda);
+}
+.estrutura-sistema .botao-icone {
+  min-width: 44px;
+  min-height: 44px;
+}
+.estrutura-sistema .os-painel,
+.estrutura-sistema .painel-registros,
+.estrutura-sistema .catalogo-painel,
+.estrutura-sistema .agil-card {
+  border-radius: 14px;
+  border-color: var(--ui-borda);
+  background: var(--ui-painel);
+}
+.estrutura-sistema .os-painel {
+  padding: 20px;
+}
+.estrutura-sistema .registros-cabecalho {
+  padding: 20px;
+}
+.estrutura-sistema .registros-cabecalho h2 {
+  font-size: 16px;
+}
+.estrutura-sistema .registros-cabecalho p {
+  font-size: 12px;
+}
+.estrutura-sistema .tabela-registros td {
+  font-size: 13px;
+}
+.estrutura-sistema .tabela-registros th {
+  font-size: 11px;
+}
+.estrutura-sistema .campo-busca input,
+.estrutura-sistema .busca-clientes input {
+  min-height: 44px;
+  font-size: 13px;
+}
+.estrutura-sistema .nota-demo {
+  padding: 8px 0;
+  margin-block: 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ui-suave);
+  font-size: 12px;
+}
+.estrutura-sistema .filtros-propostas {
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.estrutura-sistema :is(.os-status, .situacao-proposta) {
+  --situacao-cor: var(--ui-suave);
+  color: var(--situacao-cor);
+  background: color-mix(in srgb, var(--situacao-cor) 10%, var(--ui-painel));
+  border: 1px solid color-mix(in srgb, var(--situacao-cor) 20%, transparent);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.estrutura-sistema
+  :is(
+    .os-status.open,
+    .situacao-proposta.awaiting_approval,
+    .situacao-proposta.expired
+  ) {
+  --situacao-cor: var(--ui-atencao);
+}
+.estrutura-sistema :is(.os-status.in_progress, .os-status.quality_check) {
+  --situacao-cor: var(--ui-info);
+}
+.estrutura-sistema
+  :is(.os-status.ready, .os-status.delivered, .situacao-proposta.approved) {
+  --situacao-cor: var(--ui-sucesso);
+}
+.estrutura-sistema
+  :is(.os-status.cancelled, .situacao-proposta.cancelled, .situacao-proposta.declined) {
+  --situacao-cor: var(--ui-perigo);
+}
+.estrutura-sistema
+  :is(.filtros-situacao, .mapa-visao-rapida, .rel-abas)
+  :is(button, select):focus-visible {
+  outline: 2px solid var(--ui-acento);
+  outline-offset: 3px;
+}
+.acoes-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.estrutura-sistema .rodape-pagina {
+  font-size: 11px;
+  padding: 18px 28px;
+  border-top: 1px solid var(--ui-borda);
+}
+.estrutura-sistema .rodape-pagina > span:first-child {
+  color: var(--ui-suave);
+}
+.estrutura-sistema .dialogo {
+  background: var(--ui-painel);
+  color: var(--ui-texto);
+  border-radius: 18px;
+}
+.estrutura-sistema .dialogo-interior {
+  --dialogo-recuo: 24px;
+  padding: 24px;
+}
+.estrutura-sistema .dialogo:not(.menu-celular) {
+  scroll-padding-block: 90px 20px;
+}
+.estrutura-sistema .dialogo:not(.menu-celular) .dialogo-cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: -24px calc(-1 * var(--dialogo-recuo)) 20px;
+  padding: 14px var(--dialogo-recuo);
+  background: var(--ui-painel);
+}
+.estrutura-sistema .dialogo-cabecalho > .botao-icone {
+  flex-shrink: 0;
+}
+.estrutura-sistema .dialogo-cabecalho {
+  border-bottom: 1px solid var(--ui-borda);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
+.estrutura-sistema .dialogo-cabecalho h2 {
+  font-size: 20px;
+}
+.estrutura-sistema .dialogo label {
+  font-size: 13px;
+}
+.estrutura-sistema
+  .dialogo
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  font-size: 14px;
+  color: var(--ui-texto);
+  background: var(--ui-fundo);
+}
+.estrutura-sistema .rascunho-status {
+  font-size: 11px;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--ui-borda);
+  padding: 0 0 12px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .etapa-formulario {
+  margin: 8px 0 0;
+}
+.estrutura-sistema .formulario-cliente fieldset {
+  gap: 16px;
+}
+.estrutura-sistema .editor-proposta fieldset > .agil-detalhes {
+  margin: 0;
+}
+.estrutura-sistema .editor-proposta fieldset > .secao-recolhivel {
+  margin: 0;
+}
+.estrutura-sistema .os-abas {
+  background: var(--ui-hover);
+}
+.estrutura-sistema .os-abas button {
+  font-size: 13px;
+  min-height: 44px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .os-abas button[aria-current],
+.estrutura-sistema .os-abas button[aria-pressed="true"] {
+  color: var(--ui-texto);
+  background: var(--ui-painel);
+}
+.estrutura-sistema .os-abas-simples {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(130px, 1.2fr);
+  gap: 4px;
+  padding: 4px;
+  margin: 18px 0 24px;
+}
+.estrutura-sistema .os-mais-secoes {
+  margin: 0;
+  display: flex;
+  min-width: 0;
+}
+.estrutura-sistema .os-mais-secoes select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.estrutura-sistema .os-cabecalho {
+  padding: 0;
+}
+.estrutura-sistema .os-cabecalho h2 {
+  font-size: 21px;
+}
+.estrutura-sistema .os-resumo {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--ui-fundo);
+  padding: 16px;
+  gap: 12px;
+}
+.estrutura-sistema .os-cartao {
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+  border-radius: 12px;
+  padding: 18px;
+  gap: 10px;
+}
+.estrutura-sistema .os-cartao h2 {
+  font-size: 18px;
+}
+.estrutura-sistema .entrega-painel {
+  margin: 0;
+  padding: 14px;
+  border-radius: 12px;
+}
+.estrutura-sistema .entrega-painel > h3 {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.estrutura-sistema .entrega-painel > p {
+  font-size: 12px;
+}
+.secao-recolhivel {
+  border: 1px solid var(--ui-borda);
+  background: var(--ui-painel);
+  border-radius: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.secao-recolhivel > summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 54px;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+.secao-recolhivel > summary::-webkit-details-marker {
+  display: none;
+}
+.secao-recolhivel > summary strong {
+  font-size: 13px;
+  font-weight: 750;
+}
+.secao-recolhivel > summary small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ui-suave);
+  margin-top: 4px;
+}
+.secao-recolhivel > summary svg {
+  flex-shrink: 0;
+  color: var(--ui-suave);
+}
+.secao-recolhivel[open] > summary svg {
+  transform: rotate(90deg);
+}
+.secao-recolhivel[open] > summary {
+  border-bottom: 1px solid var(--ui-borda);
+}
+.secao-recolhivel-conteudo {
+  padding: 16px;
+}
+.secao-recolhivel-conteudo > .os-painel {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.secao-recolhivel-conteudo > label + label {
+  margin-top: 14px;
+}
+.secao-recolhivel summary:focus-visible,
+.grupo-menu summary:focus-visible,
+.legenda-recolhida summary:focus-visible {
+  outline: 3px solid #88a75f;
+  outline-offset: 3px;
+}
+.estrutura-sistema .agil-detalhes,
+.estrutura-sistema .os-detalhes {
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+.estrutura-sistema .agil-detalhes > summary,
+.estrutura-sistema .os-detalhes > summary {
+  font-size: 12px;
+  min-height: 36px;
+  align-content: center;
+}
+.legenda-recolhida {
+  color: var(--ui-suave);
+  font-size: 12px;
+  margin: 8px 0 16px;
+}
+.legenda-recolhida > summary {
+  min-height: 36px;
+  align-content: center;
+  cursor: pointer;
+  width: fit-content;
+}
+.estrutura-sistema .mapa-atualizacao {
+  margin: 0 0 16px;
+  font-size: 11px;
+}
+.estrutura-sistema .mapa-titulo .mapa-atualizacao {
+  margin: 0 0 0 auto;
+  gap: 6px;
+}
+.estrutura-sistema .mapa-titulo {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.estrutura-sistema .link-pagamento-os {
+  color: var(--ui-texto);
+  text-align: left;
+  font-size: 12px;
+  text-decoration: underline;
+  min-height: 36px;
+}
+.estrutura-sistema .mapa-atualizacao button {
+  padding: 4px 10px;
+  background: transparent;
+  border-color: transparent;
+  min-height: 36px;
+}
+.estrutura-sistema .indicadores {
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.estrutura-sistema .indicador {
+  padding: 16px;
+  min-height: 0;
+  border-radius: 12px;
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+  color: var(--ui-texto);
+}
+.estrutura-sistema .indicador-topo {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.estrutura-sistema .indicador-destaque .indicador-topo {
+  color: var(--ui-suave);
+}
+.estrutura-sistema .indicador-destaque .indicador-topo svg {
+  color: var(--ui-suave);
+}
+.estrutura-sistema .abas-filtro {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-borda) transparent;
+}
+.estrutura-sistema .indicador-topo .icone-suave {
+  background: transparent;
+  width: auto;
+  height: auto;
+}
+.estrutura-sistema .indicador-valor {
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 0;
+}
+.estrutura-sistema .indicador-valor small,
+.estrutura-sistema .indicador-rodape {
+  display: none;
+}
+.estrutura-sistema .mapa-titulo {
+  margin-bottom: 12px;
+}
+.estrutura-sistema .mapa-titulo h2 {
+  font-size: 16px;
+}
+.estrutura-sistema .cartao-veiculo {
+  background: var(--ui-painel);
+}
+.estrutura-sistema .linha-veiculo {
+  font-size: 13px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .linha-veiculo small {
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .servico-cartao {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.estrutura-sistema .faixa-dia {
+  display: none;
+}
+.estrutura-sistema .catalogo-resumo {
+  margin-bottom: 20px;
+  gap: 12px;
+}
+.estrutura-sistema .catalogo-resumo > div {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .estoque-indicadores article {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .fin-periodo {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .fin-periodo > div {
+  min-width: 180px;
+}
+.estrutura-sistema .fin-periodo p {
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .fin-cartoes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.estrutura-sistema .fin-cartoes article {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-content: start;
+  align-items: center;
+  border-radius: 14px;
+  padding: 20px;
+  gap: 10px;
+  background: var(--ui-painel);
+  border-color: var(--ui-borda);
+}
+.estrutura-sistema .fin-cartoes article > :not(svg):not(.fin-indicador-titulo) {
+  grid-column: 1 / -1;
+}
+.estrutura-sistema .fin-cartoes article > strong {
+  padding-block: 5px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .fin-cartoes article.fin-destaque {
+  background: #283e30;
+  color: #eff5ed;
+  border-color: #283e30;
+}
+.estrutura-sistema .fin-cartoes strong {
+  font-size: 27px;
+}
+.estrutura-sistema .fin-cartoes .secao-recolhivel {
+  background: transparent;
+  color: inherit;
+  border-color: #57735f;
+  margin: 0;
+}
+.estrutura-sistema .fin-cartoes .secao-recolhivel summary {
+  padding: 6px 10px;
+  min-height: 44px;
+}
+.estrutura-sistema .fin-cartoes .secao-recolhivel summary strong {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.estrutura-sistema .fin-cartoes .secao-recolhivel summary svg {
+  color: inherit;
+}
+.estrutura-sistema .fin-resultado .fin-valor-grande {
+  font-size: 32px;
+}
+.estrutura-sistema .gestao-indicadores article {
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.estrutura-sistema .gestao-colunas {
+  margin: 0;
+}
+.estrutura-sistema .agil-cabecalho {
+  margin-bottom: 24px;
+}
+.estrutura-sistema .agil-cabecalho > svg {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .estrutura-sistema .sidebar-desktop {
+    width: 220px;
+    padding-inline: 12px;
+  }
+  .estrutura-sistema .area-sistema {
+    margin-left: 220px;
+  }
+  .estrutura-sistema .conteudo-pagina {
+    padding: 24px;
+  }
+  .estrutura-sistema .fin-cartoes strong {
+    font-size: 24px;
+  }
+}
+@media (max-width: 1020px) {
+  .estrutura-sistema .sidebar-desktop {
+    display: none;
+  }
+  .estrutura-sistema .area-sistema {
+    margin-left: 0;
+  }
+  .estrutura-sistema .botao-menu {
+    display: inline-flex;
+  }
+  .estrutura-sistema .menu-celular .dialogo-interior {
+    padding: 20px 16px;
+  }
+}
+@media (max-width: 700px) {
+  .estrutura-sistema .linha-veiculo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .estrutura-sistema .linha-veiculo > span:nth-child(2) {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .estrutura-sistema .linha-veiculo > .placa {
+    margin-left: 0;
+    justify-self: start;
+  }
+  .estrutura-sistema .linha-veiculo > .etiqueta-etapa {
+    margin-right: 0;
+    justify-self: end;
+  }
+  .estrutura-sistema .linha-veiculo > .entrega-indicador {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .mapa-titulo .mapa-atualizacao {
+    width: auto;
+    order: 0;
+    margin-left: auto;
+  }
+  .estrutura-sistema .mapa-titulo .mapa-atualizacao > span,
+  .estrutura-sistema .mapa-titulo .mapa-atualizacao button > span {
+    display: none;
+  }
+  .estrutura-sistema .mapa-titulo .mapa-atualizacao button {
+    min-width: 40px;
+    min-height: 44px;
+  }
+  .estrutura-sistema .botao-primario,
+  .estrutura-sistema .botao-secundario {
+    font-size: 13px;
+  }
+  .estrutura-sistema .menu-principal a,
+  .estrutura-sistema .menu-principal button {
+    font-size: 13px;
+  }
+  .estrutura-sistema .fin-abas {
+    gap: 2px;
+  }
+  .estrutura-sistema .fin-abas button {
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+  .estrutura-sistema .docs-capa {
+    grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 16px;
+  }
+  .estrutura-sistema .docs-apresentacao h1 {
+    font-size: 25px;
+  }
+  .estrutura-sistema .cabecalho {
+    height: 60px;
+    padding: 0 12px;
+  }
+  .estrutura-sistema .acoes-cabecalho {
+    gap: 2px;
+  }
+  .estrutura-sistema .perfil-cabecalho {
+    padding-left: 8px;
+  }
+  .estrutura-sistema .conteudo-pagina {
+    padding: 22px 16px 28px;
+  }
+  .estrutura-sistema .titulo-pagina {
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .estrutura-sistema .titulo-pagina h1,
+  .estrutura-sistema .agil-cabecalho h1 {
+    font-size: 25px;
+  }
+  .estrutura-sistema .titulo-pagina > .botao-primario {
+    width: 100%;
+    justify-content: center;
+  }
+  .estrutura-sistema .titulo-pagina > .botao-primario svg {
+    margin-inline: 0;
+  }
+  .estrutura-sistema .titulo-pagina .acoes-titulo {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .acoes-titulo > * {
+    flex: 1;
+  }
+  .estrutura-sistema .os-painel,
+  .estrutura-sistema .registros-cabecalho {
+    padding: 16px;
+  }
+  .estrutura-sistema .dialogo-interior {
+    --dialogo-recuo: 16px;
+    padding: 18px 16px;
+  }
+  .estrutura-sistema .dialogo:not(.menu-celular) .dialogo-cabecalho {
+    margin-top: -18px;
+    padding-block: 10px;
+  }
+  .estrutura-sistema .dialogo-cabecalho h2 {
+    font-size: 18px;
+  }
+  .estrutura-sistema
+    .dialogo
+    :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    font-size: 16px;
+  }
+  .estrutura-sistema
+    .conteudo-pagina
+    :is(input, textarea):not([type="checkbox"]):not([type="radio"]):not(
+      [type="date"]
+    ):not([type="datetime-local"]) {
+    font-size: 16px;
+  }
+  .estrutura-sistema .os-abas-simples {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .estrutura-sistema .os-mais-secoes {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .os-resumo {
+    grid-template-columns: 1fr 1fr;
+  }
+  .estrutura-sistema .os-resumo > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .indicadores {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .estrutura-sistema .indicador {
+    padding: 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 64px;
+  }
+  .estrutura-sistema .indicador-topo {
+    font-size: 11px;
+    gap: 6px;
+    margin: 0;
+  }
+  .estrutura-sistema .indicador-topo svg {
+    display: none;
+  }
+  .estrutura-sistema .indicador-valor {
+    font-size: 26px;
+  }
+  .estrutura-sistema .fin-cartoes {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .estrutura-sistema .fin-cartoes article:first-child {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .fin-cartoes article {
+    padding: 14px;
+  }
+  .estrutura-sistema .fin-cartoes strong {
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    overflow-wrap: anywhere;
+  }
+  .estrutura-sistema .fin-acoes {
+    width: 100%;
+  }
+  .estrutura-sistema .fin-acoes > button {
+    flex: 1;
+  }
+  .estrutura-sistema .fin-periodo {
+    gap: 12px;
+  }
+  .estrutura-sistema .fin-periodo > div {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .estrutura-sistema .fin-periodo label {
+    flex: 1;
+    min-width: 0;
+  }
+  .estrutura-sistema .fin-periodo input {
+    width: 100%;
+  }
+  .secao-recolhivel > summary {
+    padding: 12px 14px;
+  }
+  .secao-recolhivel-conteudo {
+    padding: 14px;
+  }
+  .estrutura-sistema .rodape-pagina {
+    padding: 16px;
+  }
+  .estrutura-sistema .rodape-pagina > span:first-child {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .estrutura-sistema .rodape-pagina {
+    /* Mantém as últimas ações acima do menu e do assistente fixos no celular. */
+    padding-bottom: calc(140px + env(safe-area-inset-bottom));
+  }
+}
+/* Controles dos módulos operacionais, inclusive quando abertos em uma janela. */
+.estrutura-sistema
+  :is(
+    .planejamento-visita,
+    .distribuicao-form,
+    .distribuicao-agenda,
+    .reserva-form,
+    .reserva-recursos,
+    .reserva-barra
+  )
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    [type="hidden"]
+  ) {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--ui-fundo);
+  color: var(--ui-texto);
+  font: inherit;
+}
+.estrutura-sistema
+  :is(
+    .dialogo,
+    .plano-op,
+    .reserva-recursos,
+    .distribuicao-agenda,
+    .planejamento-visita
+  )
+  input:is([type="checkbox"], [type="radio"]) {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--ui-acento);
+}
+.estrutura-sistema .plano-op label.plano-check,
+.estrutura-sistema .plano-dias label,
+.estrutura-sistema .plano-op label.conc-selecao {
+  flex-direction: row;
+}
+.estrutura-sistema
+  :is(.reserva-form, .distribuicao-form)
+  label:has(> input[type="checkbox"]) {
+  min-height: 44px;
+}
+.estrutura-sistema .reserva-selecionados button,
+.estrutura-sistema .distribuicao-candidato button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.estrutura-sistema .reserva-status.indisponivel {
+  color: var(--ui-atencao);
+}
+.estrutura-sistema .distribuicao-impedimento {
+  border-color: var(--ui-atencao);
+}
+@media (max-width: 600px) {
+  .estrutura-sistema
+    :is(
+      .planejamento-visita,
+      .distribuicao-form,
+      .distribuicao-agenda,
+      .reserva-form,
+      .reserva-recursos,
+      .reserva-barra
+    )
+    :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    font-size: 16px;
+  }
+  .estrutura-sistema .reserva-linha {
+    flex-wrap: wrap;
+  }
+}

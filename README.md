@@ -45,7 +45,51 @@ npm run lint
 npm run build
 ```
 
+Para conferir tipos, lint, formatação, build e a bateria completa de testes locais:
+
+```powershell
+npm run check
+```
+
+`npm test` executa as suítes de regras de negócio, componentes puros e banco isolado
+com as migrações atuais. `npm run test:unit` e `npm run test:db` permitem executar
+essas partes separadamente. Nenhum desses comandos altera o banco de produção.
+Os resultados ficam em `output/validacao-refatoracao-atual/`.
+
+Use `npm run format` para aplicar o padrão de código e `npm run format:check` para
+conferir. Veja a [refatoração e validação de 13/10/2026](docs/refatoracao-e-validacao-2026-10-13.md)
+para a organização dos módulos, evidências e limites da homologação local.
+
 O aplicativo usa React, TypeScript, React Router, Tailwind, Lucide e a fonte local Manrope. React Query gerencia as consultas reais de acesso e clientes no Supabase. A identidade visual usa o nome provisório Pátio.
+
+## Publicação na Vercel
+
+O `vercel.json` configura Vite, instalação com `npm ci`, compilação com
+`npm run build`, saída `dist` e fallback das rotas para `index.html`. O Node
+utilizado é o 22.x. O `.vercelignore` exclui credenciais, backups e evidências
+locais do envio pela CLI.
+
+Antes de publicar, configure no projeto da Vercel:
+
+- `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`: URL e chave **pública**
+  do Supabase. Nunca use a chave administrativa em uma variável `VITE_`.
+- `VITE_URL_PUBLICA`: origem HTTPS escolhida para o sistema.
+- `VITE_RELEASE_ID`: identificação da versão.
+- URLs de suporte, termos e privacidade e versão dos termos, conforme
+  `.env.example`, para a ativação comercial.
+
+Configure também a origem publicada e os redirecionamentos de autenticação
+no Supabase. O frontend na Vercel não publica automaticamente as migrações ou
+Edge Functions do Supabase; SMTP, cobrança e integrações seguem o
+[guia de ativação](docs/ativacao-servicos.md).
+
+Para validar o código, execute `npm run check`. Essa verificação inclui o
+conteúdo do pacote de produção, as referências dos assets e o cache offline.
+Depois do deploy, execute
+`node scripts/verificar-publicacao.mjs https://seu-dominio`
+e confirme login e recuperação de senha no domínio publicado.
+
+Referência: [Vite e rotas SPA na Vercel](https://vercel.com/docs/frameworks/frontend/vite).
 
 ## Convenções
 

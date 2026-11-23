@@ -1,0 +1,17 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
+import {MemoryRouter} from 'react-router-dom';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {Orcamentos} from '../../src/pages/Orcamentos';
+import {gravarDemo} from '../../src/services/orcamentos';
+import '../../src/index.css';
+import '../../src/App.css';
+import '../../src/Tema.css';
+import '../../src/Clareza.css';
+const p=new URLSearchParams(location.search),situacao=p.get('estado')||'awaiting_approval';
+document.documentElement.dataset.tema=p.get('tema')||'escuro';
+const id='00000000-0000-4000-8000-000000000038',versao='00000000-0000-4000-8000-000000000039';
+const itens=Array.from({length:8},(_,i)=>({id:crypto.randomUUID(),tipo:i%2?'part':'service',descricao:p.has('longo')?'Descrição muito longa de serviço e componente para conferir a leitura e o valor sem sobreposição no orçamento '+i:'Serviço de teste '+(i+1),unidade:'un',quantidade:1,preco_unitario_centavos:15000,total_item_centavos:15000}));
+gravarDemo({id,numero:38,revisao:1,situacao,cliente_id:'cliente',veiculo_id:'veiculo',versao_atual_id:versao,ordem_servico_id:null,aprovacao:null,historico:[{id:versao,numero_versao:1,total_centavos:120000,publicado_em:'2026-11-05T12:00:00Z'}],itens,versao:{id:versao,numero_versao:1,dados_oficina:{nome:'Empresa de teste'},dados_cliente:{nome:p.has('longo')?'Cliente com nome longo para conferir a apresentação no celular':'Cliente de teste'},dados_veiculo:{modelo:'Volkswagen',motor:'AP 1.8',especialidade:'retifica'},observacoes:'Conferência visual do orçamento',condicoes:'Conforme combinado',subtotal_centavos:120000,desconto_centavos:0,total_centavos:120000,publicado_em:situacao==='draft'?null:'2026-11-05T12:00:00Z',expira_em:'2026-12-05T12:00:00Z'}});
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}})}><ContextoAcesso.Provider value={{demo:true,usuario:'qa',oficina:{id:'demo',nome:'Empresa de teste',perfil:'owner',ramo:'automotivo',especialidade:'retifica',codigo_plano:'complete'},permite:()=>true}}><MemoryRouter initialEntries={['/orcamentos?orcamento='+id]}><main className="estrutura-sistema" style={{display:'block',padding:24}}><Orcamentos/></main></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

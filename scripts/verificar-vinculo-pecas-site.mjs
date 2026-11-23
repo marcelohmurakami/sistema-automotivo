@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';import{readFile,writeFile,mkdir}from'node:fs/promises';import{randomUUID}from'node:crypto';import{chromium}from'playwright';
+const base='https://patio-gestao-peach.vercel.app',pasta='output/vinculo-pecas-20261105/site-publicado',banco='https://hzihxtjirttetnfdujcx.supabase.co';await mkdir(pasta,{recursive:true});
+const conta=JSON.parse(await readFile('output/contas-teste/20261019/credenciais.local.json','utf8')).contas.find(c=>c.especialidade==='retifica');assert(conta.empresa.startsWith('ZZ [TESTE 20261019] '));
+const pacote=JSON.parse(await readFile('output/vinculo-pecas-20261105/pacote-publicacao.json','utf8'));assert.equal((await fetch(base+'/health.json?qa='+Date.now()).then(r=>r.json())).build,pacote.build);
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'}),ctx=await browser.newContext({viewport:{width:1920,height:1080},locale:'pt-BR',timezoneId:'America/Sao_Paulo'}),p=await ctx.newPage();p.setDefaultTimeout(40000);
+const erros=[],resultados=[];p.on('pageerror',e=>erros.push(e.message));let headers;
+p.on('request',r=>{if(r.url().startsWith(banco+'/rest/v1/')){const h=r.headers();if(h.authorization)headers={authorization:h.authorization,apikey:h.apikey,'content-type':'application/json'}}});
+async function rpc(nome,dados){assert.equal(dados.p_oficina,conta.empresa_id);assert(headers?.authorization);const r=await p.request.post(banco+'/rest/v1/rpc/'+nome,{headers,data:dados});const texto=await r.text();if(!r.ok())throw Error(nome+' '+r.status()+': '+texto);return texto?JSON.parse(texto):null}
+try{
+ await p.goto(base+'/ordens-servico');await p.getByLabel('E-mail',{exact:true}).fill(conta.email);await p.getByLabel('Senha',{exact:true}).fill(conta.senha);await p.getByRole('button',{name:'Entrar no sistema',exact:true}).click();await p.getByRole('button',{name:'Nova OS',exact:true}).waitFor();
+ const w=conta.empresa_id,produto=randomUUID(),catalogo=randomUUID(),sufixo=Date.now().toString().slice(-7),descricao='QA Vínculo pastilha '+sufixo;
+ await rpc('salvar_produto_estoque',{p_oficina:w,p_id:produto,p_revisao:null,p_dados:{descricao,unidade:'un',preco_padrao_centavos:3000,custo_centavos:500,minimo:0}});
+ await rpc('movimentar_estoque',{p_oficina:w,p_produto:produto,p_tipo:'entrada',p_quantidade:10,p_motivo:'QA vínculo automático: saldo fictício',p_chave:randomUUID(),p_revisao:1});
+ await rpc('salvar_item_catalogo',{p_oficina:w,p_id:catalogo,p_revisao:null,p_dados:{descricao,tipo:'part',unidade:'un',preco_padrao_centavos:3100,favorito:true}});
+ const historico=await rpc('criar_os_pronta',{p_oficina:w,p_chave:randomUUID(),p_dados:{cliente_nome_livre:'QA Histórico vínculo '+sufixo,carro_livre:'Fiat QA',motor_livre:'Fire',desconto_centavos:0,itens:[{id:randomUUID(),item_catalogo_id:catalogo,tipo:'part',descricao,unidade:'un',quantidade:1,preco_unitario_centavos:3100,situacao:'pending'}]}});
+ await rpc('vincular_estoque_item_os',{p_oficina:w,p_os:historico.id,p_item:historico.itens[0].id,p_produto:produto,p_origem:'estoque',p_revisao:historico.revisao});
+ const cadastro=await rpc('buscar_cadastros_operacao',{p_oficina:w,p_tipo:'catalogo',p_id:catalogo,p_busca:'',p_cliente:null,p_tipo_item:'part'});assert.equal(cadastro[0].produto_estoque_id,produto);
+ await p.goto(base+'/ordens-servico?nova=1');await p.getByRole('dialog',{name:'Nova ordem de serviço',exact:true}).waitFor();await p.getByRole('combobox',{name:'Cliente',exact:true}).click();await p.getByRole('option',{name:'Informar cliente sem cadastrar',exact:true}).click();
+ const cliente='QA Entrega sem repetir peça '+sufixo;await p.getByLabel('Nome do cliente',{exact:true}).fill(cliente);await p.getByLabel('Carro',{exact:true}).fill('Fiat Palio QA');await p.getByLabel('Motor',{exact:true}).fill('Fire');
+ await p.getByLabel('Buscar serviço ou peça: OS',{exact:true}).fill(descricao);await p.getByRole('button',{name:new RegExp('Adicionar '+descricao+' por R\\$\\s*31,00')}).click();
+ await p.getByLabel('Sim · salvar como pronto e imprimir',{exact:true}).check();const salvo=p.waitForResponse(r=>r.url().endsWith('/rpc/criar_os_pronta')&&r.request().postDataJSON()?.p_oficina===w);await p.getByRole('button',{name:'Salvar como pronto e imprimir',exact:true}).click();const os=await(await salvo).json();assert.equal(os.itens[0].item_catalogo_id,catalogo);assert.equal(os.itens[0].produto_estoque_id,produto);assert.equal(os.itens[0].origem_peca,'estoque');
+ await p.getByRole('button',{name:'Agora não, só imprimir',exact:true}).click();await p.getByRole('dialog',{name:'Avisar o cliente que está pronto?',exact:true}).getByRole('button',{name:'Fechar',exact:true}).click();
+ for(const aba of ctx.pages())if(aba!==p)await aba.close();
+ await p.goto(base+'/');await p.getByRole('button',{name:'Visualizar em quadro',exact:true}).click();await p.getByPlaceholder(/Buscar (veículo|carro)/i).fill(cliente);
+ const cartao=p.locator('.cartao-veiculo').filter({hasText:cliente});
+ // A entrega rápida aciona o banco e segue diretamente para a pergunta de pagamento.
+ const entregue=p.waitForResponse(r=>r.url().endsWith('/rpc/mover_ordem_no_mapa')&&r.request().postDataJSON()?.p_os===os.id);
+ await cartao.getByRole('button',{name:/^Entregar OS/}).click();assert.equal((await entregue).status(),200);await p.getByRole('dialog',{name:'Como ficou o pagamento da OS?',exact:true}).waitFor();assert.equal(await p.getByRole('dialog',{name:'Conferir peças para entregar',exact:true}).count(),0);
+ await p.screenshot({path:pasta+'/entrega-sem-conferencia.png'});
+ const atual=await rpc('consultar_ordem_servico',{p_oficina:w,p_os:os.id}),estoque=await rpc('consultar_produto_estoque',{p_oficina:w,p_produto:produto}),movimentos=await rpc('consultar_movimentacoes_estoque',{p_oficina:w,p_produto:produto});
+ assert.equal(atual.situacao,'delivered');assert.equal(Number(estoque.saldo),9);assert.equal(movimentos.filter(m=>m.ordem_servico_id===os.id&&m.tipo==='consumo_os').length,1);assert.equal(atual.total_centavos,3100);
+ const titulo=await rpc('consultar_financeiro_os',{p_oficina:w,p_os:os.id});assert.equal(titulo.baixado_centavos,0);
+ resultados.push({ok:true,empresa:conta.empresa,os:os.id,numero:os.numero,produto,catalogo,saldoAntes:10,saldoDepois:9,movimentos:1,valor:3100,pagamentoAutomatico:false,semConferenciaRepetida:true});assert.deepEqual(erros,[]);console.log('PASS site publicado: peça selecionada, OS pronta, entrega e uma baixa automática; pagamento preservado');
+}catch(e){process.exitCode=1;console.error(e);await p.screenshot({path:pasta+'/falha.png',fullPage:true});await writeFile(pasta+'/falha.txt',await p.locator('body').innerText());}finally{await browser.close();await writeFile(pasta+'/resumo.json',JSON.stringify({ok:!process.exitCode,build:pacote.build,resultados,erros},null,2));}

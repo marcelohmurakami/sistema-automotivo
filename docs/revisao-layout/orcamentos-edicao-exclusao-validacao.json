@@ -1,0 +1,20 @@
+{
+  "data": "2026-10-06",
+  "migracao": "20261006000500_edicao_exclusao_orcamentos.sql",
+  "aplicada_supabase": true,
+  "projeto": "hzihxtjirttetnfdujcx",
+  "validacao": {
+    "banco": "21 suítes aprovadas; 30 verificações na nova suíte. A proteção final de concorrência foi retestada nas 30 verificações.",
+    "typescript_build_lint": "aprovados",
+    "navegador": "Orçamento fictício #9 da oficina de validação: aberto pelo lápis, cliente/veículo/item/valor preenchidos, preço alterado de R$120 para R$130 e salvo na mesma versão. Exclusão bloqueada sem motivo. Após informar o motivo, saiu da lista principal, apareceu em Excluídos com motivo e R$130. Restauração devolveu os dados à lista.",
+    "responsivo": "Desktop e largura de 390px; botões medidos com 44x44px, sem overflow horizontal. Viewport restaurado.",
+    "regras": [
+      "Edição de proposta emitida revisa e salva atomicamente; erro de validação preserva a versão anterior e seu link.",
+      "Proposta que já autorizou uma OS ou adicional aplicado tem edição protegida.",
+      "Exclusão reversível registra motivo e autor na auditoria, revoga links e cancela avisos pendentes.",
+      "OS que aguarda o orçamento deve ser cancelada antes da exclusão. OS já autorizada permanece preservada.",
+      "Restaurar não reativa links antigos.",
+      "RPCs verificam oficina, plano, revisão e exclusão; atualizações do orçamento usam bloqueio transacional."
+    ]
+  }
+}

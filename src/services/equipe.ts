@@ -38,17 +38,15 @@ export type EquipeDados = {
 export async function equipeRpc<T>(
   nome: string,
   parametros: Record<string, unknown>,
+  signal?: AbortSignal,
 ): Promise<T> {
   if (!supabase) throw new Error("Conexão indisponível.");
-  const { data, error } = await supabase.rpc(nome, parametros);
+  const consulta = supabase.rpc(nome, parametros);
+  const { data, error } = await (signal ? consulta.abortSignal(signal) : consulta);
   if (error) throw error;
   return data as T;
 }
-export async function gerarConvite(
-  oficina: string,
-  email: string,
-  perfil: string,
-) {
+export async function gerarConvite(oficina: string, email: string, perfil: string) {
   const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (x) =>
     x.toString(16).padStart(2, "0"),
   ).join("");

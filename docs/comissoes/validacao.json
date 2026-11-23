@@ -1,0 +1,64 @@
+{
+  "data": "2026-10-06",
+  "projeto": "hzihxtjirttetnfdujcx",
+  "migration": "supabase/migrations/20261006000100_comissoes.sql",
+  "sha256": "a1e16e13e96aaf2f2338f6ba4304e01b20025bafda27c2d8f5fca4462ed75fe9",
+  "estado": "aplicada_e_validada",
+  "executada_no_supabase": true,
+  "autorizacao": "Usuário respondeu sim à solicitação de aplicação da migração no projeto sistema_automotivo, main Production.",
+  "resultado_execucao": "Success. No rows returned",
+  "compatibilidade_remota": {
+    "pagamento_compativel": true,
+    "estorno_compativel": true,
+    "modulo_existente": false
+  },
+  "validacao": {
+    "verificacoes_banco": 531,
+    "verificacoes_comissoes": 54,
+    "teste_visual_funcional": "aprovado_com_dados_ficticios_na_oficina_de_validacao",
+    "eslint": "aprovado",
+    "suites_banco": 17,
+    "typescript": "aprovado",
+    "build": "aprovado"
+  },
+  "verificacao_remota": {
+    "rls_ativo": true,
+    "consulta_autenticada": true,
+    "consulta_anonima": false,
+    "escrita_direta": false,
+    "pagamentos_integrados": true
+  },
+  "bancada_ui": {
+    "oficina": "[VALIDAÇÃO] Atendimento completo 2026-09-30 19:41:46",
+    "os_id": "26a9efd3-05c5-4121-88d3-107f21048316",
+    "os_numero": 9,
+    "cliente": "[TESTE COMISSÕES 06/10] Cliente fictício",
+    "cliente_sem_contato": true,
+    "total_os": 300,
+    "regras": [
+      { "profissional": "[TESTE COMISSÕES] Ana", "tipo": "percentual", "valor": 10, "liberacao": "recebimento", "base": 200, "comissao": 20 },
+      { "profissional": "[TESTE COMISSÕES] Bruno", "tipo": "fixo", "valor": 25, "liberacao": "entrega", "quantidade": 2, "comissao": 50 }
+    ],
+    "entrega": "Ambos os serviços concluídos; OS passou por execução, conferência, pronta e entregue.",
+    "recebimento_cliente": 150,
+    "percentual_liberado_apos_recebimento": 10,
+    "pagamento_comissao": 5,
+    "estorno_comissao": 5,
+    "historico_preservado": true,
+    "saldo_final": { "aguardando": 10, "liberado": 60, "pago_liquido": 0 },
+    "resultado_os": { "receita": 300, "custo_comissoes": 70, "sobra_antes_despesas_gerais": 230 },
+    "transferencia_bancaria_real": false,
+    "mensagens_externas_enviadas": false,
+    "responsividade": "Viewport de 390 × 844; página e formulário sem transbordamento horizontal; temas claro e escuro conferidos; viewport e tema originais restaurados.",
+    "concorrencia": "Revisões obsoletas cobertas nos testes de banco. Não foi executado teste com dois navegadores simultâneos nesta bancada."
+  },
+  "evidencias": [
+    "migracao-aplicada.png",
+    "comissoes-desktop.png",
+    "comissoes-mobile.png",
+    "comissoes-mobile-escuro.png",
+    "historico-estorno.png",
+    "resultado-os.png"
+  ],
+  "observacao": "Dados fictícios preservados somente na oficina de validação. Migração aplicada após autorização explícita; não executar novamente. Frontend validado localmente, sem publicação nova nesta etapa."
+}

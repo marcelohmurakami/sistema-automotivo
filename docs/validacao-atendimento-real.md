@@ -1,8 +1,10 @@
 # Validação do atendimento com contas reais — 30/09/2026
 
+Rodada mais recente: [validação ampliada de 02/10](validacao-ampliada-2026-10-02/relatorio.md), com 60 conferências pela interface, testes adicionais de volume e medições de velocidade. Ela também documenta as correções da proposta pública e das atualizações da OS.
+
 **Resultado: APROVADO nas integrações reais com Supabase Auth, PostgREST e Storage.** Foram aprovadas 35 verificações e 7 cenários de concorrência, com duas contas autenticadas distintas. A execução durou aproximadamente 15 segundos.
 
-A conferência de todas as telas com duas sessões de navegador e do uso no celular continua pendente. A aprovação deste relatório não equivale a essa validação visual nem a um teste de pagamento bancário real.
+Em 02/10/2026 foi concluído um atendimento adicional pela interface, com duas sessões reais, fotos de orçamento/OS, portal, estoque e pagamentos fictícios. Consulte [o relatório de interface](validacao-ui-2026-10-02/relatorio.md) para as evidências e os limites da conferência móvel. Nenhuma destas validações equivale a um pagamento bancário real.
 
 ## Evidência da execução aprovada
 
@@ -76,3 +78,7 @@ Verificações locais adicionais: 25 testes de orçamentos, 28 de OS, lint dos a
 Não repetir o runner em nenhuma das oficinas acima: ambas já contêm dados e a segunda contém uma OS entregue. Preservar os relatórios. Para uma nova execução, preparar outra oficina isolada pelo seed `supabase/seeds/validacao-atendimento-real.sql` e executar `node scripts/iniciar-validacao-real.mjs ID_DA_NOVA_OFICINA`.
 
 As duas contas e as oficinas de teste foram mantidas; as avaliações são de sete dias. Limpeza ou revogação não foi realizada. O iniciador Node substitui o arquivo PowerShell que foi bloqueado pela política de execução do Windows, sem alterar essa política.
+
+### Acesso da oficina usada na revisão de interface — 07/10/2026
+
+A pedido do proprietário do projeto, a assinatura da oficina `01f25297-5779-41b7-8acb-e0138da4c8e8` (`[VALIDAÇÃO] Atendimento completo 2026-09-30 19:41:46`) foi reativada no Supabase. O prazo de avaliação havia vencido em 07/10/2026 às 16:41:46, horário de São Paulo. Foi mantido o plano `intermediate`, com situação `active` e `valido_ate = null`, para continuar os testes sem vencimento automático. Não há vínculo com provedor de cobrança. A alteração foi limitada a essa assinatura; não modificou usuários, permissões, dados de atendimento ou assinaturas de outras oficinas.

@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useAcesso } from "../auth/contexto";
-import { listarEstoque, type ProdutoEstoque } from "../services/estoque";
+import { listarEstoque } from "../services/estoque";
+import { useBusca } from "./suprimentos/helpers";
 import type { OrdemServico } from "../services/ordensServico";
 import { erroPublico } from "../lib/supabase";
 import { Dialogo } from "./Dialogo";
+import { ReservasEstoque } from "./suprimentos/ReservasEstoque";
+import { LerProduto } from "./suprimentos/EtiquetasEstoque";
 export function EstoqueNaOS({
   os,
   ocupado,
@@ -24,17 +27,21 @@ export function EstoqueNaOS({
     [busca, setBusca] = useState(""),
     [quantidade, setQuantidade] = useState(1);
   const [erroLocal, setErroLocal] = useState("");
+  const buscaAplicada = useBusca(busca);
   const q = useQuery({
-    queryKey: ["estoque", "opcoes-os", a.demo, a.oficina!.id],
-    queryFn: async () => {
-      const itens: ProdutoEstoque[] = [];
-      for (let p = 0; ; p++) {
-        const r = await listarEstoque(a.demo, a.oficina!.id, "", "", p);
-        itens.push(...r.itens.filter((i) => i.saldo !== null));
-        if ((p + 1) * 24 >= r.total) return itens;
-      }
-    },
-    enabled: a.permite("inventory"),
+    queryKey: ["estoque", "opcoes-os", a.demo, a.oficina!.id, buscaAplicada],
+    queryFn: async ({ signal }) =>
+      (
+        await listarEstoque(
+          a.demo,
+          a.oficina!.id,
+          buscaAplicada,
+          "controlados",
+          0,
+          signal,
+        )
+      ).itens,
+    enabled: a.permite("inventory") && !!alvo && origem === "estoque",
   });
   if (!a.permite("inventory"))
     return (
@@ -51,8 +58,8 @@ export function EstoqueNaOS({
         <Link to="/estoque">Abrir estoque</Link>
       </div>
       <p>
-        A baixa acontece na entrega. Peças do cliente ou de compra externa não
-        reduzem o saldo.
+        A baixa acontece na entrega. Peças do cliente ou de compra externa não reduzem o
+        saldo.
       </p>
       {q.isError && <p role="alert">{erroPublico(q.error)}</p>}
       {os.itens
@@ -61,7 +68,7 @@ export function EstoqueNaOS({
           const p = q.data?.find(
             (p) => p.id === (i.produto_estoque_id ?? i.item_catalogo_id),
           );
-          const origemAtual = i.origem_peca ?? (p ? "estoque" : "");
+          const origemAtual = i.origem_peca ?? (i.produto_estoque_id ? "estoque" : "");
           return (
             <div className="estoque-vinculo" key={i.id}>
               <div>
@@ -73,7 +80,9 @@ export function EstoqueNaOS({
                       ? "Compra externa, fora do estoque"
                       : p
                         ? `${p.descricao} · saldo ${p.saldo} ${p.unidade}`
-                        : "Origem ainda não definida"}
+                        : origemAtual === "estoque"
+                          ? "Estoque da empresa"
+                          : "Origem ainda não definida"}
                 </small>
               </div>
               {!encerrada && (
@@ -84,7 +93,7 @@ export function EstoqueNaOS({
                     setErroLocal("");
                     setAlvo(i.id);
                     setOrigem(origemAtual || "estoque");
-                    setProduto(p?.id ?? "");
+                    setProduto(i.produto_estoque_id ?? i.item_catalogo_id ?? "");
                     setBusca("");
                   }}
                 >
@@ -113,9 +122,7 @@ export function EstoqueNaOS({
       <Dialogo
         aberto={!!alvo}
         fechar={() => !ocupado && setAlvo(null)}
-        titulo={
-          alvo === "novo" ? "Adicionar peça do estoque" : "Origem da peça"
-        }
+        titulo={alvo === "novo" ? "Adicionar peça do estoque" : "Origem da peça"}
       >
         {erroLocal && (
           <p role="alert" className="erro-formulario">
@@ -158,10 +165,7 @@ export function EstoqueNaOS({
             {alvo !== "novo" && (
               <label>
                 De onde veio a peça?
-                <select
-                  value={origem}
-                  onChange={(e) => setOrigem(e.target.value)}
-                >
+                <select value={origem} onChange={(e) => setOrigem(e.target.value)}>
                   <option value="estoque">Estoque da oficina</option>
                   <option value="cliente">Trazida pelo cliente</option>
                   <option value="externa">
@@ -183,33 +187,46 @@ export function EstoqueNaOS({
                 <label>
                   Produto
                   <select
+                    disabled={q.isFetching || busca !== buscaAplicada}
                     required
                     value={produto}
                     onChange={(e) => setProduto(e.target.value)}
                   >
                     <option value="">Selecione</option>
+                    {produto && !q.data?.some((p) => p.id === produto) && (
+                      <option value={produto}>
+                        {item?.descricao ?? "Produto selecionado"}
+                      </option>
+                    )}
                     {q.data
                       ?.filter(
-                        (p) =>
-                          (alvo === "novo" ||
-                            p.unidade === (item?.unidade ?? "un")) &&
-                          (`${p.descricao} ${p.codigo}`
-                            .toLowerCase()
-                            .includes(busca.toLowerCase()) ||
-                            p.id === produto),
+                        (p) => alvo === "novo" || p.unidade === (item?.unidade ?? "un"),
                       )
                       .map((p) => (
                         <option value={p.id} key={p.id}>
-                          {p.descricao} · saldo {p.saldo} {p.unidade}
+                          {p.descricao} · disponível {p.disponivel ?? p.saldo}{" "}
+                          {p.unidade}
                         </option>
                       ))}
                   </select>
                 </label>
+                {!a.demo && (
+                  <LerProduto
+                    selecionar={(p) => {
+                      if (item && p.unidade !== item.unidade) {
+                        setErroLocal("Este produto usa outra unidade de medida.");
+                        return;
+                      }
+                      setBusca(p.descricao);
+                      setProduto(p.id);
+                    }}
+                  />
+                )}
                 {q.isPending && <p>Carregando peças…</p>}
                 {alvo !== "novo" && (
                   <small>
-                    Mostrando peças na unidade {item?.unidade}. O vínculo não
-                    altera o preço aprovado.
+                    Mostrando peças na unidade {item?.unidade}. O vínculo não altera o
+                    preço aprovado.
                   </small>
                 )}
               </>
@@ -234,6 +251,7 @@ export function EstoqueNaOS({
           </fieldset>
         </form>
       </Dialogo>
+      <ReservasEstoque documento={os.id} ramo="os" bloqueado={ocupado || encerrada} />
     </section>
   );
 }

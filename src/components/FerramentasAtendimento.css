@@ -1,0 +1,38 @@
+.ferramentas-atendimento {
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 16px;
+  color: var(--ui-suave);
+}
+.ferramentas-atendimento > summary {
+  width: fit-content;
+  max-width: 100%;
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.ferramentas-atendimento > summary:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.ferramentas-atendimento-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+.ferramentas-atendimento-acoes > button {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  white-space: normal;
+  font-size: 13px;
+}
+.ferramentas-atendimento-acoes > [role="alert"] {
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+}

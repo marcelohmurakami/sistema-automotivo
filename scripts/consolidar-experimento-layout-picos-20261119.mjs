@@ -1,0 +1,10 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const root='output/picos-51-20261119';
+const d=JSON.parse(await readFile(root+'/experimento-layout-piloto/resultados.json','utf8'));
+const offline=d.resultados.filter(x=>x.nome==='Offline');assert.equal(offline.length,48);
+const stats=xs=>{xs=xs.toSorted((a,b)=>a-b);return {n:xs.length,mediana:(xs[Math.floor((xs.length-1)/2)]+xs[Math.ceil((xs.length-1)/2)])/2,p95:xs[Math.ceil(xs.length*.95)-1],maximo:Math.max(...xs)}};
+const resumo=[false,true].map(mobile=>({dispositivo:mobile?'celular':'desktop',...Object.fromEntries(['antes','depois'].map(fase=>[fase,stats(offline.filter(x=>x.mobile===mobile&&x.fase===fase).map(x=>x.segundos))]))}));
+assert.equal((await readFile('src/App.tsx','utf8')).replaceAll('\r\n','\n'),(await readFile(root+'/App-antes-carga-layout.tsx','utf8')).replaceAll('\r\n','\n'));
+const evidencia={alteracaoAdotada:false,motivo:'A carga sob demanda do layout reduziu o JavaScript inicial, mas não melhorou as medianas deste piloto. Alteração revertida integralmente; a versão final permanece a da matriz principal.',resumo,modulosIniciaisAntes:20,modulosIniciaisDepois:12,javascriptInicialAntesBytes:769871,javascriptInicialDepoisBytes:549179,amostras:d.resultados.length,falhas:d.falhas,notaFalha:'Uma espera incorreta no instrumento da rota Garantia: a versão anterior do piloto já utilizava consultar_ocorrencias_servicos, mas o teste aguardava a RPC de relatório antigo. Falha preservada; não se anuncia aprovação desse cenário. Os 48 registros Offline concluíram. O gerador do teste foi corrigido; a alteração de aplicação foi descartada.',fontes:['experimento-layout-piloto/resultados.json','cpu-offline/resultados.json','trace-offline/resultados.json','datas-offline/resultados.json']};
+await writeFile(root+'/experimento-layout-resumo.json',JSON.stringify(evidencia,null,2));console.log(JSON.stringify(evidencia,null,2));

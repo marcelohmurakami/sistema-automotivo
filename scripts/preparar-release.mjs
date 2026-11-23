@@ -1,0 +1,14 @@
+import { readFile,readdir,mkdir,writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+const raiz=resolve('output/release');
+const resultado=JSON.parse(await readFile('output/validacao-refatoracao-atual/resultado.json','utf8'));
+if(resultado.resultados.some(r=>!r.sucesso))throw Error('Há testes pendentes ou reprovados. Execute npm run check.');
+const nomes=(await readdir('supabase/migrations')).filter(n=>/^\d{14}_.+\.sql$/.test(n)).sort();
+if(resultado.migracoes!==nomes.at(-1).slice(0,14))throw Error('A bancada precisa incluir a última migração.');
+const sha=d=>createHash('sha256').update(d).digest('hex');
+const migracoes=await Promise.all(nomes.map(async nome=>({arquivo:nome,sha256:sha(await readFile('supabase/migrations/'+nome))})));
+const health=JSON.parse(await readFile('dist/health.json','utf8'));
+await mkdir(raiz,{recursive:true});
+await writeFile(resolve(raiz,'manifesto.json'),JSON.stringify({geradoEm:new Date().toISOString(),build:health,lockfile:sha(await readFile('package-lock.json')),validacao:{executadoEm:resultado.executadoEm,suites:resultado.resultados.length},migracoes,publicado:false},null,2));
+console.log(`Manifesto preparado com ${migracoes.length} migrações e ${resultado.resultados.length} suítes. Nenhum deploy executado.`);

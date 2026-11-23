@@ -1,0 +1,11 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {FotosOrcamento} from '../../src/components/FotosOrcamento';
+import {Dialogo} from '../../src/components/Dialogo';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+import '../../src/pages/Orcamentos.css';import '../../src/pages/Documentos.css';
+document.documentElement.dataset.tema=new URLSearchParams(location.search).get('tema')||'claro';
+window.qa={fotos:Array.from({length:Number(new URLSearchParams(location.search).get('preexistentes')||0)},(_,i)=>({id:'foto-'+i,arquivo_id:'foto-'+i,caminho:'foto-'+i,legenda:'Imagem '+i,situacao:'ready'})),falhar:false,uploads:0,assinaturas:0};
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false}}})}><ContextoAcesso.Provider value={{demo:false,usuario:'qa',oficina:{id:'qa',nome:'QA fotos'},permite:()=>true}}><main className="estrutura-sistema"><Dialogo aberto fechar={()=>{}} titulo="Orçamento QA" classe="dialogo-orcamento"><FotosOrcamento versao="qa-versao" rascunho/></Dialogo></main></ContextoAcesso.Provider></QueryClientProvider>);

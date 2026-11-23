@@ -3,11 +3,11 @@ import { supabase } from "../lib/supabase";
 export function FotosPropostaPublica({ token }: { token: string }) {
   const q = useQuery({
     queryKey: ["fotos-proposta-publica", token],
-    queryFn: async () => {
-      const { data, error } = await supabase!.functions.invoke(
-        "fotos-proposta",
-        { body: { token } },
-      );
+    queryFn: async ({ signal }) => {
+      const { data, error } = await supabase!.functions.invoke("fotos-proposta", {
+        body: { token },
+        signal,
+      });
       if (error) throw error;
       return data.fotos as { legenda: string; url: string }[];
     },
@@ -20,8 +20,7 @@ export function FotosPropostaPublica({ token }: { token: string }) {
       <h3>Fotos anexadas</h3>
       {q.isError ? (
         <p>
-          Não foi possível carregar as fotos. Peça à oficina para verificar o
-          acesso.
+          Não foi possível carregar as fotos. Peça à equipe para verificar o acesso.
         </p>
       ) : q.isPending ? (
         <p>Carregando fotos…</p>
@@ -30,6 +29,8 @@ export function FotosPropostaPublica({ token }: { token: string }) {
           {q.data.map((f, i) => (
             <figure key={i}>
               <img
+                loading="lazy"
+                decoding="async"
                 src={f.url}
                 alt={f.legenda || "Peça ou problema encontrado"}
                 style={{ maxWidth: "100%", maxHeight: 350, borderRadius: 12 }}

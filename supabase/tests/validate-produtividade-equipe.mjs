@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import {randomUUID as uuid,createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {criarCenarioSubsistemas} from './subsistemas-fixture.mjs';
+process.env.DB_VALIDATION_MIGRATION_LIMIT ||= '20261030000500';
+process.env.DB_VALIDATION_RUNTIME ||= resolve('node_modules/@electric-sql/pglite/dist/index.js');
+let db; const resultados=[];
+try {
+ const ctx=await criarCenarioSubsistemas();db=ctx.db;const {login,ids,registros}=ctx;
+ const call=async(n,a)=>Object.values((await db.query(`select public.${n}(${a.map((_,i)=>'$'+(i+1)).join(',')})`,a.map(x=>x&&typeof x==='object'?JSON.stringify(x):x))).rows[0])[0];
+ for(const [perfil,r] of Object.entries(registros)){
+  await login(ids[perfil]);const checks=[];const eq=(a,b,msg)=>{assert.deepEqual(a,b,msg);checks.push(msg)};const no=async(fn,msg,code)=>{await assert.rejects(fn,e=>{if(code&&e.code!==code)console.error(JSON.stringify({message:e.message,code:e.code,where:e.where}));return !code||e.code===code},msg);checks.push(msg)};
+  const auto=!!r.proposta,doc=r.atendimento||(await call('salvar_ordem_servico',[r.w,{cliente_id:r.cliente,veiculo_id:r.objeto},uuid()])).id;
+  if(!auto){const at=(await call('consultar_detalhes_atendimento',[r.w,doc])).atendimento;await call('salvar_atendimento_servico',[r.w,doc,{...at,situacao:'aprovado'},at.revisao]);}
+  const colega=uuid();await call('salvar_funcionario',[r.w,colega,{nome:'Segundo profissional',ativo:true}]);
+  const antes=await call('consultar_contribuicao_equipe',[r.w,doc]);eq(antes.revisar,true,'sinaliza atribuição ausente');
+  const h=uuid(),inicio=r.hoje+'T06:00:00-03:00',fim=r.hoje+'T07:00:00-03:00';
+  // Data histórica evita depender do horário em que a bancada é executada.
+  const di='2026-01-10T06:00:00-03:00',df='2026-01-10T07:00:00-03:00';
+  await call('registrar_horas_equipe',[r.w,h,doc,r.funcionario,di,df,6000,'Execução QA']);
+  await call('registrar_horas_equipe',[r.w,h,doc,r.funcionario,di,df,6000,'Execução QA']);
+  let d=await call('consultar_contribuicao_equipe',[r.w,doc]);eq(d.horas.length,1,'hora idempotente');eq(d.fontes.find(x=>x.chave==='producao:'+h).valor,6000,'hora entra no custo');
+  await no(()=>call('registrar_horas_equipe',[r.w,uuid(),doc,r.funcionario,di,df,6000,'Duplicado']),'bloqueia sobreposição','23P01');
+  await no(()=>call('registrar_horas_equipe',[r.w,h,doc,r.funcionario,di,df,9000,'Execução QA']),'chave não altera hora já gravada','PT409');
+  await no(()=>call('registrar_horas_equipe',[r.w,uuid(),doc,r.funcionario,df,di,6000,'Invertido']),'bloqueia duração invertida','22023');
+  await no(()=>call('registrar_horas_equipe',[r.w,uuid(),doc,r.funcionario,'2030-01-01T08:00:00-03:00','2030-01-01T09:00:00-03:00',6000,'Futuro']),'não registra produção futura','22023');
+  if(!auto){const at=(await call('consultar_detalhes_atendimento',[r.w,doc])).atendimento;await call('salvar_equipe_atendimento',[r.w,doc,at.revisao,[{funcionario_id:r.funcionario,percentual:0,custo_hora_centavos:6000}]]);}
+  if(!auto)await no(()=>call('registrar_horas_atendimento',[r.w,doc,uuid(),r.funcionario,di,df,'Duplicado pelo módulo antigo']),'módulo antigo respeita novas horas','23P01');
+  d=await call('consultar_contribuicao_equipe',[r.w,doc]);
+  const atrib={criterio:'manual',participantes:[{funcionario_id:r.funcionario,execucao_bp:7500,venda_bp:0},{funcionario_id:colega,execucao_bp:2500,venda_bp:10000}],fontes:{}};
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,{...atrib,participantes:[atrib.participantes[0]]},d.documento.assinatura,null]),'bloqueia percentual incompleto','22023');
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,{...atrib,criterio:'igual'},d.documento.assinatura,null]),'não aceita divisão desigual rotulada igual','22023');
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,{...atrib,criterio:'horas'},d.documento.assinatura,null]),'não aceita divisão incompatível com horas','22023');
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,{...atrib,fontes:{inventada:r.funcionario}},d.documento.assinatura,null]),'bloqueia fonte de custo inventada','22023');
+  await call('salvar_atribuicao_equipe',[r.w,doc,atrib,d.documento.assinatura,null]);
+  d=await call('consultar_contribuicao_equipe',[r.w,doc]);eq(d.revisar,false,'atribuição conferida');eq(d.participantes.reduce((s,x)=>s+x.receita,0),d.documento.receita,'centavos da receita preservados');eq(d.participantes.reduce((s,x)=>s+x.custo,0),d.documento.custo,'custos preservados');eq(d.participantes.find(x=>x.funcionario_id===r.funcionario).minutos,60,'horas da pessoa correta');
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,atrib,'desatualizada',1]),'bloqueia custos alterados','PT409');
+  await no(()=>call('salvar_atribuicao_equipe',[r.w,doc,atrib,d.documento.assinatura,null]),'bloqueia revisão antiga','PT409');
+  eq((await call('historico_contribuicao_equipe',[r.w,doc])).length,1,'histórico da atribuição preservado');
+  eq((await call('listar_contribuicoes_equipe',[r.w,r.hoje,r.hoje,'',0,'todos'])).some(x=>x.id===doc),true,'lista OS no período');
+  await call('cancelar_horas_equipe',[r.w,h,'Correção de apontamento']);d=await call('consultar_contribuicao_equipe',[r.w,doc]);eq(d.revisar,true,'cancelamento exige nova conferência');eq(d.horas[0].cancelado_em!==null,true,'preserva hora cancelada');
+  const skill=await call('salvar_habilidade_equipe',[r.w,{nome:'Diagnóstico QA',nivel_minimo:2,exige_comprovacao:true},null]);
+  const qp={funcionario_id:r.funcionario,habilidade:skill,nivel:2,realizada_em:'2026-01-01',valida_ate:'2027-12-31',comprovante:'Certificado fictício QA',situacao:'concluida',observacoes:''},qid=uuid();
+  await no(()=>call('salvar_qualificacao_equipe',[r.w,qid,{...qp,comprovante:''},null]),'exige comprovante','22023');
+  await call('salvar_qualificacao_equipe',[r.w,qid,qp,null]);eq((await call('consultar_qualificacoes_equipe',[r.w,null,0])).qualificacoes.length,1,'qualificação listada');
+  eq((await call('matriz_qualificacoes_equipe',[r.w,r.funcionario,0]))[0].aptidoes[0].estado,'Válida','matriz identifica qualificação válida');
+  await no(()=>call('salvar_qualificacao_equipe',[r.w,uuid(),{...qp,realizada_em:'2030-01-01',valida_ate:null},null]),'não conclui treinamento no futuro','22023');
+  const recurso=auto?null:r.recurso,tec={id:uuid(),nome:'Profissional QA',recurso_id:recurso,funcionario_id:r.funcionario,ativo:true,habilidades:['Diagnóstico QA'],ferramentas:[],regioes:[],base_endereco:'',base_ponto:null,jornada:[{dia:2,inicio:'08:00',fim:'18:00'}],bloqueios:[]};await call('salvar_perfil_distribuicao',[r.w,tec.id,tec,null]);
+  const agenda={id:uuid(),cliente_id:r.cliente,identificacao:'Objeto QA',veiculo_id:null,recurso:tec.nome,recurso_id:recurso,servico:'Serviço QA',atendimento_id:r.atendimento??null,inicio:'2026-11-10T10:00:00-03:00',fim:'2026-11-10T11:00:00-03:00',situacao:'agendado',visita:false,logistica:{},deslocamento_minutos:0,distribuicao:{habilidades:['Diagnóstico QA']}};
+  let sug=await call('sugerir_tecnico_agenda',[r.w,agenda]);eq(sug.candidatos.find(x=>x.id===tec.id).apto,true,'qualificação permite distribuição');
+  await call('salvar_qualificacao_equipe',[r.w,qid,{...qp,valida_ate:'2026-10-01'},1]);sug=await call('sugerir_tecnico_agenda',[r.w,agenda]);eq(sug.candidatos.find(x=>x.id===tec.id).apto,false,'qualificação vencida bloqueia');
+  eq((await call('matriz_qualificacoes_equipe',[r.w,r.funcionario,0]))[0].aptidoes[0].estado,'Vencida','matriz identifica vencimento');
+  await call('salvar_qualificacao_equipe',[r.w,qid,qp,2]);
+  const save=d=>auto?call('operar_produtividade',[r.w,'salvar_agenda',d]):call('salvar_agenda_servico',[r.w,d.id,d,null]);await save({...agenda,distribuicao:{}});
+  eq((await call('consultar_demanda_equipe',[r.w,'2026-11-10','2026-11-10'])).some(x=>x.id===agenda.id),true,'demanda da escala');
+  const plan=(await db.query("select public.prever_escala_equipe($1,$2::uuid[],ARRAY['Diagnóstico QA']) v",[r.w,[agenda.id]])).rows[0].v;eq(plan[0].escolha.id,tec.id,'escala sugere profissional apto');
+  const pp=plan.map(x=>({id:x.id,revisao:x.revisao,perfil_id:x.escolha.id,habilidades:x.habilidades})),pid=uuid();await call('aplicar_escala_equipe',[r.w,pid,pp]);eq((await call('aplicar_escala_equipe',[r.w,pid,pp])).length,1,'escala idempotente');
+  await no(()=>call('aplicar_escala_equipe',[r.w,uuid(),pp]),'escala antiga recusada','PT409');
+  await call('salvar_qualificacao_equipe',[r.w,qid,{...qp,nivel:1},3]);sug=await call('sugerir_tecnico_agenda',[r.w,agenda]);eq(sug.candidatos.find(x=>x.id===tec.id).apto,false,'nível insuficiente bloqueia escala');
+  const fresh=(await call('consultar_demanda_equipe',[r.w,'2026-11-10','2026-11-10'])).find(x=>x.id===agenda.id);
+  await no(()=>call('aplicar_escala_equipe',[r.w,uuid(),[{...pp[0],revisao:fresh.revisao}]]),'revalida qualificação na confirmação','22023');
+  await call('salvar_qualificacao_equipe',[r.w,qid,{...qp,situacao:'planejada'},4]);sug=await call('sugerir_tecnico_agenda',[r.w,agenda]);eq(sug.candidatos.find(x=>x.id===tec.id).apto,false,'treinamento planejado não habilita');
+  await call('salvar_qualificacao_equipe',[r.w,qid,qp,5]);
+  const agenda2={...agenda,id:uuid(),recurso:'Fila de demanda QA',recurso_id:auto?null:uuid(),distribuicao:{}};if(!auto)await call('salvar_recurso_agenda',[r.w,agenda2.recurso_id,agenda2.recurso,true]);await save(agenda2);
+  const plan2=(await db.query("select public.prever_escala_equipe($1,$2::uuid[],ARRAY['Diagnóstico QA']) v",[r.w,[agenda.id,agenda2.id]])).rows[0].v;eq(plan2.filter(x=>x.escolha).length,1,'não duplica profissional no mesmo horário');
+  await no(()=>call('aplicar_escala_equipe',[r.w,uuid(),plan2.map(x=>({id:x.id,revisao:x.revisao,perfil_id:tec.id,habilidades:x.habilidades}))]),'escolha manual conflitante recusada');
+  eq((await call('consultar_demanda_equipe',[r.w,'2026-11-10','2026-11-10'])).find(x=>x.id===agenda.id).revisao,fresh.revisao,'falha da escala reverte todas as alterações');
+  await no(()=>call('consultar_demanda_equipe',[r.w,'2026-01-01','2026-12-31']),'limita período de planejamento','22023');
+  const ld={funcionario_id:r.funcionario,competencia:r.hoje,natureza:'provento',rubrica:'Gratificação a conferir',valor_centavos:20000,referencia:'Autorização interna QA'},lid=uuid();await call('lancar_departamento_pessoal',[r.w,lid,ld]);await call('lancar_departamento_pessoal',[r.w,lid,ld]);
+  const dp=await call('consultar_departamento_pessoal',[r.w,r.hoje,r.hoje]);eq(dp.lancamentos.length,1,'lançamento DP idempotente');eq(dp.versao,'patio.dp.v1','contrato de exportação versionado');
+  const ex=await call('exportar_departamento_pessoal',[r.w,uuid(),r.hoje,r.hoje]);eq(ex.hash.length,64,'exportação com hash');await call('cancelar_lancamento_dp',[r.w,lid,'Solicitação corrigida']);eq((await call('obter_exportacao_dp',[r.w,ex.id])).dados.lancamentos[0].cancelado_em,null,'exportação preserva versão anterior');
+  eq(createHash('sha256').update(ex.dados_canonicos).digest('hex'),ex.hash,'hash verificável pelo integrador');
+  eq((await call('exportar_departamento_pessoal',[r.w,ex.id,r.hoje,r.hoje])).hash,ex.hash,'reenvio preserva a exportação');
+  await no(()=>call('lancar_departamento_pessoal',[r.w,lid,{...ld,valor_centavos:30000}]),'chave DP não muda valor','PT409');
+  await no(()=>call('consultar_departamento_pessoal',[r.w,'2026-01-01','2026-03-01']),'exportação limita período','22023');
+  const outra=Object.values(registros).find(x=>x.w!==r.w);await no(()=>call('consultar_contribuicao_equipe',[outra.w,doc]),'isolamento de empresas','42501');await no(()=>db.query('select * from public.lancamentos_departamento_pessoal'),'sem acesso direto DP','42501');
+  await no(()=>call('consultar_departamento_pessoal',[outra.w,r.hoje,r.hoje]),'dados de pessoal isolados por empresa','42501');
+  await db.exec('reset role');await db.query("update public.membros_oficina set perfil='staff' where oficina_id=$1 and usuario_id=$2",[r.w,ids[perfil]]);await login(ids[perfil]);
+  for(const [nome,args] of [['consultar_contribuicao_equipe',[r.w,doc]],['consultar_departamento_pessoal',[r.w,r.hoje,r.hoje]],['consultar_qualificacoes_equipe',[r.w,null,0]],['consultar_demanda_equipe',[r.w,r.hoje,r.hoje]]])await no(()=>call(nome,args),'perfil operacional não acessa '+nome,'42501');
+  await db.exec('reset role');await db.query("update public.membros_oficina set perfil='owner' where oficina_id=$1 and usuario_id=$2",[r.w,ids[perfil]]);await db.query("update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id=$1",[r.w]);await login(ids[perfil]);await no(()=>call('consultar_contribuicao_equipe',[r.w,doc]),'respeita plano de relatórios individuais','42501');await no(()=>call('consultar_departamento_pessoal',[r.w,r.hoje,r.hoje]),'respeita plano na exportação DP','42501');
+  resultados.push({perfil,checks});console.log('PASS',perfil,checks.length);
+ }
+ await mkdir('output/funcionarios-produtividade-20261030',{recursive:true});await writeFile('output/funcionarios-produtividade-20261030/banco.json',JSON.stringify({data:new Date().toISOString(),subsetores:resultados.length,verificacoes:resultados.reduce((s,x)=>s+x.checks.length,0),resultados},null,2));
+}catch(e){console.error(JSON.stringify({message:e.message,code:e.code,where:e.where,detail:e.detail,stack:e.stack?.split('\n').slice(0,4).join('\n')}));process.exitCode=1}finally{await db?.close()}

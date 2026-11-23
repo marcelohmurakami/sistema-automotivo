@@ -1,0 +1,315 @@
+.fin-detalhamento {
+  width: 100%;
+  min-width: 0;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding-bottom: 64px;
+}
+.fin-hist-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.fin-hist-cabecalho h1 {
+  font-size: clamp(24px, 3vw, 34px);
+  margin: 0 0 8px;
+  letter-spacing: -0.8px;
+}
+.fin-hist-cabecalho p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--tema-texto-687468, #687468);
+}
+.fin-hist-cabecalho .fin-hist-sobretitulo {
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.fin-hist-filtros {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.fin-detalhamento label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 650;
+  min-width: 0;
+}
+.fin-detalhamento input:not([type="checkbox"]),
+.fin-detalhamento select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--tema-borda-dfe4dc, #dfe4dc);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: inherit;
+  font: inherit;
+  background: var(--tema-fundo-ffffff, #fff);
+}
+.fin-hist-filtros .fin-hist-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.fin-hist-checkbox input {
+  width: 18px;
+  height: 18px;
+}
+.fin-hist-resumo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid var(--tema-borda-dfe4dc, #dfe4dc);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--tema-fundo-ffffff, #fff);
+}
+.fin-hist-total {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  background: var(--tema-fundo-f3f5ef, #f3f5ef);
+}
+.fin-hist-total > strong {
+  font-size: clamp(24px, 3vw, 36px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.fin-hist-total > span,
+.fin-hist-total small {
+  font-size: 13px;
+}
+.fin-hist-composicao {
+  margin: 0;
+  padding: 18px 24px;
+  min-width: 0;
+}
+.fin-hist-composicao > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--tema-borda-e9ede5, #e9ede5);
+  font-size: 14px;
+}
+.fin-hist-composicao > div:last-child {
+  border-bottom: 0;
+}
+.fin-hist-composicao dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.fin-hist-composicao dt {
+  min-width: 0;
+}
+.fin-hist-nota {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tema-texto-687468, #687468);
+  overflow-wrap: anywhere;
+}
+.fin-hist-lista {
+  margin-top: 24px;
+  border: 1px solid var(--tema-borda-dfe4dc, #dfe4dc);
+  border-radius: 16px;
+  background: var(--tema-fundo-ffffff, #fff);
+  overflow: hidden;
+}
+.fin-hist-busca {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+.fin-hist-busca label > div {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--tema-borda-dfe4dc, #dfe4dc);
+  border-radius: 10px;
+  padding-left: 12px;
+}
+.fin-hist-busca label > div input {
+  border: 0;
+  background: transparent;
+}
+.fin-hist-busca svg {
+  flex-shrink: 0;
+}
+.fin-hist-contagem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: var(--tema-fundo-f3f5ef, #f3f5ef);
+  font-size: 13px;
+}
+.fin-hist-colunas,
+.fin-hist-linha {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) minmax(120px, 180px) 18px;
+  gap: 16px;
+  align-items: center;
+}
+.fin-hist-colunas {
+  padding: 12px 20px;
+  font-size: 12px;
+  color: var(--tema-texto-687468, #687468);
+}
+.fin-hist-colunas > :nth-child(3) {
+  text-align: right;
+}
+.fin-detalhamento .fin-hist-linha {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid var(--tema-borda-e9ede5, #e9ede5);
+  padding: 16px 20px;
+  text-align: left;
+  background: transparent;
+  border-radius: 0;
+  color: inherit;
+}
+.fin-detalhamento .fin-hist-linha:hover {
+  background: var(--tema-fundo-f3f5ef, #f3f5ef);
+}
+.fin-hist-linha time {
+  font-size: 13px;
+}
+.fin-hist-linha > b {
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+.fin-hist-descricao {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fin-hist-descricao > strong {
+  font-size: 15px;
+}
+.fin-hist-descricao > span {
+  font-size: 13px;
+}
+.fin-hist-descricao small {
+  font-size: 12px;
+  color: var(--tema-texto-687468, #687468);
+}
+.fin-hist-negativo {
+  color: var(--tema-texto-a34038, #a34038);
+}
+.fin-hist-estado {
+  padding: 28px 20px;
+  text-align: center;
+  line-height: 1.6;
+}
+.fin-hist-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px;
+  font-size: 13px;
+}
+.fin-hist-dialogo {
+  max-width: 680px;
+}
+.fin-hist-registro {
+  padding-top: 20px;
+  min-width: 0;
+}
+.fin-hist-registro h3 {
+  font-size: 18px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+.fin-hist-valor {
+  font-size: 28px;
+  display: block;
+  margin: 12px 0;
+}
+.fin-hist-registro .fin-hist-composicao {
+  padding: 8px 0;
+}
+.fin-hist-origem {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+.fin-hist-pagamento {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--tema-borda-e9ede5, #e9ede5);
+  padding: 14px 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.fin-hist-pagamento > div {
+  min-width: 0;
+}
+.fin-hist-pagamento > div:last-child {
+  text-align: right;
+}
+.fin-hist-pagamento small {
+  display: block;
+  margin-top: 4px;
+}
+@media (max-width: 700px) {
+  .fin-hist-resumo,
+  .fin-hist-busca {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fin-hist-filtros > label {
+    flex: 1 1 130px;
+  }
+  .fin-hist-composicao,
+  .fin-hist-total {
+    padding: 16px;
+  }
+  .fin-hist-colunas {
+    display: none;
+  }
+  .fin-detalhamento .fin-hist-linha {
+    grid-template-columns: minmax(0, 1fr) minmax(80px, 120px) 16px;
+    gap: 10px;
+    padding: 16px;
+  }
+  .fin-hist-linha time {
+    grid-column: 1/-1;
+    font-size: 12px;
+  }
+  .fin-hist-linha > b {
+    font-size: 14px;
+  }
+  .fin-hist-busca,
+  .fin-hist-contagem {
+    padding: 16px;
+  }
+}
+.estrutura-sistema .fin-detalhamento .fin-hist-busca input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.fin-detalhamento > .fin-hist-nota {
+  margin-top: 12px;
+}

@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+const js=ts.transpile(readFileSync('src/lib/avisoOSPronta.ts','utf8'),{module:ts.ModuleKind.ESNext});
+const m=await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+assert.equal(m.telefoneWhatsAppPronta('(16) 99999-1234'),'5516999991234');
+assert.equal(m.telefoneWhatsAppPronta('+55 16 99999-1234'),'5516999991234');
+assert.equal(m.telefoneWhatsAppPronta('1633331234'),'551633331234');
+assert.equal(m.linkWhatsAppPronta('', 'Cliente',123),null);
+assert.equal(m.linkWhatsAppPronta('123','Cliente',123),null);
+const url=new URL(m.linkWhatsAppPronta('+55 16 99999-1234','João & Maria',123));
+assert.equal(url.hostname,'wa.me');assert.equal(url.pathname,'/5516999991234');assert.match(url.searchParams.get('text'),/João & Maria/);assert.match(url.searchParams.get('text'),/#123/);
+globalThis.window=new EventTarget();let avisos=[];window.addEventListener(m.eventoOSPronta,e=>avisos.push(e.detail));m.notificarOSPronta('oficina','os');assert.deepEqual(avisos,[{oficina:'oficina',id:'os'}]);
+console.log('PASS telefone brasileiro, DDI, telefone ausente/inválido, mensagem e evento da OS pronta');

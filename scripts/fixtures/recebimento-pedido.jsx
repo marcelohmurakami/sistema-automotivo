@@ -1,0 +1,13 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {MemoryRouter} from 'react-router-dom';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {DetalhePedido} from '../../src/components/suprimentos/DetalhePedido';
+import {especialidades} from '../../src/lib/especialidades';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+const p=new URLSearchParams(location.search),perfil=p.get('perfil')||'mecanica';
+document.documentElement.dataset.tema=p.get('tema')||'escuro';window.fixturePerfis=Object.keys(especialidades);
+const acesso={demo:false,usuario:'qa',oficina:{id:'empresa-ficticia',nome:'Empresa QA',especialidade:perfil,ramo:especialidades[perfil].ramo,perfil:'owner'},permite:()=>true};
+const qc=new QueryClient({defaultOptions:{queries:{retry:false,staleTime:Infinity},mutations:{retry:false}}});
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={qc}><ContextoAcesso.Provider value={acesso}><MemoryRouter><div className="estrutura-sistema"><main><DetalhePedido id="pedido" fechar={()=>{}} /></main></div></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

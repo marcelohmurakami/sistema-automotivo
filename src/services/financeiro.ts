@@ -1,11 +1,20 @@
-import { rpc } from "./orcamentos";
+import { novoId } from "../lib/uuid.ts";
+import { lerOrdensDemo } from "../lib/ordensDemo";
+import { rpc } from "../lib/rpc";
+
+import type { ParcelaFinanceira } from "../lib/parcelasFinanceiras";
+import { gerarRecorrenciasDemo } from "./recorrencias";
 import { lerEstoqueDemo } from "./estoque";
 import type { OrdemServico } from "./ordensServico";
+import {
+  prepararDescontoRecebimentoDemo,
+  gravarRecebimentoDemo,
+} from "./descontoRecebimentoDemo";
 export const categorias: Record<string, string> = {
   transferencia: "Transferência entre contas",
-  servicos: "Serviços e peças vendidos",
+  servicos: "Serviços e produtos vendidos",
   outras_receitas: "Outras receitas",
-  pecas_externas: "Peças compradas para uma OS",
+  pecas_externas: "Peças e materiais comprados para serviços",
   pessoal: "Salários e equipe",
   aluguel: "Aluguel",
   agua_luz: "Água, luz e internet",
@@ -24,11 +33,10 @@ export const categoriasReceber = [
   "saldo_inicial",
 ];
 export const categoriasPagar = Object.keys(categorias).filter(
-  (c) =>
-    !["servicos", "outras_receitas", "aporte", "transferencia"].includes(c),
+  (c) => !["servicos", "outras_receitas", "aporte", "transferencia"].includes(c),
 );
 export const contas: Record<string, string> = {
-  caixa: "Dinheiro na oficina",
+  caixa: "Dinheiro em caixa",
   banco: "Banco / conta digital",
 };
 export const formas: Record<string, string> = {
@@ -55,6 +63,14 @@ export const hoje = () =>
     day: "2-digit",
   }).format(new Date());
 export type TituloFinanceiro = {
+  forma_prevista?: string;
+  acompanhamento_qualidade_id?: string | null;
+  credito_fornecedor_centavos?: number;
+  parcelamento_id?: string;
+  valor_variavel?: boolean;
+  valor_confirmado_em?: string | null;
+  recorrencia_id?: string | null;
+  comissao_id?: string | null;
   compra_id?: string | null;
   provisorio?: boolean;
   pagamento_combinado?: boolean;
@@ -78,6 +94,9 @@ export type TituloFinanceiro = {
   aberto_centavos: number;
 };
 export type BaixaFinanceira = {
+  mostrar_desconto_nota?: boolean;
+  desconto_centavos?: number;
+  saldo_antes_desconto_centavos?: number;
   id: string;
   titulo_id: string;
   valor_centavos: number;
@@ -122,6 +141,7 @@ export type PainelFinanceiro = {
   ordens: ResultadoOS[];
 };
 export type FiltrosFinanceiro = {
+  titulo?: string | null;
   inicio: string;
   fim: string;
   busca: string;
@@ -133,31 +153,26 @@ export type FiltrosFinanceiro = {
 type DadosDemo = { titulos: TituloFinanceiro[]; baixas: BaixaFinanceira[] };
 const chaveDemo = "patio_financeiro_v1";
 function ler(): DadosDemo {
-  return JSON.parse(
-    localStorage.getItem(chaveDemo) || '{"titulos":[],"baixas":[]}',
-  );
+  return JSON.parse(localStorage.getItem(chaveDemo) || '{"titulos":[],"baixas":[]}');
 }
 function gravar(d: DadosDemo) {
   localStorage.setItem(chaveDemo, JSON.stringify(d));
 }
 function sincronizarDemo() {
+  gerarRecorrenciasDemo();
   const d = ler();
-  const os: OrdemServico[] = JSON.parse(
-    localStorage.getItem("patio_os_v1") || "[]",
-  );
-  for (const o of os.filter(
-    (o) => o.situacao === "delivered" && o.total_centavos > 0,
-  ))
+  const os: OrdemServico[] = lerOrdensDemo();
+  for (const o of os.filter((o) => o.situacao === "delivered" && o.total_centavos > 0))
     if (!d.titulos.some((t) => t.automatico && t.ordem_servico_id === o.id)) {
       const entrega =
-        o.historico.find((h) => h.descricao === "Situação: Entregue")
-          ?.ocorrido_em ?? o.criado_em;
+        o.historico.find((h) => h.descricao === "Situação: Entregue")?.ocorrido_em ??
+        o.criado_em;
       const data = new Intl.DateTimeFormat("en-CA", {
         timeZone: "America/Sao_Paulo",
       }).format(new Date(entrega));
       d.titulos.push({
         ...novoTitulo("receber"),
-        id: crypto.randomUUID(),
+        id: novoId(),
         descricao: `OS #${o.numero}`,
         categoria: "servicos",
         valor_centavos: o.total_centavos,
@@ -173,7 +188,7 @@ function sincronizarDemo() {
 }
 export function novoTitulo(natureza: "receber" | "pagar"): TituloFinanceiro {
   return {
-    id: crypto.randomUUID(),
+    id: novoId(),
     natureza,
     descricao: "",
     categoria: natureza === "receber" ? "outras_receitas" : "outras_despesas",
@@ -200,6 +215,16 @@ function comSaldo(d: DadosDemo, t: TituloFinanceiro) {
     baixado_centavos: pago,
     aberto_centavos: t.valor_centavos - pago,
   };
+}
+export function consultarFinanceiroDemoCompleto(): DadosDemo {
+  const dados = sincronizarDemo();
+  return {
+    titulos: dados.titulos.map((t) => comSaldo(dados, t)),
+    baixas: dados.baixas,
+  };
+}
+export function tituloDemoAtivo(id: string) {
+  return ler().titulos.some((t) => t.id === id && !t.cancelado_em);
 }
 export function validarFinanceiroOSDemo(o: OrdemServico) {
   const d = ler(),
@@ -232,9 +257,10 @@ export async function consultarFinanceiroOS(
   demo: boolean,
   oficina: string,
   os: string,
+  signal?: AbortSignal,
 ): Promise<TituloFinanceiro | null> {
   if (!demo)
-    return rpc("consultar_financeiro_os", { p_oficina: oficina, p_os: os });
+    return rpc("consultar_financeiro_os", { p_oficina: oficina, p_os: os }, signal);
   const d = sincronizarDemo(),
     t = d.titulos.find(
       (t) => t.automatico && t.ordem_servico_id === os && !t.cancelado_em,
@@ -253,9 +279,7 @@ export async function prepararFinanceiroOS(
   const atual = await consultarFinanceiroOS(true, oficina, o.id);
   if (atual) return atual;
   if (o.situacao === "cancelled" || o.total_centavos <= 0)
-    throw new Error(
-      "Inclua os itens antes de receber. OS cancelada não pode receber.",
-    );
+    throw new Error("Inclua os itens antes de receber. OS cancelada não pode receber.");
   const d = ler(),
     t = {
       ...novoTitulo("receber"),
@@ -268,9 +292,7 @@ export async function prepararFinanceiroOS(
       provisorio: o.situacao !== "delivered",
       revisao: 1,
     };
-  const anterior = d.titulos.find(
-    (x) => x.automatico && x.ordem_servico_id === o.id,
-  );
+  const anterior = d.titulos.find((x) => x.automatico && x.ordem_servico_id === o.id);
   if (anterior) t.id = anterior.id;
   d.titulos = d.titulos.filter((x) => x.id !== t.id);
   d.titulos.push(t);
@@ -297,22 +319,113 @@ export async function combinarPagamentoOS(
   atual.revisao++;
   gravar(d);
 }
+export async function consultarTituloFinanceiro(
+  demo: boolean,
+  oficina: string,
+  id: string,
+  signal?: AbortSignal,
+): Promise<TituloFinanceiro | null> {
+  if (!demo)
+    return rpc("consultar_titulo_alerta", { p_oficina: oficina, p_titulo: id }, signal);
+  const d = sincronizarDemo(),
+    t = d.titulos.find((t) => t.id === id);
+  return t ? comSaldo(d, t) : null;
+}
+/** Combina o vencimento sem registrar recebimento nem alterar o valor da conta. */
+export async function combinarPagamentoTitulo(
+  demo: boolean,
+  oficina: string,
+  titulo: TituloFinanceiro,
+  vencimento: string,
+) {
+  if (!demo)
+    return rpc("combinar_pagamento_titulo", {
+      p_oficina: oficina,
+      p_titulo: titulo.id,
+      p_revisao: titulo.revisao,
+      p_vencimento: vencimento,
+    });
+  if (!vencimento || titulo.cancelado_em || titulo.aberto_centavos <= 0)
+    throw new Error("Informe uma data para uma conta com saldo em aberto.");
+  return salvarTitulo(true, oficina, {
+    ...titulo,
+    vencimento,
+    pagamento_combinado: true,
+  });
+}
 export async function consultarFinanceiro(
   demo: boolean,
   oficina: string,
   f: FiltrosFinanceiro,
+  signal?: AbortSignal,
 ): Promise<PainelFinanceiro> {
-  if (!demo)
-    return rpc("consultar_financeiro", {
-      p_oficina: oficina,
-      p_inicio: f.inicio,
-      p_fim: f.fim,
-      p_busca: f.busca,
-      p_filtro: f.filtro,
-      p_natureza: f.natureza,
-      p_pagina: f.pagina,
-      p_os: f.os,
-    });
+  if (!demo) {
+    try {
+      return await rpc<PainelFinanceiro>(
+        "consultar_painel_financeiro",
+        {
+          p_oficina: oficina,
+          p_inicio: f.inicio,
+          p_fim: f.fim,
+          p_busca: f.busca,
+          p_filtro: f.filtro,
+          p_natureza: f.natureza,
+          p_pagina: f.pagina,
+          p_os: f.os,
+          p_titulo: f.titulo || null,
+        },
+        signal,
+      );
+    } catch (erro) {
+      // Compatibilidade durante a implantação; erros de autorização nunca são contornados.
+      if (
+        !erro ||
+        typeof erro !== "object" ||
+        !("code" in erro) ||
+        erro.code !== "PGRST202"
+      )
+        throw erro;
+    }
+    try {
+      await rpc("sincronizar_contas_recorrentes", { p_oficina: oficina }, signal);
+    } catch (erro) {
+      // Mantém o financeiro existente utilizável durante a implantação da migração.
+      // A central de alertas e a aba de recorrências exibem a atualização pendente.
+      if (
+        !erro ||
+        typeof erro !== "object" ||
+        !("code" in erro) ||
+        erro.code !== "PGRST202"
+      )
+        throw erro;
+    }
+    const painel: PainelFinanceiro = await rpc(
+      "consultar_financeiro",
+      {
+        p_oficina: oficina,
+        p_inicio: f.inicio,
+        p_fim: f.fim,
+        p_busca: f.busca,
+        p_filtro: f.filtro,
+        p_natureza: f.natureza,
+        p_pagina: f.pagina,
+        p_os: f.os,
+      },
+      signal,
+    );
+    if (f.titulo) {
+      const t: TituloFinanceiro | null = await rpc(
+        "consultar_titulo_alerta",
+        {
+          p_oficina: oficina,
+          p_titulo: f.titulo,
+        },
+        signal,
+      );
+      return { ...painel, itens: t ? [t] : [], total: t ? 1 : 0 };
+    }
+    return painel;
+  }
   if (
     !f.inicio ||
     !f.fim ||
@@ -324,9 +437,7 @@ export async function consultarFinanceiro(
     todos = d.titulos.map((t) => comSaldo(d, t)),
     ativos = todos.filter((t) => !t.cancelado_em),
     periodo = (data: string) => data >= f.inicio && data <= f.fim;
-  const movimentos = lerEstoqueDemo().movimentos.filter(
-    (m) => m.ordem_servico_id,
-  );
+  const movimentos = lerEstoqueDemo().movimentos.filter((m) => m.ordem_servico_id);
   const r: ResumoFinanceiro = {
     receitas: 0,
     despesas: 0,
@@ -347,8 +458,7 @@ export async function consultarFinanceiro(
         t.aberto_centavos;
     if (periodo(t.competencia) && !t.provisorio) {
       if (!foraResultado.includes(t.categoria))
-        r[t.natureza === "receber" ? "receitas" : "despesas"] +=
-          t.valor_centavos;
+        r[t.natureza === "receber" ? "receitas" : "despesas"] += t.valor_centavos;
       if (t.automatico && !t.custos_revisados) r.revisar_custos++;
     }
   }
@@ -357,9 +467,9 @@ export async function consultarFinanceiro(
     const t = todos.find((t) => t.id === b.titulo_id)!;
     const sinal = b.estorno_de ? -1 : 1;
     const liquido =
-      sinal *
-      (b.valor_centavos - (t.natureza === "receber" ? b.taxa_centavos : 0));
-    saldos[b.conta] += (t.natureza === "receber" ? 1 : -1) * liquido;
+      sinal * (b.valor_centavos - (t.natureza === "receber" ? b.taxa_centavos : 0));
+    saldos[b.conta] =
+      (saldos[b.conta] ?? 0) + (t.natureza === "receber" ? 1 : -1) * liquido;
     if (periodo(b.data) && t.categoria !== "transferencia") {
       r[t.natureza === "receber" ? "entradas" : "saidas"] += liquido;
       r.taxas += sinal * b.taxa_centavos;
@@ -372,29 +482,27 @@ export async function consultarFinanceiro(
     if (periodo(data)) r.pecas += Math.round(-m.quantidade * m.custo_centavos);
   }
   const lista = todos
-    .filter(
-      (t) =>
-        (!f.os || t.ordem_servico_id === f.os) &&
-        (!f.natureza || t.natureza === f.natureza) &&
-        `${t.descricao} ${t.pessoa}`
-          .toLowerCase()
-          .includes(f.busca.toLowerCase()) &&
-        (f.filtro === "cancelados"
-          ? !!t.cancelado_em && periodo(t.competencia)
-          : !t.cancelado_em &&
-            (f.filtro === "abertos"
-              ? t.aberto_centavos > 0
-              : f.filtro === "atrasados"
-                ? t.aberto_centavos > 0 && t.vencimento < hoje()
-                : f.filtro === "vencimentos"
-                  ? periodo(t.vencimento)
-                  : f.filtro === "pagos"
-                    ? t.aberto_centavos === 0 && periodo(t.competencia)
-                    : periodo(t.competencia))),
+    .filter((t) =>
+      f.titulo
+        ? t.id === f.titulo
+        : (!f.os || t.ordem_servico_id === f.os) &&
+          (!f.natureza || t.natureza === f.natureza) &&
+          `${t.descricao} ${t.pessoa}`.toLowerCase().includes(f.busca.toLowerCase()) &&
+          (f.filtro === "cancelados"
+            ? !!t.cancelado_em && periodo(t.competencia)
+            : !t.cancelado_em &&
+              (f.filtro === "abertos"
+                ? t.aberto_centavos > 0
+                : f.filtro === "atrasados"
+                  ? t.aberto_centavos > 0 && t.vencimento < hoje()
+                  : f.filtro === "vencimentos"
+                    ? periodo(t.vencimento)
+                    : f.filtro === "pagos"
+                      ? t.aberto_centavos === 0 && periodo(t.competencia)
+                      : periodo(t.competencia))),
     )
     .sort(
-      (a, b) =>
-        a.vencimento.localeCompare(b.vencimento) || a.id.localeCompare(b.id),
+      (a, b) => a.vencimento.localeCompare(b.vencimento) || a.id.localeCompare(b.id),
     );
   const ordens = ativos
     .filter((t) => t.automatico && !t.provisorio && periodo(t.competencia))
@@ -430,6 +538,48 @@ export async function consultarFinanceiro(
     ordens,
   };
 }
+export async function salvarContaParcelada(
+  demo: boolean,
+  oficina: string,
+  t: TituloFinanceiro,
+  parcelas: ParcelaFinanceira[],
+) {
+  if (
+    parcelas.length < 2 ||
+    parcelas.length > 60 ||
+    parcelas.some(
+      (p) =>
+        !Number.isSafeInteger(p.valor_centavos) ||
+        p.valor_centavos < 1 ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(p.vencimento),
+    ) ||
+    parcelas.reduce((s, p) => s + p.valor_centavos, 0) !== t.valor_centavos
+  )
+    throw new Error(
+      "Gere as parcelas e confira os vencimentos. A soma deve ser igual ao valor total.",
+    );
+  if (t.revisao || t.automatico || t.compra_id || t.comissao_id || t.recorrencia_id)
+    throw new Error("O parcelamento é exclusivo para novas contas manuais.");
+  if (!demo)
+    return rpc<string[]>("criar_conta_parcelada", {
+      p_oficina: oficina,
+      p_chave: t.id,
+      p_dados: t,
+      p_parcelas: parcelas,
+    });
+  const d = ler();
+  if (d.titulos.some((x) => x.parcelamento_id === t.id)) return;
+  const novos = parcelas.map((p, i) => ({
+    ...t,
+    ...p,
+    id: novoId(),
+    parcelamento_id: t.id,
+    descricao: `${t.descricao.trim().slice(0, 180)} · ${i + 1}/${parcelas.length}`,
+    revisao: 1,
+    aberto_centavos: p.valor_centavos,
+  }));
+  gravar({ ...d, titulos: [...d.titulos, ...novos] });
+}
 export async function salvarTitulo(
   demo: boolean,
   oficina: string,
@@ -450,6 +600,7 @@ export async function salvarTitulo(
   if (
     anterior &&
     (anterior.automatico ||
+      anterior.acompanhamento_qualidade_id ||
       anterior.compra_id ||
       d.baixas.some((b) => b.titulo_id === t.id)) &&
     (t.valor_centavos !== anterior.valor_centavos ||
@@ -473,34 +624,113 @@ export async function salvarTitulo(
   ];
   gravar(d);
 }
+export async function confirmarValorRecorrente(
+  demo: boolean,
+  oficina: string,
+  t: TituloFinanceiro,
+  valor: number,
+): Promise<TituloFinanceiro> {
+  if (!demo)
+    return rpc("confirmar_valor_recorrente", {
+      p_oficina: oficina,
+      p_titulo: t.id,
+      p_revisao: t.revisao,
+      p_valor: valor,
+    });
+  const d = ler();
+  const atual = d.titulos.find((x) => x.id === t.id);
+  if (
+    !atual ||
+    !atual.valor_variavel ||
+    atual.cancelado_em ||
+    atual.revisao !== t.revisao
+  )
+    throw new Error("Conta alterada ou indisponível. Atualize a tela.");
+  if (
+    !Number.isSafeInteger(valor) ||
+    valor < 1 ||
+    valor > 10000000000 ||
+    d.baixas.some((b) => b.titulo_id === t.id)
+  )
+    throw new Error("Confira o valor. Contas com pagamentos não podem ser alteradas.");
+  atual.valor_centavos = valor;
+  atual.valor_confirmado_em = new Date().toISOString();
+  atual.revisao++;
+  gravar(d);
+  return comSaldo(d, atual);
+}
 export async function baixarTitulo(
   demo: boolean,
   oficina: string,
   t: TituloFinanceiro,
-  b: Omit<BaixaFinanceira, "id" | "titulo_id" | "estorno_de" | "criado_em">,
+  b: Omit<BaixaFinanceira, "id" | "titulo_id" | "estorno_de" | "criado_em"> & {
+    vencimento_restante?: string;
+  },
 ) {
   if (!demo)
-    return rpc("baixar_titulo_financeiro", {
-      p_oficina: oficina,
-      p_titulo: t.id,
-      p_chave: b.chave,
-      p_valor: b.valor_centavos,
-      p_taxa: b.taxa_centavos,
-      p_data: b.data,
-      p_conta: b.conta,
-      p_forma: b.forma,
-      p_observacao: b.observacao,
-    });
+    return rpc(
+      b.desconto_centavos
+        ? typeof b.mostrar_desconto_nota === "boolean"
+          ? "baixar_titulo_com_desconto_nota"
+          : "baixar_titulo_com_desconto_os"
+        : b.vencimento_restante
+          ? "baixar_titulo_com_restante"
+          : "baixar_titulo_financeiro",
+      {
+        ...(b.desconto_centavos
+          ? {
+              p_desconto: b.desconto_centavos,
+              p_saldo: b.saldo_antes_desconto_centavos,
+              ...(typeof b.mostrar_desconto_nota === "boolean"
+                ? { p_mostrar_desconto_nota: b.mostrar_desconto_nota }
+                : {}),
+            }
+          : {}),
+        ...(b.vencimento_restante ? { p_vencimento: b.vencimento_restante } : {}),
+        p_oficina: oficina,
+        p_titulo: t.id,
+        p_chave: b.chave,
+        p_valor: b.valor_centavos,
+        p_taxa: b.taxa_centavos,
+        p_data: b.data,
+        p_conta: b.conta,
+        p_forma: b.forma,
+        p_observacao: b.observacao,
+      },
+    );
   const d = ler();
-  if (d.baixas.some((x) => x.chave === b.chave)) return;
+  const repetida = d.baixas.find((x) => x.chave === b.chave);
+  if (repetida) {
+    if (
+      repetida.titulo_id !== t.id ||
+      repetida.valor_centavos !== b.valor_centavos ||
+      (repetida.desconto_centavos || 0) !== (b.desconto_centavos || 0)
+    )
+      throw new Error("Esta confirmação já foi usada. Reabra o pagamento.");
+    return;
+  }
   const atual = comSaldo(
     d,
     d.titulos.find((x) => x.id === t.id)!,
   );
+  const desconto = b.desconto_centavos || 0;
+  if (
+    !Number.isSafeInteger(desconto) ||
+    desconto < 0 ||
+    (desconto > 0 && desconto >= atual.aberto_centavos)
+  )
+    throw new Error("O desconto deve deixar um valor maior que zero para receber.");
+  if (desconto > 0 && b.saldo_antes_desconto_centavos !== atual.aberto_centavos)
+    throw new Error("O saldo mudou. Reabra o pagamento para conferir o desconto.");
+  if (atual.valor_variavel && !atual.valor_confirmado_em)
+    throw new Error(
+      "Confirme o valor desta conta variável para este mês antes de pagar.",
+    );
   if (
     atual.cancelado_em ||
     b.valor_centavos <= 0 ||
-    b.valor_centavos > atual.aberto_centavos ||
+    b.valor_centavos > atual.aberto_centavos - desconto ||
+    (!!b.vencimento_restante && b.valor_centavos >= atual.aberto_centavos - desconto) ||
     b.taxa_centavos < 0 ||
     b.taxa_centavos >= b.valor_centavos ||
     b.data > hoje()
@@ -508,24 +738,40 @@ export async function baixarTitulo(
     throw new Error("Confira valor, taxa e data do pagamento.");
   d.baixas.push({
     ...b,
-    id: crypto.randomUUID(),
+    id: novoId(),
     titulo_id: t.id,
     estorno_de: null,
     criado_em: new Date().toISOString(),
   });
-  d.titulos.find((x) => x.id === t.id)!.revisao++;
-  gravar(d);
+  const tituloAtual = d.titulos.find((x) => x.id === t.id)!;
+  const documentos =
+    desconto > 0
+      ? prepararDescontoRecebimentoDemo(
+          oficina,
+          atual,
+          desconto,
+          b.mostrar_desconto_nota,
+        )
+      : new Map<string, string>();
+  tituloAtual.valor_centavos -= desconto;
+  if (b.vencimento_restante) {
+    tituloAtual.vencimento = b.vencimento_restante;
+    tituloAtual.pagamento_combinado = true;
+  }
+  tituloAtual.revisao++;
+  gravarRecebimentoDemo(new Map([[chaveDemo, JSON.stringify(d)], ...documentos]));
 }
 export async function historicoFinanceiro(
   demo: boolean,
   oficina: string,
   id: string,
+  signal?: AbortSignal,
 ): Promise<BaixaFinanceira[]> {
   return demo
     ? ler()
         .baixas.filter((b) => b.titulo_id === id)
         .reverse()
-    : rpc("historico_financeiro", { p_oficina: oficina, p_titulo: id });
+    : rpc("historico_financeiro", { p_oficina: oficina, p_titulo: id }, signal);
 }
 export async function estornarBaixa(
   demo: boolean,
@@ -543,20 +789,17 @@ export async function estornarBaixa(
     });
   const d = ler();
   if (d.baixas.some((x) => x.estorno_de === b.id)) return;
-  if (
-    b.estorno_de ||
-    data < b.data ||
-    data > hoje() ||
-    motivo.trim().length < 3
-  )
+  if (b.estorno_de || data < b.data || data > hoje() || motivo.trim().length < 3)
     throw new Error("Informe motivo e data válidos.");
   d.baixas.push({
     ...b,
-    id: crypto.randomUUID(),
+    desconto_centavos: 0,
+    saldo_antes_desconto_centavos: undefined,
+    id: novoId(),
     estorno_de: b.id,
     data,
     observacao: motivo,
-    chave: crypto.randomUUID(),
+    chave: novoId(),
     criado_em: new Date().toISOString(),
   });
   d.titulos.find((t) => t.id === b.titulo_id)!.revisao++;
@@ -582,6 +825,7 @@ export async function cancelarTitulo(
     );
   if (
     atual.automatico ||
+    atual.acompanhamento_qualidade_id ||
     atual.compra_id ||
     atual.baixado_centavos !== 0 ||
     motivo.trim().length < 3
@@ -601,11 +845,7 @@ export async function cancelarTitulo(
   );
   gravar(d);
 }
-export async function revisarCustos(
-  demo: boolean,
-  oficina: string,
-  id: string,
-) {
+export async function revisarCustos(demo: boolean, oficina: string, id: string) {
   if (!demo)
     return rpc("revisar_custos_financeiro", {
       p_oficina: oficina,
@@ -653,9 +893,9 @@ export async function transferirFinanceiro(
     };
     d.titulos.push(t);
     d.baixas.push({
-      id: crypto.randomUUID(),
+      id: novoId(),
       titulo_id: t.id,
-      chave: crypto.randomUUID(),
+      chave: novoId(),
       valor_centavos: valor,
       taxa_centavos: 0,
       data,
@@ -696,11 +936,11 @@ export async function estornarTransferencia(
     if (!d.baixas.some((x) => x.estorno_de === b.id))
       d.baixas.push({
         ...b,
-        id: crypto.randomUUID(),
+        id: novoId(),
         estorno_de: b.id,
         data,
         observacao: motivo,
-        chave: crypto.randomUUID(),
+        chave: novoId(),
         criado_em: new Date().toISOString(),
       });
     t.cancelado_em = new Date().toISOString();

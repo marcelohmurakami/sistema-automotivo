@@ -1,0 +1,116 @@
+.central-compras {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+.central-compras-cabecalho,
+.central-compras-atalhos,
+.central-compras-recebidas-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+}
+.central-compras-cabecalho {
+  justify-content: space-between;
+}
+.central-compras-cabecalho h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 2.5vw, 2rem);
+  line-height: 1.2;
+  font-weight: 750;
+}
+.central-compras-cabecalho p {
+  margin: 0;
+  color: var(--ui-suave);
+}
+.central-compras-atalhos a {
+  font-size: 0.9rem;
+}
+.central-compras-abas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.central-compras-abas > a,
+.central-compras-abas > select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-suave);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.central-compras-abas > select {
+  margin-left: auto;
+  max-width: 17rem;
+}
+.central-compras-abas option {
+  background: var(--ui-painel);
+  color: var(--ui-texto);
+}
+.central-compras-abas > a[aria-current="page"],
+.central-compras-abas > .central-compras-selecao {
+  color: var(--ui-texto);
+  background: var(--ui-fundo);
+  border-color: var(--ui-borda);
+}
+.central-compras-abas > :focus-visible {
+  outline: 2px solid var(--lima);
+  outline-offset: 2px;
+}
+.central-compras-conteudo {
+  min-width: 0;
+}
+.central-compras-recebidas-barra {
+  margin-bottom: 16px;
+}
+.central-compras-recebidas-barra > div {
+  flex: 1 1 18rem;
+}
+.central-compras-recebidas-barra h2 {
+  font-size: 1.1rem;
+  margin: 0 0 4px;
+}
+.central-compras-recebidas-barra p {
+  font-size: 0.9rem;
+  color: var(--ui-suave);
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .central-compras {
+    gap: 18px;
+  }
+  .central-compras-abas {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .central-compras-abas > select {
+    grid-column: 1 / -1;
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+  .central-compras-abas > a {
+    text-align: center;
+    padding: 10px 6px;
+  }
+  .central-compras-recebidas-barra > button {
+    width: 100%;
+  }
+}

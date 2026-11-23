@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {importarTypescript} from './lib/importar-typescript.mjs';
+const {calcularHoraProdutiva:hora,calcularPrecoServico:preco,parametrosIniciais:base}=await importarTypescript('src/lib/precificacao.ts');
+const p={...base,salarios:100000,encargos:20,beneficios:10000,indiretos:80000,dias:20,horas:8,ocupacao:50,impostos:10,margem:20};
+test('hora real inclui encargos, estrutura e ocupação',()=>{const h=hora(p);assert.equal(h.produtivas,80);assert.equal(h.ociosas,80);assert.equal(h.hora,2625);assert.equal(hora({...p,ocupacao:100}).hora,1312.5);});
+test('preço tem margem sobre venda, não markup sobre custo',()=>{const r=preco(p,120,10000,0,0);assert.equal(r.custo,15250);assert.equal(r.piso,16945);assert.equal(r.preco,21786);assert(r.lucro/r.preco>=0.1999);});
+test('desconto de tributos e taxas não acrescenta centavo por ruído de ponto flutuante',()=>{for(let taxa=0;taxa<=95;taxa++){const custo=100-taxa;const r=preco({...base,impostos:taxa,taxas:0,margem:0},0,custo,0,0);assert.equal(r.preco,100,`tributo ${taxa}%`);}});
+test('custo direto zero, terceiros e extras são tratados separadamente',()=>{assert.equal(preco({...base,margem:0,ocupacao:100},0,0,0,0).preco,0);assert.equal(preco({...base,margem:0},0,123,456,789).custo,1368);});
+test('rejeita capacidade impossível, infinitos e percentuais inválidos',()=>{for(const v of [{ocupacao:0},{ocupacao:101},{horas:25},{dias:32},{profissionais:0},{salarios:NaN},{encargos:301},{margem:90,impostos:10},{salarios:1.5}])assert.throws(()=>hora({...p,...v}));for(const v of [-1,NaN,Infinity,1.5])assert.throws(()=>preco(p,10,v,0,0));assert.throws(()=>preco(p,1000001,0,0,0));});

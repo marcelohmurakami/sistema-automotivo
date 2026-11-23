@@ -1,9 +1,11 @@
 import { useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Users, UserPlus, ShieldCheck, Copy, Check, Link2 } from "lucide-react";
 import { useAcesso } from "../auth/contexto";
 import { erroEquipe } from "../services/equipe";
 import { Dialogo } from "../components/Dialogo";
+import { PermissoesEquipe } from "../components/PermissoesEquipe";
 import {
   equipeRpc,
   gerarConvite,
@@ -25,6 +27,7 @@ export function Equipe() {
   const [convidando, setConvidando] = useState(false),
     [link, setLink] = useState("");
   const [editar, setEditar] = useState<MembroEquipe | null>(null);
+  const [permissoes, setPermissoes] = useState<MembroEquipe | null>(null);
   const [ocupado, setOcupado] = useState(false),
     trava = useRef(false);
   const dono = a.oficina?.perfil === "owner";
@@ -57,9 +60,7 @@ export function Equipe() {
     const f = new FormData(e.currentTarget);
     void executar(async () => {
       if (a.demo) {
-        setAviso(
-          "Demonstração: entre na sua conta real para gerar um convite válido.",
-        );
+        setAviso("Demonstração: entre na sua conta real para gerar um convite válido.");
         setConvidando(false);
         return;
       }
@@ -78,8 +79,7 @@ export function Equipe() {
         <ShieldCheck size={32} />
         <h1>A equipe é administrada pelo proprietário.</h1>
         <p>
-          Peça ao responsável pela oficina para convidar pessoas ou alterar seu
-          acesso.
+          Peça ao responsável pela empresa para convidar pessoas ou alterar seu acesso.
         </p>
       </section>
     );
@@ -91,9 +91,7 @@ export function Equipe() {
           <h1>
             Minha equipe<span>.</span>
           </h1>
-          <p>
-            Convide quem trabalha com você e cuide dos acessos em um só lugar.
-          </p>
+          <p>Convide quem trabalha com você e cuide dos acessos em um só lugar.</p>
         </div>
         <button
           className="botao-primario"
@@ -105,10 +103,15 @@ export function Equipe() {
           <UserPlus size={18} /> Convidar pessoa
         </button>
       </header>
+      {a.permite("finance") && (
+        <Link className="botao-secundario" to="/financeiro?aba=comissoes">
+          Configurar comissões da equipe
+        </Link>
+      )}
       {a.demo && (
         <p className="aviso-cliente">
-          Demonstração: alterações nesta tela são temporárias. Nenhum convite
-          será enviado.
+          Demonstração: alterações nesta tela são temporárias. Nenhum convite será
+          enviado.
         </p>
       )}
       {erro && (
@@ -121,10 +124,7 @@ export function Equipe() {
           {aviso}
         </p>
       )}
-      <section
-        className="equipe-perfis"
-        aria-label="O que cada perfil pode fazer"
-      >
+      <section className="equipe-perfis" aria-label="O que cada perfil pode fazer">
         <article>
           <ShieldCheck />
           <h2>Proprietário</h2>
@@ -134,16 +134,16 @@ export function Equipe() {
           <Users />
           <h2>Gerente</h2>
           <p>
-            Cuida da operação, configurações e financeiro, conforme o plano. Não
-            altera a equipe.
+            Cuida da operação, configurações e financeiro, conforme o plano. Não altera
+            a equipe.
           </p>
         </article>
         <article>
           <Check />
           <h2>Funcionário</h2>
           <p>
-            Atende clientes e trabalha nos módulos operacionais do plano. Não
-            acessa financeiro e relatórios de gestão.
+            Atende clientes e trabalha nos módulos operacionais do plano. Não acessa
+            financeiro e relatórios de gestão.
           </p>
         </article>
       </section>
@@ -160,10 +160,8 @@ export function Equipe() {
         <>
           <section className="os-painel">
             <h2>
-              Pessoas da oficina{" "}
-              <small>
-                ({dados?.membros.filter((m) => m.ativo).length} ativas)
-              </small>
+              Pessoas com acesso ao sistema{" "}
+              <small>({dados?.membros.filter((m) => m.ativo).length} ativas)</small>
             </h2>
             <div className="equipe-lista">
               {dados?.membros.map((m) => (
@@ -181,15 +179,23 @@ export function Equipe() {
                   {m.perfil === "owner" ? (
                     <span className="texto-suave">Responsável</span>
                   ) : (
-                    <button
-                      className="botao-secundario"
-                      onClick={() => {
-                        setErro("");
-                        setEditar(m);
-                      }}
-                    >
-                      Gerenciar
-                    </button>
+                    <div className="dados-acoes">
+                      <button
+                        className="botao-secundario"
+                        onClick={() => {
+                          setErro("");
+                          setEditar(m);
+                        }}
+                      >
+                        Gerenciar
+                      </button>
+                      <button
+                        className="botao-secundario"
+                        onClick={() => setPermissoes(m)}
+                      >
+                        Permissões
+                      </button>
+                    </div>
                   )}
                 </article>
               ))}
@@ -198,16 +204,14 @@ export function Equipe() {
           <section className="os-painel">
             <h2>Convites</h2>
             <p className="texto-suave">
-              Válidos por 7 dias. Ao gerar outro para o mesmo e-mail, o link
-              anterior é revogado.
+              Válidos por 7 dias. Ao gerar outro para o mesmo e-mail, o link anterior é
+              revogado.
             </p>
             {!dados?.convites.length ? (
               <div className="equipe-vazio">
                 <Link2 />
                 <p>Nenhum convite por enquanto.</p>
-                <small>
-                  Convide pelo e-mail e compartilhe o link com a pessoa.
-                </small>
+                <small>Convide pelo e-mail e compartilhe o link com a pessoa.</small>
               </div>
             ) : (
               <div className="equipe-lista">
@@ -223,8 +227,7 @@ export function Equipe() {
                           : c.situacao}
                       </p>
                       <small>
-                        Validade:{" "}
-                        {new Date(c.expira_em).toLocaleString("pt-BR")}
+                        Validade: {new Date(c.expira_em).toLocaleString("pt-BR")}
                       </small>
                     </div>
                     {c.situacao === "pendente" && (
@@ -251,6 +254,11 @@ export function Equipe() {
           </section>
         </>
       )}
+      {permissoes && (
+        <Dialogo aberto titulo="Permissões por área" fechar={() => setPermissoes(null)}>
+          <PermissoesEquipe membro={permissoes} />
+        </Dialogo>
+      )}
       {convidando && (
         <Dialogo
           aberto
@@ -259,8 +267,8 @@ export function Equipe() {
         >
           <form className="formulario-cliente" onSubmit={convidar}>
             <p>
-              A pessoa deverá entrar com este e-mail confirmado para aceitar. O
-              acesso será limitado ao plano da oficina.
+              A pessoa deverá entrar com este e-mail confirmado para aceitar. O acesso
+              será limitado ao plano da empresa.
             </p>
             <label>
               E-mail do funcionário
@@ -294,16 +302,12 @@ export function Equipe() {
         <Dialogo aberto titulo="Convite pronto" fechar={() => setLink("")}>
           <div className="formulario-cliente">
             <p>
-              Copie o link e envie à pessoa pelo canal que preferir. Nenhuma
-              mensagem foi enviada automaticamente.
+              Copie o link e envie à pessoa pelo canal que preferir. Nenhuma mensagem
+              foi enviada automaticamente.
             </p>
             <label>
               Link do convite
-              <input
-                value={link}
-                readOnly
-                onFocus={(e) => e.currentTarget.select()}
-              />
+              <input value={link} readOnly onFocus={(e) => e.currentTarget.select()} />
             </label>
             <button
               className="botao-primario"
@@ -321,8 +325,8 @@ export function Equipe() {
             {aviso && <p role="status">{aviso}</p>}
             {erro && <p role="alert">{erro}</p>}
             <small>
-              Este link aparece apenas agora. Se perder, gere outro convite para
-              o mesmo e-mail.
+              Este link aparece apenas agora. Se perder, gere outro convite para o mesmo
+              e-mail.
             </small>
           </div>
         </Dialogo>
@@ -379,8 +383,8 @@ export function Equipe() {
               </select>
             </label>
             <p>
-              Suspender bloqueia novas consultas e operações. O histórico da
-              pessoa é preservado.
+              Suspender bloqueia novas consultas e operações. O histórico da pessoa é
+              preservado.
             </p>
             {erro && (
               <p role="alert" className="erro-formulario">

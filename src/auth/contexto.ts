@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { Ramo } from "../lib/ramos";
 export const recursosPorPlano = {
   basic: ["customers", "catalog", "simple_notes"],
   intermediate: [
@@ -29,6 +30,7 @@ export const recursosPorPlano = {
     "parts_requests",
     "automations",
     "ai",
+    "employee_reports",
   ],
 };
 export type Plano = keyof typeof recursosPorPlano;
@@ -38,6 +40,9 @@ export const nomesPlanos: Record<Plano, string> = {
   complete: "Completo",
 };
 export type OficinaAcesso = {
+  ramo?: Ramo;
+  especialidade?: string;
+  padrao?: boolean;
   id: string;
   nome: string;
   perfil: "owner" | "manager" | "staff";
@@ -51,6 +56,7 @@ export type Acesso = {
   demo: boolean;
   carregando: boolean;
   erro: string;
+  segundoFatorExigido?: boolean;
   usuario: string | null;
   email: string | null;
   oficina: OficinaAcesso | null;
@@ -58,6 +64,7 @@ export type Acesso = {
   permite: (recurso: string) => boolean;
   selecionarOficina: (id: string) => void;
   demonstrar: () => void;
+  demonstrarRamo: (ramo: Ramo) => void;
   usarContaReal: () => void;
   sair: () => Promise<void>;
   atualizar: () => Promise<unknown>;

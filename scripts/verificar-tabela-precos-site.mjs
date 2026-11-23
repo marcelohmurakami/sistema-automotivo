@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';import{readFile,writeFile,mkdir}from'node:fs/promises';import{chromium}from'playwright';
+const raiz=process.env.QA_OUTPUT || 'output/tabela-precos-20261105',pasta=raiz+'/site-publicado',base='https://patio-gestao-peach.vercel.app';await mkdir(pasta,{recursive:true});
+const pacote=JSON.parse(await readFile(raiz+'/pacote-publicacao.json','utf8'));assert.equal((await fetch(base+'/health.json?qa='+Date.now()).then(r=>r.json())).build,pacote.build);
+const contas=JSON.parse(await readFile('output/contas-teste/20261019/credenciais.local.json','utf8')).contas;
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'}),resultados=[],erros=[];let ctx,p;
+try{
+ for(const ramo of ['automotivo','assistencia_tecnica','manutencao_campo','limpeza']){
+  const conta=contas.find(c=>c.ramo===ramo&&(ramo!=='automotivo'||c.especialidade==='retifica'));assert(conta?.empresa.startsWith('ZZ [TESTE 20261019] '),ramo);
+  await ctx?.close();ctx=await browser.newContext({viewport:{width:1920,height:1080},locale:'pt-BR',timezoneId:'America/Sao_Paulo'});await ctx.addInitScript(()=>{window.qaPrint=0;const open=window.open.bind(window);window.open=(...args)=>{const j=open(...args);if(j){const print=j.print.bind(j);j.print=()=>{window.qaPrint++;return print()}}return j};});p=await ctx.newPage();p.setDefaultTimeout(30000);p.on('pageerror',e=>erros.push(e.message));
+  await p.goto(base+'/catalogo');await p.getByLabel('E-mail',{exact:true}).fill(conta.email);await p.getByLabel('Senha',{exact:true}).fill(conta.senha);await p.getByRole('button',{name:'Entrar no sistema',exact:true}).click();await p.getByRole('button',{name:'Imprimir tabela de preços',exact:true}).click();const d=p.getByRole('dialog',{name:'Imprimir tabela de preços',exact:true});await d.locator('.tabela-precos-linha').first().waitFor();
+  const n=Math.min(2,await d.locator('.tabela-precos-linha').count()),esperados=[];
+  for(let i=0;i<n;i++){const linha=d.locator('.tabela-precos-linha').nth(i);esperados.push({servico:await linha.locator('span').innerText(),preco:await linha.locator('strong').innerText()});await linha.getByRole('checkbox').check();}
+  for(const largura of [1920,390,320]){await p.setViewportSize({width:largura,height:largura===1920?1080:844});assert(await d.evaluate(e=>e.scrollWidth<=e.clientWidth+1));await p.screenshot({path:pasta+'/'+ramo+'-'+largura+'.png'});}
+  const nova=ctx.waitForEvent('page');await d.getByRole('button',{name:`Imprimir ${n} serviço${n===1?'':'s'}`,exact:true}).click();const folha=await nova;await folha.locator('tbody tr').first().waitFor();await p.waitForFunction(()=>window.qaPrint===1);assert.equal(await folha.locator('tbody tr').count(),n);assert.equal(await folha.locator('h1').innerText(),conta.empresa);
+  esperados.sort((a,b)=>a.servico.localeCompare(b.servico,'pt-BR',{numeric:true}));for(let i=0;i<n;i++){const celulas=await folha.locator('tbody tr').nth(i).locator('td').allTextContents();assert.deepEqual(celulas,[esperados[i].servico,esperados[i].preco]);}
+  await folha.setViewportSize({width:900,height:1000});assert(await folha.locator('tbody td').first().evaluate(e=>{const s=getComputedStyle(e);return s.fontSize==='13px'&&s.paddingTop==='7px'&&s.paddingBottom==='7px';}),'Itens compactos na prévia');await folha.screenshot({path:pasta+'/'+ramo+'-impressao.png',fullPage:true});await folha.emulateMedia({media:'print'});assert(await folha.locator('tbody td').first().evaluate(e=>{const s=getComputedStyle(e);return Math.abs(parseFloat(s.fontSize)-40/3)<0.01&&s.paddingTop==='7px';}),'Fonte de 10pt na impressão');await folha.close();await d.getByRole('button',{name:'Fechar janela',exact:true}).click();assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  resultados.push({ramo,empresa:conta.empresa,servicos:esperados,impressaoAutomatica:true,semAlterarCadastros:true});console.log('PASS tabela de preços publicada',ramo);
+ }
+ assert.deepEqual(erros,[]);
+}catch(e){process.exitCode=1;console.error(e.message);if(p)await p.screenshot({path:pasta+'/falha.png'});}
+finally{await browser.close();await writeFile(pasta+'/resumo.json',JSON.stringify({ok:!process.exitCode,build:pacote.build,resultados,erros},null,2));}

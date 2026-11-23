@@ -1,20 +1,41 @@
+import { FormFornecedor } from "../components/compras/FormFornecedor";
+import { Paginacao } from "../components/compras/PaginacaoCompras";
+import { useBuscaDebounced } from "../lib/useBuscaDebounced";
+import { componenteSobDemanda } from "../lib/componenteSobDemanda";
+const ImportarNfe = componenteSobDemanda(async () => ({
+  default: (await import("../components/ImportarNfe")).ImportarNfe,
+}));
+const PagamentosIntegrados = componenteSobDemanda(async () => ({
+  default: (await import("../components/PagamentosIntegrados")).PagamentosIntegrados,
+}));
+const PagamentoCompra = componenteSobDemanda(async () => ({
+  default: (await import("../components/PagamentoCompra")).PagamentoCompra,
+}));
+import { novoId } from "../lib/uuid.ts";
+import { EscolherDeposito } from "../components/suprimentos/Depositos";
+import { passoProduto } from "../components/suprimentos/helpers";
+import { dinheiro } from "../lib/formatacao";
+import { vocabularioEstoque } from "../lib/interfaceRamo";
+
+import { BuscaCompra } from "../components/BuscaCompra";
 import { atualizarIntegracoes } from "../lib/atualizarIntegracoes";
 import { useState, useRef, type FormEvent } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, Truck, ShoppingBag, Search } from "lucide-react";
+import { Plus, ShoppingBag, Search } from "lucide-react";
 import { useAcesso } from "../auth/contexto";
 import { Dialogo } from "../components/Dialogo";
-import { PagamentosIntegrados } from "../components/PagamentosIntegrados";
+
 import { erroPublico } from "../lib/supabase";
-import { dinheiro } from "../services/orcamentos";
+
 import { normalizarTelefone } from "../services/clientes";
-import { hoje, contas, formas } from "../services/financeiro";
+import { hoje } from "../services/financeiro";
+
+import { lerPagamentoCompra } from "../lib/pagamentoCompra";
 import { listarEstoque } from "../services/estoque";
 import {
   listarFornecedores,
   salvarFornecedor,
-  arquivarFornecedor,
   novoFornecedor,
   listarCompras,
   consultarCompra,
@@ -24,358 +45,13 @@ import {
   type ItemCompra,
 } from "../services/compras";
 import "./Compras.css";
-function FormFornecedor({
-  valor,
-  ocupado,
-  salvar,
-}: {
-  valor: Fornecedor;
-  ocupado: boolean;
-  salvar: (f: Fornecedor) => void;
-}) {
-  return (
-    <form
-      className="formulario-cliente"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        salvar({
-          ...valor,
-          nome: String(f.get("nome")).trim(),
-          documento: String(f.get("documento")).replace(/\D/g, ""),
-          telefone: String(f.get("telefone")),
-          email: String(f.get("email")).trim(),
-          endereco: String(f.get("endereco")),
-          observacoes: String(f.get("observacoes")),
-        });
-      }}
-    >
-      <fieldset disabled={ocupado}>
-        <label>
-          Nome do fornecedor
-          <input
-            name="nome"
-            defaultValue={valor.nome}
-            minLength={2}
-            maxLength={160}
-            required
-            autoFocus
-          />
-        </label>
-        <div className="dupla-campos">
-          <label>
-            CNPJ ou CPF
-            <input
-              name="documento"
-              inputMode="numeric"
-              defaultValue={valor.documento}
-              maxLength={25}
-            />
-          </label>
-          <label>
-            Telefone / WhatsApp
-            <input
-              type="tel"
-              name="telefone"
-              defaultValue={valor.telefone}
-              placeholder="(16) 99999-9999"
-            />
-          </label>
-        </div>
-        <label>
-          E-mail
-          <input
-            type="email"
-            name="email"
-            defaultValue={valor.email}
-            maxLength={254}
-          />
-        </label>
-        <label>
-          Endereço
-          <input
-            name="endereco"
-            defaultValue={valor.endereco}
-            maxLength={500}
-          />
-        </label>
-        <label>
-          Observações
-          <textarea
-            name="observacoes"
-            defaultValue={valor.observacoes}
-            maxLength={2000}
-            placeholder="Contato comercial, prazo habitual, informações úteis…"
-          />
-        </label>
-        <button className="botao-primario" disabled={ocupado}>
-          {ocupado ? "Salvando…" : "Salvar fornecedor"}
-        </button>
-      </fieldset>
-    </form>
-  );
-}
-function Paginacao({
-  pagina,
-  total,
-  mudar,
-}: {
-  pagina: number;
-  total: number;
-  mudar: (p: number) => void;
-}) {
-  return (
-    <div className="compra-paginacao">
-      <span>
-        {total} registro(s) · Página {pagina + 1}
-      </span>
-      <button
-        className="botao-secundario"
-        disabled={!pagina}
-        onClick={() => mudar(pagina - 1)}
-      >
-        Anterior
-      </button>
-      <button
-        className="botao-secundario"
-        disabled={(pagina + 1) * 30 >= total}
-        onClick={() => mudar(pagina + 1)}
-      >
-        Próxima
-      </button>
-    </div>
-  );
-}
-export function Fornecedores() {
-  const a = useAcesso(),
-    qc = useQueryClient(),
-    oficina = a.oficina!.id;
-  const [busca, setBusca] = useState(""),
-    [arquivados, setArquivados] = useState(false),
-    [pagina, setPagina] = useState(0),
-    [form, setForm] = useState<Fornecedor | null>(null),
-    [arquivo, setArquivo] = useState<Fornecedor | null>(null),
-    [ocupado, setOcupado] = useState(false),
-    [erro, setErro] = useState(""),
-    [aviso, setAviso] = useState("");
-  const trava = useRef(false);
-  const q = useQuery({
-    queryKey: ["fornecedores", a.demo, oficina, busca, arquivados, pagina],
-    queryFn: () =>
-      listarFornecedores(a.demo, oficina, busca, arquivados, pagina),
-  });
-  async function executar(fn: () => Promise<unknown>) {
-    if (trava.current) return;
-    trava.current = true;
-    setOcupado(true);
-    setErro("");
-    try {
-      await fn();
-      await qc.invalidateQueries({ queryKey: ["fornecedores"] });
-      setForm(null);
-      setArquivo(null);
-      setAviso("Fornecedor atualizado.");
-    } catch (e) {
-      setErro(erroPublico(e));
-    } finally {
-      setOcupado(false);
-      trava.current = false;
-    }
-  }
-  return (
-    <>
-      <div className="titulo-pagina">
-        <div>
-          <div className="sobretitulo">
-            <span className="linha-verde" />
-            QUEM ABASTECE SUA OFICINA
-          </div>
-          <h1>
-            Fornecedores<span>.</span>
-          </h1>
-          <p>
-            Contatos e informações em um só lugar, prontos para a próxima
-            compra.
-          </p>
-        </div>
-        <button
-          className="botao-primario"
-          onClick={() => {
-            setErro("");
-            setForm(novoFornecedor());
-          }}
-        >
-          <Plus size={18} />
-          Novo fornecedor
-        </button>
-      </div>
-      {a.demo && (
-        <p className="aviso-cliente">
-          Demonstração · Dados salvos neste navegador.
-        </p>
-      )}
-      {aviso && (
-        <p role="status" className="aviso-cliente">
-          {aviso}
-        </p>
-      )}
-      <section className="os-painel">
-        <div className="compra-filtros">
-          <label>
-            <Search size={18} />
-            <input
-              aria-label="Buscar fornecedores"
-              placeholder="Nome, CNPJ ou CPF"
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPagina(0);
-              }}
-            />
-          </label>
-          <select
-            aria-label="Situação dos fornecedores"
-            value={arquivados ? "arquivados" : "ativos"}
-            onChange={(e) => {
-              setArquivados(e.target.value === "arquivados");
-              setPagina(0);
-            }}
-          >
-            <option value="ativos">Ativos</option>
-            <option value="arquivados">Arquivados</option>
-          </select>
-          <Link to="/compras">Ver compras →</Link>
-        </div>
-        {q.isPending ? (
-          <p>Carregando fornecedores…</p>
-        ) : q.isError ? (
-          <p role="alert">{erroPublico(q.error)}</p>
-        ) : (
-          <>
-            {!q.data.itens.length && (
-              <div className="compra-vazio">
-                <Truck size={34} />
-                <h3>
-                  {busca
-                    ? "Nenhum fornecedor encontrado"
-                    : "Cadastre quem fornece suas peças"}
-                </h3>
-                <p>
-                  Nome é obrigatório. Você pode completar os outros dados
-                  depois.
-                </p>
-              </div>
-            )}
-            <div className="fornecedor-grade">
-              {q.data.itens.map((f) => (
-                <article className="fornecedor-card" key={f.id}>
-                  <Truck size={22} />
-                  <h3>{f.nome}</h3>
-                  <p>{f.documento || "Documento não informado"}</p>
-                  {f.telefone && <a href={"tel:" + f.telefone}>{f.telefone}</a>}
-                  {f.email && <p>{f.email}</p>}
-                  {f.endereco && <p>{f.endereco}</p>}
-                  {f.observacoes && (
-                    <p className="texto-suave">{f.observacoes}</p>
-                  )}
-                  <div className="compra-acoes">
-                    {!f.arquivado_em && (
-                      <button
-                        className="botao-secundario"
-                        onClick={() => {
-                          setErro("");
-                          setForm(f);
-                        }}
-                      >
-                        Editar
-                      </button>
-                    )}
-                    <button
-                      className="botao-secundario"
-                      onClick={() => {
-                        setErro("");
-                        setArquivo(f);
-                      }}
-                    >
-                      {f.arquivado_em ? "Restaurar" : "Arquivar"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <Paginacao pagina={pagina} total={q.data.total} mudar={setPagina} />
-          </>
-        )}
-      </section>
-      <Dialogo
-        aberto={!!form || !!arquivo}
-        fechar={() => {
-          if (!ocupado) {
-            setForm(null);
-            setArquivo(null);
-          }
-        }}
-        titulo={
-          arquivo
-            ? arquivo.arquivado_em
-              ? "Restaurar fornecedor"
-              : "Arquivar fornecedor"
-            : form?.revisao
-              ? "Editar fornecedor"
-              : "Novo fornecedor"
-        }
-      >
-        {erro && (
-          <p className="erro-formulario" role="alert">
-            {erro}
-          </p>
-        )}
-        {form && (
-          <FormFornecedor
-            key={form.id}
-            valor={form}
-            ocupado={ocupado}
-            salvar={(f) =>
-              void executar(() =>
-                salvarFornecedor(a.demo, oficina, {
-                  ...f,
-                  telefone: normalizarTelefone(f.telefone),
-                }),
-              )
-            }
-          />
-        )}{" "}
-        {arquivo && (
-          <>
-            <p>
-              {arquivo.nome}:{" "}
-              {arquivo.arquivado_em
-                ? "voltará a aparecer para novas compras."
-                : "será ocultado de novas compras. O histórico das compras será preservado."}
-            </p>
-            <button
-              className="botao-primario"
-              disabled={ocupado}
-              onClick={() =>
-                void executar(() =>
-                  arquivarFornecedor(a.demo, oficina, arquivo),
-                )
-              }
-            >
-              Confirmar
-            </button>
-          </>
-        )}
-      </Dialogo>
-    </>
-  );
-}
-export function Compras() {
+export function Compras({ integrada = false }: { integrada?: boolean }) {
   const a = useAcesso(),
     qc = useQueryClient(),
     oficina = a.oficina!.id,
     [params, setParams] = useSearchParams(),
     gerente = a.oficina!.perfil !== "staff" && a.permite("finance");
+  const termos = vocabularioEstoque(a.oficina?.ramo);
   const [busca, setBusca] = useState(""),
     [pagina, setPagina] = useState(0),
     [nova, setNova] = useState(false),
@@ -383,55 +59,73 @@ export function Compras() {
     [erro, setErro] = useState(""),
     [aviso, setAviso] = useState(""),
     [itens, setItens] = useState<ItemCompra[]>([]),
-    [produto, setProduto] = useState(""),
     [buscaPeca, setBuscaPeca] = useState(""),
+    [precisaSeries, setPrecisaSeries] = useState(false),
+    [deposito, setDeposito] = useState<string | null>(null),
     [fornecedor, setFornecedor] = useState(""),
     [buscaFornecedor, setBuscaFornecedor] = useState(""),
     [rapido, setRapido] = useState<Fornecedor | null>(null),
-    [pagamento, setPagamento] = useState("depois"),
     [cancelando, setCancelando] = useState(false),
-    [chave, setChave] = useState(() => crypto.randomUUID());
+    [chave, setChave] = useState(() => novoId());
   const trava = useRef(false),
     id = params.get("compra");
+  const termoConsulta2 = useBuscaDebounced(busca);
   const q = useQuery({
-    queryKey: ["compras", a.demo, oficina, busca, pagina],
-    queryFn: () => listarCompras(a.demo, oficina, busca, pagina),
+    queryKey: ["compras", a.demo, oficina, termoConsulta2, pagina],
+    queryFn: ({ signal }) =>
+      listarCompras(a.demo, oficina, termoConsulta2, pagina, signal),
     enabled: gerente,
     refetchInterval: 30000,
   });
   const detalhe = useQuery({
     queryKey: ["compra", a.demo, oficina, id],
-    queryFn: () => consultarCompra(a.demo, oficina, id!),
+    queryFn: ({ signal }) => consultarCompra(a.demo, oficina, id!, signal),
     enabled: gerente && !!id,
     refetchInterval: 30000,
   });
+  const termoConsulta3 = useBuscaDebounced(buscaFornecedor);
   const fs = useQuery({
-    queryKey: ["fornecedores", a.demo, oficina, "opcoes", buscaFornecedor],
-    queryFn: () => listarFornecedores(a.demo, oficina, buscaFornecedor),
+    queryKey: ["fornecedores", a.demo, oficina, "opcoes", termoConsulta3],
+    queryFn: ({ signal }) =>
+      listarFornecedores(a.demo, oficina, termoConsulta3, false, 0, signal),
     enabled: nova && gerente,
   });
+  const termoConsulta4 = useBuscaDebounced(buscaPeca);
   const ps = useQuery({
-    queryKey: ["estoque", a.demo, oficina, "compra", buscaPeca],
-    queryFn: () => listarEstoque(a.demo, oficina, buscaPeca, "", 0),
+    queryKey: ["estoque", a.demo, oficina, "compra", termoConsulta4],
+    queryFn: ({ signal }) =>
+      listarEstoque(a.demo, oficina, termoConsulta4, "controlados", 0, signal),
     enabled: nova && gerente,
   });
   const total = itens.reduce(
     (s, i) => s + Math.round(i.quantidade * i.custo_centavos),
     0,
   );
-  async function executar(fn: () => Promise<unknown>, fechar = true) {
+  async function executar(
+    fn: (confirmadas: QueryKey[]) => Promise<unknown>,
+    fechar = true,
+    atualizaCompra = true,
+  ) {
     if (trava.current) return;
     trava.current = true;
     setOcupado(true);
     setErro("");
     try {
-      await fn();
-      await atualizarIntegracoes(qc);
+      const confirmadas: QueryKey[] = [];
+      await fn(confirmadas);
+      if (atualizaCompra) {
+        await qc.cancelQueries({ queryKey: ["compras", a.demo, oficina] });
+        await atualizarIntegracoes(qc, ["compras", "compra"], confirmadas);
+      }
       if (fechar) {
         setNova(false);
         setCancelando(false);
       }
-      setAviso("Registrado. Estoque e financeiro atualizados juntos.");
+      setAviso(
+        atualizaCompra
+          ? "Registrado. Estoque e financeiro atualizados juntos."
+          : "Fornecedor cadastrado.",
+      );
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
@@ -441,87 +135,131 @@ export function Compras() {
   }
   function enviar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!fornecedor) {
+      setErro("Selecione um fornecedor nos resultados da busca.");
+      return;
+    }
     const f = new FormData(e.currentTarget);
-    void executar(() =>
-      registrarCompra(a.demo, oficina, {
+    void executar(async (confirmadas) => {
+      await registrarCompra(a.demo, oficina, {
+        deposito_id: deposito,
         id: chave,
         fornecedor_id: fornecedor,
         documento: String(f.get("documento")).trim(),
         data: String(f.get("data")),
-        vencimento: String(f.get("vencimento")),
+        vencimento: hoje(),
         observacoes: String(f.get("observacoes")),
         itens,
-        pago:
-          pagamento === "depois"
-            ? 0
-            : pagamento === "total"
-              ? total
-              : Math.round(Number(f.get("pago")) * 100),
-        conta: String(f.get("conta") || "banco"),
-        forma: String(f.get("forma") || "pix"),
-      }),
-    );
+        pago: 0,
+        conta: "banco",
+        forma: "pix",
+        pagamento: lerPagamentoCompra(f, total),
+      });
+      // Abrir os detalhes já confirmados evita duas leituras concorrentes da compra.
+      const queryKey = ["compra", a.demo, oficina, chave];
+      await qc.fetchQuery({
+        queryKey,
+        queryFn: ({ signal }) => consultarCompra(a.demo, oficina, chave, signal),
+        staleTime: 0,
+      });
+      confirmadas.push(queryKey);
+      setNova(false);
+      setParams({ compra: chave });
+    });
   }
   if (!gerente)
     return (
       <section className="os-painel">
         <h1>Compras reservadas à gerência</h1>
         <p>
-          O proprietário ou gerente pode registrar compras com acesso ao estoque
-          e ao financeiro.
+          O proprietário ou gerente pode registrar compras com acesso ao estoque e ao
+          financeiro.
         </p>
         <Link to="/estoque">Voltar ao estoque</Link>
       </section>
     );
   return (
     <>
-      <div className="titulo-pagina">
-        <div>
-          <div className="sobretitulo">
-            <span className="linha-verde" />
-            PEÇAS RECEBIDAS, CONTAS ORGANIZADAS
+      {integrada ? (
+        <div className="central-compras-recebidas-barra">
+          <div>
+            <h2>Compras recebidas</h2>
+            <p>Consulte notas, itens e pagamentos dos fornecedores.</p>
           </div>
-          <h1>
-            Compras<span>.</span>
-          </h1>
-          <p>
-            Registre uma vez. As peças entram no estoque e o valor vai para o
-            financeiro.
-          </p>
+          <button
+            className="botao-primario"
+            onClick={() => {
+              if (trava.current) return;
+              setNova(true);
+              setChave(novoId());
+              setItens([]);
+              setFornecedor("");
+              setBuscaFornecedor("");
+              setBuscaPeca("");
+              setErro("");
+            }}
+          >
+            <Plus size={18} />
+            Registrar compra
+          </button>
+          <ImportarNfe />
         </div>
-        <button
-          className="botao-primario"
-          onClick={() => {
-            setNova(true);
-            setChave(crypto.randomUUID());
-            setItens([]);
-            setFornecedor("");
-            setBuscaFornecedor("");
-            setBuscaPeca("");
-            setProduto("");
-            setPagamento("depois");
-            setErro("");
-          }}
-        >
-          <Plus size={18} />
-          Registrar compra
-        </button>
-      </div>
+      ) : (
+        <>
+          <div className="titulo-pagina">
+            <div>
+              <div className="sobretitulo">
+                <span className="linha-verde" />
+                PEÇAS RECEBIDAS, CONTAS ORGANIZADAS
+              </div>
+              <h1>
+                Compras<span>.</span>
+              </h1>
+              <p>
+                Registre uma vez. Os itens entram no estoque e o valor vai para o
+                financeiro.
+              </p>
+            </div>
+            <button
+              className="botao-primario"
+              onClick={() => {
+                if (trava.current) return;
+                setNova(true);
+                setChave(novoId());
+                setItens([]);
+                setFornecedor("");
+                setBuscaFornecedor("");
+                setBuscaPeca("");
+                setErro("");
+              }}
+            >
+              <Plus size={18} />
+              Registrar compra
+            </button>
+          </div>
+          <div className="agil-acoes" style={{ marginBottom: 16 }}>
+            <ImportarNfe />
+          </div>
+        </>
+      )}
       {a.demo && (
-        <p className="aviso-cliente">
-          Demonstração · Dados salvos neste navegador.
-        </p>
+        <p className="aviso-cliente">Demonstração · Dados salvos neste navegador.</p>
       )}
       {aviso && (
         <p role="status" className="aviso-cliente">
           {aviso}
         </p>
       )}
-      <div className="compra-acoes compra-links">
-        <Link to="/estoque">← Estoque</Link>
-        <Link to="/fornecedores">Fornecedores</Link>
-        <Link to="/financeiro">Financeiro →</Link>
-      </div>
+      {!integrada && (
+        <div className="compra-acoes compra-links">
+          <Link to="/estoque">← Estoque</Link>
+          <Link className="botao-secundario" to="/compras?aba=pedidos">
+            Pedidos, cotações e reposição →
+          </Link>
+          <Link to="/fornecedores">Fornecedores</Link>
+          <Link to="/financeiro">Financeiro →</Link>
+        </div>
+      )}
       <section className="os-painel">
         <div className="compra-filtros">
           <label>
@@ -547,10 +285,7 @@ export function Compras() {
               <div className="compra-vazio">
                 <ShoppingBag size={34} />
                 <h3>Nenhuma compra por aqui</h3>
-                <p>
-                  Cadastre o fornecedor e registre as peças que chegaram à
-                  oficina.
-                </p>
+                <p>Cadastre o fornecedor e registre os itens recebidos.</p>
               </div>
             )}
             <div className="compra-lista">
@@ -567,14 +302,16 @@ export function Compras() {
                   <div>
                     <strong>{c.nome_fornecedor}</strong>
                     <span>
-                      {new Date(c.data + "T12:00:00").toLocaleDateString(
-                        "pt-BR",
-                      )}{" "}
-                      ·{" "}
                       {c.documento
                         ? `Documento ${c.documento}`
                         : "Sem documento informado"}
                     </span>
+                  </div>
+                  <div className="compra-data">
+                    <span>Data da compra</span>
+                    <strong>
+                      {new Date(c.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                    </strong>
                   </div>
                   <div>
                     <strong>{dinheiro(c.total_centavos)}</strong>
@@ -588,6 +325,7 @@ export function Compras() {
                             : `A pagar · ${new Date(c.vencimento + "T12:00:00").toLocaleDateString("pt-BR")}`}
                     </span>
                   </div>
+                  <span className="compra-abrir">Ver compra →</span>
                 </button>
               ))}
             </div>
@@ -609,32 +347,35 @@ export function Compras() {
         <form className="formulario-cliente" onSubmit={enviar}>
           <fieldset disabled={ocupado}>
             <p className="aviso-cliente">
-              Use esta tela quando as peças chegarem. A confirmação dá entrada
-              no estoque e gera a conta do fornecedor.
+              Use esta tela quando os itens chegarem. A confirmação dá entrada no
+              estoque e gera a conta do fornecedor.
             </p>
-            <label>
-              Buscar fornecedor
-              <input
-                value={buscaFornecedor}
-                onChange={(e) => setBuscaFornecedor(e.target.value)}
-                placeholder="Nome ou documento"
+            {!a.demo && (
+              <EscolherDeposito
+                rotulo="Receber em qual local de estoque?"
+                valor={deposito}
+                alterar={setDeposito}
               />
-            </label>
-            <label>
-              Fornecedor
-              <select
-                value={fornecedor}
-                onChange={(e) => setFornecedor(e.target.value)}
-                required
-              >
-                <option value="">Selecione o fornecedor</option>
-                {fs.data?.itens.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.nome}
-                  </option>
-                ))}
-              </select>
-            </label>
+            )}
+            <BuscaCompra
+              rotulo="Fornecedor"
+              valor={buscaFornecedor}
+              alterar={(v) => {
+                setBuscaFornecedor(v);
+                setFornecedor("");
+              }}
+              obrigatorio
+              carregando={fs.isFetching || buscaFornecedor !== termoConsulta3}
+              opcoes={(fs.data?.itens ?? []).map((f) => ({
+                id: f.id,
+                nome: f.nome,
+                detalhe: f.documento || f.telefone || undefined,
+              }))}
+              selecionar={(f) => {
+                setFornecedor(f.id);
+                setBuscaFornecedor(f.nome);
+              }}
+            />
             {fs.isError && <p role="alert">{erroPublico(fs.error)}</p>}
             <button
               type="button"
@@ -656,66 +397,62 @@ export function Compras() {
               </label>
               <label>
                 Nota / documento
-                <input
-                  name="documento"
-                  maxLength={100}
-                  placeholder="Opcional"
-                />
+                <input name="documento" maxLength={100} placeholder="Opcional" />
               </label>
             </div>
-            <h3>Peças recebidas</h3>
-            <label>
-              Buscar peça no estoque
-              <input
-                value={buscaPeca}
-                onChange={(e) => setBuscaPeca(e.target.value)}
-                placeholder="Nome ou código"
-              />
-            </label>
-            <div className="compra-acoes">
-              <select
-                aria-label="Peça para adicionar"
-                value={produto}
-                onChange={(e) => setProduto(e.target.value)}
-              >
-                <option value="">Selecione uma peça</option>
-                {ps.data?.itens
-                  .filter(
-                    (p) =>
-                      p.saldo !== null &&
-                      !itens.some((i) => i.produto_id === p.id),
-                  )
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.descricao} · {p.unidade}
-                    </option>
-                  ))}
-              </select>
-              <button
-                type="button"
-                className="botao-secundario"
-                disabled={!produto}
-                onClick={() => {
-                  const p = ps.data!.itens.find((p) => p.id === produto)!;
-                  setItens([
-                    ...itens,
-                    {
-                      produto_id: p.id,
-                      descricao: p.descricao,
-                      quantidade: 1,
-                      custo_centavos: p.custo_centavos,
-                    },
-                  ]);
-                  setProduto("");
-                }}
-              >
-                Adicionar peça
-              </button>
-            </div>
+            <h3>{termos.recebidos}</h3>
+            <BuscaCompra
+              rotulo={termos.itemEstoque}
+              valor={buscaPeca}
+              alterar={setBuscaPeca}
+              carregando={ps.isFetching || buscaPeca !== termoConsulta4}
+              opcoes={(ps.data?.itens ?? [])
+                .filter(
+                  (p) => p.saldo !== null && !itens.some((i) => i.produto_id === p.id),
+                )
+                .map((p) => ({
+                  id: p.id,
+                  nome: p.descricao,
+                  detalhe: [
+                    p.codigo || "Sem código",
+                    "Saldo: " + p.saldo + " " + p.unidade,
+                    "Custo: " + dinheiro(p.custo_centavos),
+                  ].join(" · "),
+                }))}
+              selecionar={(o) => {
+                const p = ps.data?.itens.find((p) => p.id === o.id);
+                if (!p || p.saldo === null) return;
+                setPrecisaSeries(!!p.rastreado);
+                if (p.rastreado) return;
+                setItens((atuais) =>
+                  atuais.some((i) => i.produto_id === p.id)
+                    ? atuais
+                    : [
+                        ...atuais,
+                        {
+                          produto_id: p.id,
+                          descricao: p.descricao,
+                          unidade: p.unidade,
+                          quantidade: 1,
+                          custo_centavos: p.custo_centavos,
+                        },
+                      ],
+                );
+                setBuscaPeca("");
+              }}
+            />
             {ps.isError && <p role="alert">{erroPublico(ps.error)}</p>}
+            {precisaSeries && (
+              <p className="aviso-cliente">
+                Este produto é controlado por série ou IMEI.{" "}
+                <Link to="/compras?aba=pedidos">
+                  Abra um pedido para identificar as unidades ao receber →
+                </Link>
+              </p>
+            )}
             <p className="texto-suave">
-              Só aparecem peças com estoque controlado. Cadastre novas peças na
-              tela de estoque.
+              Só aparecem itens com estoque controlado. Cadastre novos itens na tela de
+              estoque.
             </p>
             {itens.map((i, k) => (
               <article className="compra-item" key={i.produto_id}>
@@ -735,17 +472,15 @@ export function Compras() {
                     Quantidade
                     <input
                       type="number"
-                      min="0.001"
+                      min={passoProduto(i.unidade || "un")}
                       max="1000000"
-                      step="0.001"
+                      step={passoProduto(i.unidade || "un")}
                       required
                       value={i.quantidade || ""}
                       onChange={(e) =>
                         setItens(
                           itens.map((x, n) =>
-                            n === k
-                              ? { ...x, quantidade: Number(e.target.value) }
-                              : x,
+                            n === k ? { ...x, quantidade: Number(e.target.value) } : x,
                           ),
                         )
                       }
@@ -789,69 +524,7 @@ export function Compras() {
               <span>Total da compra</span>
               <strong>{dinheiro(total)}</strong>
             </div>
-            <h3>Como ficou o pagamento?</h3>
-            <label>
-              Situação do pagamento
-              <select
-                value={pagamento}
-                onChange={(e) => setPagamento(e.target.value)}
-              >
-                <option value="depois">Vou pagar depois</option>
-                <option value="parcial">Paguei uma parte</option>
-                <option value="total">Paguei tudo</option>
-              </select>
-            </label>
-            <label>
-              {pagamento === "total"
-                ? "Vencimento da conta"
-                : "Vencimento combinado para pagar"}
-              <input
-                type="date"
-                name="vencimento"
-                defaultValue={hoje()}
-                required
-              />
-            </label>
-            {pagamento === "parcial" && (
-              <label>
-                Valor já pago (R$)
-                <input
-                  name="pago"
-                  type="number"
-                  min="0.01"
-                  max={Math.max(0, total - 1) / 100}
-                  step="0.01"
-                  required
-                />
-              </label>
-            )}
-            {pagamento !== "depois" && (
-              <>
-                <p>O pagamento será registrado na data da compra.</p>
-                <div className="dupla-campos">
-                  <label>
-                    Conta
-                    <select name="conta" defaultValue="banco">
-                      {Object.entries(contas).map(([v, n]) => (
-                        <option value={v} key={v}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Forma
-                    <select name="forma">
-                      {Object.entries(formas).map(([v, n]) => (
-                        <option value={v} key={v}>
-                          {n}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              </>
-            )}
+            <PagamentoCompra key={chave} total={total} />
             <label>
               Observações
               <textarea name="observacoes" maxLength={2000} />
@@ -862,7 +535,7 @@ export function Compras() {
             >
               {ocupado
                 ? "Registrando…"
-                : "Confirmar compra e entrada das peças"}
+                : `Confirmar compra e entrada ${termos.dosItens}`}
             </button>
           </fieldset>
         </form>
@@ -883,16 +556,20 @@ export function Compras() {
             valor={rapido}
             ocupado={ocupado}
             salvar={(f) =>
-              void executar(async () => {
-                await salvarFornecedor(a.demo, oficina, {
-                  ...f,
-                  telefone: normalizarTelefone(f.telefone),
-                });
-                setBuscaFornecedor(f.nome);
-                setFornecedor(f.id);
-                await qc.invalidateQueries({ queryKey: ["fornecedores"] });
-                setRapido(null);
-              }, false)
+              void executar(
+                async () => {
+                  await salvarFornecedor(a.demo, oficina, {
+                    ...f,
+                    telefone: normalizarTelefone(f.telefone),
+                  });
+                  setBuscaFornecedor(f.nome);
+                  setFornecedor(f.id);
+                  await qc.invalidateQueries({ queryKey: ["fornecedores"] });
+                  setRapido(null);
+                },
+                false,
+                false,
+              )
             }
           />
         )}
@@ -916,9 +593,7 @@ export function Compras() {
                   ? `Documento: ${detalhe.data.documento}`
                   : "Documento não informado"}{" "}
                 ·{" "}
-                {new Date(detalhe.data.data + "T12:00:00").toLocaleDateString(
-                  "pt-BR",
-                )}
+                {new Date(detalhe.data.data + "T12:00:00").toLocaleDateString("pt-BR")}
               </p>
               <p>{detalhe.data.observacoes}</p>
               {detalhe.data.itens.map((i) => (
@@ -927,13 +602,20 @@ export function Compras() {
                   <p>
                     {i.quantidade} × {dinheiro(i.custo_centavos)} ={" "}
                     {dinheiro(
-                      i.total_centavos ??
-                        Math.round(i.quantidade * i.custo_centavos),
+                      i.total_centavos ?? Math.round(i.quantidade * i.custo_centavos),
                     )}
                   </p>
                 </div>
               ))}
-              <PagamentosIntegrados titulo={detalhe.data.titulo} />
+              {(detalhe.data.titulos || [detalhe.data.titulo]).map((t, i, lista) => (
+                <PagamentosIntegrados
+                  key={t.id}
+                  titulo={t}
+                  rotulo={
+                    lista.length > 1 ? `Parcela ${i + 1} de ${lista.length}` : undefined
+                  }
+                />
+              ))}
               {detalhe.data.cancelado_em ? (
                 <p className="aviso-cliente">
                   Compra cancelada: {detalhe.data.motivo_cancelamento}
@@ -941,7 +623,11 @@ export function Compras() {
               ) : (
                 <button
                   className="botao-secundario"
-                  onClick={() => setCancelando(!cancelando)}
+                  disabled={ocupado || detalhe.isFetching}
+                  onClick={() => {
+                    if (trava.current) return;
+                    setCancelando((valor) => !valor);
+                  }}
                 >
                   Cancelar esta compra
                 </button>
@@ -953,19 +639,14 @@ export function Compras() {
                     e.preventDefault();
                     const f = new FormData(e.currentTarget);
                     void executar(() =>
-                      cancelarCompra(
-                        a.demo,
-                        oficina,
-                        id!,
-                        String(f.get("motivo")),
-                      ),
+                      cancelarCompra(a.demo, oficina, id!, String(f.get("motivo"))),
                     );
                   }}
                 >
                   <p>
-                    Os pagamentos precisam estar estornados e as peças não podem
-                    ter alterações posteriores. O cancelamento reverte o estoque
-                    e a conta juntos.
+                    Os pagamentos precisam estar estornados e os itens não podem ter
+                    alterações posteriores. O cancelamento reverte o estoque e a conta
+                    juntos.
                   </p>
                   {erro && (
                     <p role="alert" className="erro-formulario">

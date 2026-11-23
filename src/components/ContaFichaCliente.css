@@ -1,0 +1,144 @@
+.dialogo.conta-ficha-dialogo {
+  width: min(900px, calc(100vw - 24px));
+  max-width: 900px;
+}
+.conta-ficha {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding-top: 18px;
+}
+.conta-ficha-ajuda {
+  margin: 0;
+  color: var(--ui-suave);
+  line-height: 1.6;
+  font-size: 13px;
+}
+.conta-ficha-resumo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--ui-fundo);
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  padding: 16px;
+}
+.conta-ficha-resumo > span,
+.conta-ficha-rodape > span {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.conta-ficha-resumo strong {
+  font-size: 26px;
+}
+.conta-ficha-resumo small {
+  color: var(--ui-suave);
+}
+.conta-ficha-selecao {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ui-suave);
+}
+.conta-ficha-lista {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.dialogo.conta-ficha-dialogo .conta-ficha-linha {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  margin: 0;
+}
+.dialogo.conta-ficha-dialogo .conta-ficha-linha.marcada {
+  border-color: var(--verde, #88a75f);
+  background: var(--ui-fundo);
+}
+.dialogo.conta-ficha-dialogo .conta-ficha-linha input {
+  appearance: auto;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  padding: 0;
+}
+.conta-ficha-descricao {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.conta-ficha-descricao > strong {
+  display: flex;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  font-size: 15px;
+}
+.conta-ficha-descricao small,
+.conta-ficha-valor small {
+  color: var(--ui-suave);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.conta-ficha-valor {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.conta-ficha-vazia {
+  padding: 24px 12px;
+  text-align: center;
+  background: var(--ui-fundo);
+  border-radius: 10px;
+}
+.conta-ficha-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-top: 1px solid var(--ui-borda);
+  padding: 16px 0 0;
+}
+.conta-ficha-rodape strong {
+  font-size: 22px;
+}
+.conta-ficha-rodape button {
+  min-height: 44px;
+}
+@media (max-width: 520px) {
+  .dialogo.conta-ficha-dialogo .conta-ficha-linha {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+  .conta-ficha-valor {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+  }
+  .conta-ficha-rodape button {
+    width: 100%;
+  }
+  .conta-ficha-resumo strong {
+    font-size: 24px;
+  }
+}

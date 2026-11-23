@@ -1,0 +1,30 @@
+{
+  "data": "2026-10-06",
+  "alteracao": "Concluir serviço na conferência; parar por motivo; retomar na etapa anterior",
+  "banco": {
+    "projeto": "hzihxtjirttetnfdujcx",
+    "migracao": "20261006000300_acoes_rapidas_mapa.sql",
+    "sha256": "ccf2c50c29e8f8a6ff7cc7521d7e5ec97eba9de72b40a6abe54460aaf2789260",
+    "aplicacao": "Success. No rows returned no editor SQL do Supabase",
+    "suites_locais": 19,
+    "verificacoes_aprovadas": 615,
+    "verificacoes_novas": 47,
+    "cobertura": ["conclusão de itens pendentes", "itens cancelados e já concluídos preservados", "reversão atômica de falhas", "revisão e clique duplicado", "isolamento por oficina e plano", "permissão de funcionário", "parada e retomada com histórico", "entrega e financeiro preservados"]
+  },
+  "interface": {
+    "oficina": "[VALIDAÇÃO] Atendimento completo 2026-09-30 19:41:46",
+    "os_criada": "872b7d11-91a5-4240-a940-44c9c96c5dbd",
+    "numero_os": 10,
+    "cliente": "[TESTE COMISSÕES 06/10] Cliente fictício",
+    "situacao_final": "Pronta para entrega",
+    "item_concluido": "[TESTE MAPA] Conferência rápida",
+    "fluxo": ["Recebida", "Em execução", "Parada por peças com detalhes", "Retomada à execução", "Conferência", "Concluir serviço", "Pronta para entrega", "Verificação do item e histórico", "Voltar à conferência", "Parada por aprovação sem detalhes", "Retomar à conferência", "Concluir novamente após retorno"],
+    "modos_verificados": ["quadro no desktop", "lista no celular"],
+    "viewport_celular": "390x844",
+    "largura_util_celular": 375,
+    "largura_conteudo_celular": 375,
+    "altura_minima_botoes": 44,
+    "viewport_restaurado": true,
+    "observacao": "Somente a nova OS fictícia foi alterada nesta validação. Nenhuma entrega ou cobrança real foi efetuada."
+  }
+}

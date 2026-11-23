@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {criarBancoLocal} from './banco-local.mjs';
+import {umMesDepois} from '../../src/lib/vencimentoPagamento.ts';
+assert.equal(umMesDepois('2026-10-08'),'2026-11-08');
+assert.equal(umMesDepois('2026-01-31'),'2026-02-28');
+assert.equal(umMesDepois('2028-01-31'),'2028-02-29');
+assert.equal(umMesDepois('2026-12-08'),'2027-01-08');
+const db=await criarBancoLocal('20261008001100');
+const scalar=async(s,a=[])=>Object.values((await db.query(s,a)).rows[0])[0];
+try {
+const uid=randomUUID();
+await db.exec(`insert into auth.users values('${uid}');select set_config('request.jwt.claim.sub','${uid}',false);set role authenticated`);
+const w=await scalar("select public.criar_oficina('Teste pagamentos',null)");
+await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id='${w}';set role authenticated`);
+const day=await scalar("select (now() at time zone 'America/Sao_Paulo')::date::text");
+const t=randomUUID();
+await scalar('select public.salvar_titulo_financeiro($1,$2,$3)',[w,t,{natureza:'receber',categoria:'outras_receitas',descricao:'Teste parcial',valor_centavos:10000,competencia:day,vencimento:day}]);
+const key=randomUUID();
+const call=(value,date,k=key)=>scalar('select public.baixar_titulo_com_restante($1,$2,$3,$4,0,$5,\'banco\',\'pix\',$6)',[w,t,k,value,day,date]);
+await assert.rejects(()=>call(3000,null));
+assert.equal(await scalar('select count(*) from public.baixas_financeiras'),0);
+const b=await call(3000,umMesDepois(day));
+assert.equal(await call(3000,umMesDepois(day)),b);
+assert.equal(await scalar('select count(*) from public.baixas_financeiras'),1);
+const title=(await db.query('select vencimento::text,pagamento_combinado from public.titulos_financeiros where id=$1',[t])).rows[0];
+assert.equal(title.vencimento,umMesDepois(day));assert.equal(title.pagamento_combinado,true);
+await assert.rejects(()=>call(7000,day,randomUUID()));
+assert.equal(await scalar('select sum(valor_centavos)::int from public.baixas_financeiras'),3000);
+await db.exec('reset role');
+assert.equal(await scalar('select aberto_centavos::int from private.financeiro_saldos where id=$1',[t]),7000);
+console.log('PASS calendário, vencimento, saldo parcial, rollback e idempotência');
+} finally {await db.close();}

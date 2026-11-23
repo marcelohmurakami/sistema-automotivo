@@ -1,0 +1,14 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {DocumentoCliente} from '../../src/components/DocumentoCliente';
+import {imprimirDocumentoCliente} from '../../src/services/impressaoDocumentoCliente';
+import {cenarioOrcamento} from './orcamentos-impressao-dados.mjs';
+import '../../src/index.css';
+import '../../src/App.css';
+import '../../src/Tema.css';
+import '../../src/Clareza.css';
+import '../../src/pages/CentralDocumentos.css';
+const params=new URLSearchParams(location.search),{documento}=cenarioOrcamento(params.get('perfil')||'mecanica',params.get('caso')||'normal');
+window.qaDocumento=documento;
+document.documentElement.dataset.tema='escuro';
+createRoot(document.getElementById('root')).render(<main style={{maxWidth:900,margin:'24px auto',padding:'0 12px'}}><button id="imprimir" onClick={()=>imprimirDocumentoCliente(window.open('','_blank'),documento)}>Imprimir orçamento</button><div className="docs-papel"><DocumentoCliente documento={documento}/></div></main>);

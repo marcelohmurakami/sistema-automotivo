@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {normalizarBuscaOrcamentos} from '../src/lib/buscaOrcamentos.ts';
+test('Número copiado da lista funciona com #, espaços e zeros',()=>{for(const s of ['#0038',' # 0038 ','0038','38'])assert.equal(normalizarBuscaOrcamentos(s),'38');assert.equal(normalizarBuscaOrcamentos('#0000'),'0');});
+test('Não altera nomes, placas, modelos nem números longos',()=>{for(const s of ['João da Silva','ABC1D23','Gol 2008','A#0038','1.500','99999999999999999999'])assert.equal(normalizarBuscaOrcamentos(' '+s+' '),s);assert.equal(normalizarBuscaOrcamentos('  '),'');});

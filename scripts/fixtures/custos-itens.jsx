@@ -1,0 +1,22 @@
+import React,{useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {MemoryRouter} from 'react-router-dom';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {ContextoAcesso} from '../../src/auth/contexto';
+import {Catalogo} from '../../src/pages/Catalogo';
+import {FichaCliente} from '../../src/components/FichaCliente';
+import {LucroServico} from '../../src/components/LucroServico';
+import {EditorItensOS} from '../../src/components/EditorItensOS';
+import {useDesconto} from '../../src/lib/useDesconto';
+import {Dialogo} from '../../src/components/Dialogo';
+import {especialidades} from '../../src/lib/especialidades';
+import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
+import '../../src/pages/Clientes.css';import '../../src/pages/OrdensServico.css';
+import '../../src/pages/Financeiro.css';import '../../src/pages/Servicos.css';
+const p=new URLSearchParams(location.search),perfil=p.get('perfil')||'mecanica',ramo=especialidades[perfil].ramo;
+const acesso={demo:false,usuario:'qa',oficina:{id:'empresa-ficticia',nome:'Empresa QA',especialidade:perfil,ramo,perfil:p.get('papel')||'owner'},permite:()=>true};
+const qc=new QueryClient({defaultOptions:{queries:{retry:false,staleTime:Infinity},mutations:{retry:false}}});
+document.documentElement.dataset.tema=p.get('tema')||'escuro';window.fixturePerfis=Object.keys(especialidades);
+function Editor(){const [itens,setItens]=useState([]),desconto=useDesconto(itens.reduce((s,i)=>s+Math.round(i.quantidade*i.preco_unitario_centavos),0));window.fixtureItens=itens;return <EditorItensOS itens={itens} alterar={setItens} catalogo={[]} desconto={desconto} aoEditarItem={()=>{}} aoProcessar={()=>{}}/>;}
+const tela=p.get('tela')||'os';
+createRoot(document.getElementById('root')).render(<QueryClientProvider client={qc}><ContextoAcesso.Provider value={acesso}><MemoryRouter><div className="estrutura-sistema"><main style={{padding:20}}>{tela==='catalogo'?<Catalogo/>:<Dialogo aberto titulo={tela==='cliente'?'Ficha do cliente':tela==='editor'?'Nova OS':'Lucro e custos da OS'} fechar={()=>{}} classe="dialogo-ficha-cliente">{tela==='cliente'?<FichaCliente id="cliente" editar={()=>{}}/>:tela==='editor'?<Editor/>:<LucroServico id="os"/>}</Dialogo>}</main></div></MemoryRouter></ContextoAcesso.Provider></QueryClientProvider>);

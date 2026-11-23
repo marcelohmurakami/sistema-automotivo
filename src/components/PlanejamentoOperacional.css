@@ -1,0 +1,287 @@
+.plano-op {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  width: 100%;
+  grid-column: 1/-1;
+  color: var(--ui-texto);
+  line-height: 1.5;
+}
+.plano-op > *,
+.plano-op fieldset > *,
+.plano-cabecalho > * {
+  min-width: 0;
+}
+.plano-op h1 {
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 750;
+  line-height: 1.25;
+}
+.plano-op h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.plano-op details,
+.plano-op > details {
+  padding: 1rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.plano-op summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  list-style: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.plano-op summary::-webkit-details-marker {
+  display: none;
+}
+.plano-op summary::before {
+  content: "▸";
+  flex: 0 0 10px;
+  color: var(--ui-suave);
+}
+.plano-op details[open] > summary::before {
+  content: "▾";
+}
+.plano-op summary ~ * {
+  margin-top: 1rem;
+}
+details.plano-op > summary ~ * {
+  margin-top: 0;
+}
+.plano-op label {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.plano-op
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not(
+    [type="hidden"]
+  ) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-fundo);
+  color: var(--ui-texto);
+  font: inherit;
+  font-weight: 400;
+}
+.plano-op :is(input, textarea)::placeholder {
+  color: var(--ui-suave);
+  opacity: 1;
+}
+.plano-op textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.plano-op input[type="file"] {
+  overflow: hidden;
+}
+.plano-op input[type="file"]::file-selector-button {
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-right: 8px;
+  background: var(--ui-hover);
+  color: var(--ui-texto);
+  font: inherit;
+  cursor: pointer;
+}
+.plano-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+.plano-dias,
+.plano-linha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.plano-dias label,
+.plano-op label.plano-check {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.plano-op input:is([type="checkbox"], [type="radio"]) {
+  flex: 0 0 18px;
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--ui-acento);
+}
+.plano-op .plano-concluir-visita {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  padding: 0.85rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+}
+.plano-concluir-visita input {
+  margin-top: 0.2rem;
+}
+.plano-concluir-visita span {
+  display: grid;
+  gap: 0.35rem;
+}
+.plano-concluir-visita small {
+  font-weight: 400;
+}
+.plano-linha {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.plano-linha > span {
+  flex: 1;
+  min-width: min(120px, 100%);
+  overflow-wrap: anywhere;
+}
+.plano-op fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.plano-op legend {
+  font-weight: 700;
+  padding: 0 0 12px;
+}
+.plano-previa {
+  max-height: 320px;
+  overflow: auto;
+}
+.plano-op [role="alert"] {
+  padding: 12px;
+  border: 1px solid var(--ui-perigo);
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.plano-op button,
+.estrutura-sistema .plano-op :is(.botao-primario, .botao-secundario) {
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.plano-op button:not([class]) {
+  padding: 8px 14px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 9px;
+  background: var(--ui-painel);
+  color: var(--ui-texto);
+  font-weight: 600;
+}
+.plano-op button:not([class]):hover:not(:disabled) {
+  background: var(--ui-hover);
+}
+.plano-op small {
+  color: var(--ui-suave);
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 1;
+}
+.plano-lista {
+  display: grid;
+  gap: 0.75rem;
+}
+.plano-card {
+  padding: 1rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
+  background: var(--ui-painel);
+}
+.plano-status {
+  padding: 0.3rem 0.65rem;
+  border-radius: 1rem;
+  background: var(--ui-hover);
+  color: var(--ui-texto);
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.plano-acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.plano-cabecalho > div:first-child {
+  flex: 1 1 260px;
+}
+.plano-cabecalho p {
+  color: var(--ui-suave);
+  margin-top: 4px;
+  max-width: 68ch;
+}
+.plano-op :is(h2, h3, p, strong, small, summary) {
+  overflow-wrap: anywhere;
+}
+.plano-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.plano-offline {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+.plano-op progress {
+  width: 100%;
+}
+/* O formulário já fornece o espaçamento; os módulos não precisam somar margens. */
+:is(.plano-op, .formulario-cliente)
+  :is(
+    .planejamento-visita,
+    .reserva-recursos,
+    .distribuicao-agenda,
+    .os-detalhes.plano-op
+  ) {
+  margin-block: 0;
+}
+@media (max-width: 600px) {
+  .plano-offline {
+    padding: 16px;
+  }
+  .plano-campos {
+    grid-template-columns: 1fr;
+  }
+  .plano-linha {
+    align-items: flex-start;
+  }
+  .plano-cabecalho > label {
+    width: 100%;
+  }
+  .plano-op :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+    font-size: 16px;
+  }
+  .plano-op details {
+    padding: 12px;
+  }
+}

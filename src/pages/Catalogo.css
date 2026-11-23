@@ -1,6 +1,6 @@
 .catalogo-resumo {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin: 24px 0;
 }
@@ -74,24 +74,58 @@
   text-decoration: underline;
 }
 .catalogo-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
-}
-.catalogo-card {
-  padding: 18px;
-  border: 1px solid var(--borda);
-  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+}
+.catalogo-card {
+  padding: 20px 0;
+  border: 0;
+  border-top: 1px solid var(--borda);
+  border-radius: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 180px 230px;
+  align-items: center;
+  gap: 20px;
   min-width: 0;
+}
+.catalogo-card > p {
+  grid-column: 2;
+  margin: 0;
+}
+.catalogo-card .catalogo-acoes {
+  grid-column: 4;
+  grid-row: 1;
 }
 .catalogo-card h2 {
   font-size: 17px;
   line-height: 1.5;
   margin: 0;
   overflow-wrap: anywhere;
+}
+.catalogo-card {
+  cursor: pointer;
+}
+.catalogo-card:hover {
+  background: #8294890b;
+}
+.catalogo-abrir-ficha {
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  padding: 4px 0;
+}
+.catalogo-abrir-ficha small {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.catalogo-abrir-ficha:focus-visible {
+  outline: 2px solid var(--lima);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 .catalogo-card-topo {
   display: flex;
@@ -121,11 +155,11 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin-top: auto;
+  margin-top: 0;
   flex-wrap: wrap;
 }
 .catalogo-preco strong {
-  font-size: 25px;
+  font-size: 18px;
 }
 .catalogo-preco span,
 .catalogo-card > p {
@@ -205,7 +239,33 @@
     flex: 1;
   }
   .catalogo-preco strong {
-    font-size: 23px;
+    font-size: 18px;
+  }
+}
+@media (max-width: 1100px) {
+  .catalogo-card {
+    grid-template-columns: 44px minmax(0, 1fr) 160px;
+  }
+  .catalogo-card .catalogo-acoes {
+    grid-column: 2 / -1;
+    grid-row: auto;
+    justify-content: flex-end;
+  }
+  .catalogo-acoes button {
+    flex: 0 1 auto;
+  }
+}
+@media (max-width: 600px) {
+  .catalogo-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .catalogo-preco {
+    grid-column: 2;
+  }
+  .catalogo-card .catalogo-acoes {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 @media (max-width: 600px) {

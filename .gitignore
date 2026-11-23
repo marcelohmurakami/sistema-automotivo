@@ -16,6 +16,8 @@ dist-ssr
 !.env.example
 tmp/
 backups/
+/output/
+/LOGINS-E-SENHAS.local.txt
 docs/validacao-real/
 *.dump
 *.dump.partial

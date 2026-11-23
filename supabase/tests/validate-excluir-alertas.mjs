@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { criarBancoLocal } from './banco-local.mjs';
+const db = await criarBancoLocal('20261009000600');
+const one = async (sql, args = []) => Object.values((await db.query(sql, args)).rows[0])[0];
+try {
+  const usuario = randomUUID();
+  await db.exec(`insert into auth.users values ('${usuario}'); select set_config('request.jwt.claim.sub','${usuario}',false); set role authenticated;`);
+  const oficina = await one("select public.criar_oficina('Teste exclusão alertas',null)");
+  await db.exec(`reset role; update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id='${oficina}';`);
+  const titulo = await one(`insert into public.titulos_financeiros(oficina_id,natureza,descricao,categoria,valor_centavos,competencia,vencimento) values ($1,'receber','Conta de teste','outras_receitas',10000,current_date,current_date) returning id`, [oficina]);
+  await db.exec('set role authenticated');
+  const consultar = () => one('select public.consultar_alertas($1)', [oficina]);
+  const alerta = (await consultar()).find(a => a.id === titulo);
+  assert.ok(alerta);
+  await one('select public.excluir_alerta($1,$2)', [oficina, alerta.chave]);
+  await one('select public.excluir_alerta($1,$2)', [oficina, alerta.chave]);
+  assert.equal((await consultar()).some(a => a.id === titulo), false);
+  await one('select public.marcar_alertas_lidos($1,$2)', [oficina, [alerta.chave]]);
+  assert.equal((await consultar()).some(a => a.id === titulo), false);
+  await db.exec('reset role');
+  assert.equal(await one('select valor_centavos from public.titulos_financeiros where id=$1', [titulo]), 10000);
+  assert.equal(await one('select cancelado_em from public.titulos_financeiros where id=$1', [titulo]), null);
+  await db.query('update public.titulos_financeiros set vencimento=current_date+1 where id=$1', [titulo]);
+  await db.exec('set role authenticated');
+  assert.ok((await consultar()).some(a => a.id === titulo));
+  const estranho = randomUUID();
+  await db.exec(`reset role; insert into auth.users values('${estranho}'); select set_config('request.jwt.claim.sub','${estranho}',false); set role authenticated;`);
+  await assert.rejects(one('select public.excluir_alerta($1,$2)', [oficina, alerta.chave]));
+  console.log('PASS exclusão persistente e idempotente; conta preservada; novo prazo gera aviso; acesso entre empresas bloqueado');
+} finally { await db.close(); }

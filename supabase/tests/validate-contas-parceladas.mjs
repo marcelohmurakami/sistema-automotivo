@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import ts from 'typescript';
+import { criarBancoLocal } from './banco-local.mjs';
+const js=ts.transpile(readFileSync('src/lib/parcelasFinanceiras.ts','utf8'),{module:ts.ModuleKind.ESNext});
+const {gerarParcelasFinanceiras}=await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
+const parcelas=gerarParcelasFinanceiras(10000,3,'2027-01-31');
+assert.deepEqual(parcelas.map(p=>p.valor_centavos),[3334,3333,3333]);
+assert.deepEqual(parcelas.map(p=>p.vencimento),['2027-01-31','2027-02-28','2027-03-31']);
+assert.throws(()=>gerarParcelasFinanceiras(1,3,'2027-01-31'));
+const db=await criarBancoLocal('20261009000900');
+const one=async(s,a=[])=>Object.values((await db.query(s,a)).rows[0])[0];
+try {
+ const u=randomUUID();await db.exec(`insert into auth.users values('${u}');select set_config('request.jwt.claim.sub','${u}',false);set role authenticated;`);
+ const w=await one("select public.criar_oficina('Teste parcelas',null)");
+ await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id='${w}';set role authenticated;`);
+ const d={natureza:'receber',descricao:'Venda combinada',categoria:'outras_receitas',valor_centavos:10000,competencia:'2026-10-09',vencimento:'2027-01-31',pessoa:'Cliente',observacoes:'Combinado'};
+ const call=(data,ps,key=randomUUID())=>one('select public.criar_conta_parcelada($1,$2,$3,$4)',[w,key,data,JSON.stringify(ps)]);
+ const key=randomUUID(),ids=await call(d,parcelas,key);assert.equal(ids.length,3);
+ assert.deepEqual(await call(d,parcelas,key),ids);
+ const custos=await call({...d,natureza:'pagar',categoria:'terceiros'},[{valor_centavos:6000,vencimento:'2026-10-10'},{valor_centavos:4000,vencimento:'2026-11-10'}]);assert.equal(custos.length,2);
+ await assert.rejects(call(d,[...parcelas.slice(0,2),{...parcelas[2],valor_centavos:3332}]),/soma/);
+ await assert.rejects(call(d,[...parcelas.slice(0,2),{...parcelas[2],vencimento:'invalid'}]));
+ await assert.rejects(call({...d,descricao:'a'},parcelas),/descrição/);
+ await db.exec('reset role');
+ assert.equal(await one('select count(*)::int from public.titulos_financeiros where oficina_id=$1',[w]),5);
+ assert.equal(await one('select sum(valor_centavos)::int from public.titulos_financeiros where id=any($1::uuid[])',[ids]),10000);
+ assert.equal(await one('select count(distinct competencia)::int from public.titulos_financeiros where id=any($1::uuid[])',[ids]),1);
+ assert.equal(await one('select count(*)::int from public.baixas_financeiras where oficina_id=$1',[w]),0);
+ const outsider=randomUUID();await db.exec(`insert into auth.users values('${outsider}');select set_config('request.jwt.claim.sub','${outsider}',false);set role authenticated;`);
+ await assert.rejects(call(d,parcelas));
+ console.log('PASS parcelas mensais, centavos, valores distintos, receita/despesa, idempotência, rollback integral, sem movimentar caixa, isolamento de acesso');
+}finally{await db.close();}

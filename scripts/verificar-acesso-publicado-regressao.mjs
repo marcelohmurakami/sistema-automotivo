@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';import{readFile,writeFile,mkdir}from'node:fs/promises';import{resolve}from'node:path';import{chromium}from'playwright';
+const out=resolve(process.env.QA_OUTPUT||'output/regressao-mapa-orcamentos-os-20261116/compartilhado/acesso-publicado'),base='https://patio-gestao-peach.vercel.app';await mkdir(out,{recursive:true});
+const contas=JSON.parse(await readFile('output/contas-teste/20261019/credenciais.local.json','utf8')).contas.filter(c=>c.ramo==='automotivo'&&(!process.env.QA_PERFIS||process.env.QA_PERFIS.split(',').includes(c.especialidade))),health=await fetch(base+'/health.json?qa='+Date.now()).then(r=>r.json()),resultados=[],erros=[];
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});let p;
+try{for(const[idx,c]of contas.entries()){
+ assert(c.empresa.startsWith('ZZ [TESTE 20261019] '));const ctx=await browser.newContext({viewport:{width:idx%2?390:1920,height:900},serviceWorkers:'block',locale:'pt-BR'});p=await ctx.newPage();p.setDefaultTimeout(20000);p.on('pageerror',e=>erros.push(e.message));
+ try{
+  await p.goto(base+'/entrar',{waitUntil:'domcontentloaded'});await p.getByLabel('E-mail',{exact:true}).fill(c.email);await p.getByLabel('Senha',{exact:true}).fill(c.senha);await p.getByRole('button',{name:'Entrar no sistema',exact:true}).click();await p.getByRole('textbox',{name:'Buscar veículo no mapa',exact:true}).waitFor();
+  await p.goto(base+'/ordens-servico',{waitUntil:'domcontentloaded'});await p.getByRole('button',{name:'Nova OS',exact:true}).click();await p.getByRole('combobox',{name:'Cliente',exact:true}).click();await p.getByRole('option',{name:'Informar cliente sem cadastrar',exact:true}).click();await p.getByLabel('Nome do cliente',{exact:true}).fill('QA rascunho preservado');
+  await p.route('**/rpc/consultar_meu_acesso',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'PGRST003',message:'Falha temporária simulada'})}),{times:1});
+  const falha=p.waitForResponse(r=>r.url().endsWith('/rpc/consultar_meu_acesso')&&r.status()===503);await p.evaluate(()=>{Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true});window.dispatchEvent(new Event('visibilitychange'));delete document.visibilityState;window.dispatchEvent(new Event('visibilitychange'));});await falha;
+  const retorno=await p.waitForResponse(r=>r.url().endsWith('/rpc/consultar_meu_acesso')&&r.status()===200);assert(retorno.ok());assert.equal(await p.getByLabel('Nome do cliente',{exact:true}).inputValue(),'QA rascunho preservado');assert.equal(await p.getByText('Não conseguimos validar seu acesso.',{exact:true}).count(),0);
+  resultados.push({perfil:c.especialidade,nome:'Consulta indisponível temporariamente preserva a OS em preenchimento',ok:true});await p.screenshot({path:resolve(out,c.especialidade+'-recuperado.png')});
+  await p.route('**/rpc/consultar_meu_acesso',r=>r.fulfill({status:403,contentType:'application/json',body:JSON.stringify({code:'42501',message:'Acesso revogado simulado'})}),{times:1});await p.evaluate(()=>{Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true});window.dispatchEvent(new Event('visibilitychange'));delete document.visibilityState;window.dispatchEvent(new Event('visibilitychange'));});await p.getByText('Não conseguimos validar seu acesso.',{exact:true}).waitFor();assert.equal(await p.getByLabel('Nome do cliente',{exact:true}).count(),0);resultados.push({perfil:c.especialidade,nome:'Negação de acesso bloqueia imediatamente a tela publicada',ok:true});
+  console.log('PASS acesso publicado',c.especialidade);
+ }finally{await ctx.close();}
+}assert.deepEqual(erros,[]);}catch(e){process.exitCode=1;console.error(e.stack);}finally{await browser.close();await writeFile(resolve(out,'resultados.json'),JSON.stringify({ok:!process.exitCode,build:health.build,metodo:'Site publicado; respostas 503 e 403 controladas somente no navegador de teste. Nenhum dado salvo.',resultados,erros},null,2));}
+
+
+

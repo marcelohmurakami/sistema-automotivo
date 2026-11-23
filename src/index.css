@@ -60,8 +60,10 @@ button {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--tema-borda-6b922c, #6b922c);
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--ui-acento, #6b922c);
   outline-offset: 3px;
 }
 input,

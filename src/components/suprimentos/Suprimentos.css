@@ -1,0 +1,329 @@
+.supr {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  color: var(--ui-texto);
+}
+.supr h2,
+.supr h3,
+.supr p {
+  margin: 0;
+}
+.supr small {
+  display: block;
+  color: var(--ui-suave);
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+.supr strong {
+  display: block;
+}
+.supr input:not([type="checkbox"]),
+.supr select,
+.supr textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 0.65rem;
+  background: var(--ui-fundo);
+  color: inherit;
+  font: inherit;
+}
+.supr label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 0;
+}
+.supr textarea {
+  resize: vertical;
+}
+.supr button:not(.botao-icone) {
+  border: 1px solid var(--ui-borda);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  min-height: 40px;
+  background: var(--ui-painel);
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.supr button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+.supr button.botao-primario {
+  background: var(--lima);
+  color: var(--sobre-destaque, #172018);
+  font-weight: 700;
+}
+.supr-barra {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.supr-barra h2,
+.supr-barra h3 {
+  margin-right: auto;
+}
+.supr-barra > label {
+  flex: 1 1 12rem;
+}
+.supr-barra > p {
+  flex: 1 1 15rem;
+}
+.supr-abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.supr-abas button[aria-pressed="true"] {
+  background: var(--lima);
+  color: var(--sobre-destaque, #172018);
+  font-weight: 700;
+}
+.supr-painel {
+  padding: 1rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 0.85rem;
+  background: var(--ui-painel);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.supr-linha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--ui-borda);
+  min-width: 0;
+}
+.supr-linha:last-child {
+  border-bottom: 0;
+}
+.supr-linha > div:first-child,
+.supr-linha > span:first-child {
+  flex: 1 1 14rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supr-linha strong {
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.supr button.supr-clicavel {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  padding: 1rem;
+  background: var(--ui-painel);
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.supr button.supr-clicavel > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supr button.supr-clicavel > span:last-child {
+  flex-shrink: 0;
+}
+.supr .supr-local > button.supr-clicavel {
+  flex: 1 1 12rem;
+  width: auto;
+}
+.supr .supr-local > button.supr-clicavel > span:last-child {
+  white-space: nowrap;
+}
+.supr-seletor-deposito {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.supr-clicavel:hover {
+  border-color: var(--ui-acento);
+}
+.supr-campos {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+.supr-campos > label,
+.supr-campos > .compra-busca-unica {
+  flex: 1 1 11rem;
+  min-width: 0;
+}
+.supr-numero {
+  max-width: 8rem;
+}
+.supr-selo {
+  font-size: 0.8rem;
+  border: 1px solid var(--ui-borda);
+  border-radius: 2rem;
+  padding: 0.25rem 0.6rem;
+  white-space: nowrap;
+}
+.supr-valor {
+  font-size: 1.2rem;
+  font-weight: 750;
+}
+.supr-vazio {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--ui-suave);
+}
+.supr form,
+.supr fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.supr fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.supr details {
+  border: 1px solid var(--ui-borda);
+  border-radius: 0.7rem;
+  padding: 0.9rem;
+}
+.supr summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+.supr details[open] > summary {
+  margin-bottom: 1rem;
+}
+.supr details > div + div {
+  margin-top: 0.8rem;
+}
+.supr-paginacao {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+.supr-paginacao > span {
+  margin-right: auto;
+}
+.supr label.supr-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--ui-borda);
+  padding: 0.6rem 0;
+}
+.supr-check > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supr input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  accent-color: var(--ui-acento);
+  margin: 0;
+}
+.supr-unidades {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.supr-metrica {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.supr-metrica > span {
+  flex: 1 1 5rem;
+}
+.supr-metrica b {
+  font-size: 1.2rem;
+}
+.supr-aviso {
+  padding: 0.8rem;
+  border-left: 3px solid var(--ui-acento);
+  background: var(--ui-fundo);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .supr {
+    gap: 0.8rem;
+  }
+  .supr-painel {
+    padding: 0.8rem;
+  }
+  .supr-linha {
+    gap: 0.65rem;
+  }
+  .supr-numero {
+    max-width: none;
+  }
+  .supr-campos > label {
+    flex-basis: 7rem;
+  }
+  .supr-barra > button {
+    flex-grow: 1;
+  }
+  .supr-linha > .supr-barra {
+    width: 100%;
+  }
+  .supr-paginacao > span {
+    width: 100%;
+  }
+  .supr button.supr-clicavel {
+    padding: 0.85rem;
+  }
+}
+.supr .supr-recebimento-selecao {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.supr .supr-recebimento-selecao input {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+}
+.supr-recebimento-selecao span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supr-recebimento-acoes,
+.supr-recebimento-saldo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.supr-recebimento .supr-campos input[readonly] {
+  background: var(--ui-fundo);
+  font-weight: 700;
+  cursor: default;
+}
+.supr-recebimento-saldo {
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-borda);
+  font-size: 0.875rem;
+}

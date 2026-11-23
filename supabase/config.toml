@@ -4,3 +4,27 @@ verify_jwt = false
 verify_jwt = false
 [functions.automacoes-oficina]
 verify_jwt = false
+[functions.recontatos-oleo]
+verify_jwt = false
+[functions.cobranca-oficina]
+verify_jwt = false
+[functions.webhook-cobranca]
+verify_jwt = false
+
+[functions.pix-os]
+verify_jwt = false
+[functions.webhook-pix]
+verify_jwt = false
+[functions.capturar-atendimento]
+verify_jwt = false
+[functions.assistente-operacional]
+# A função autentica o JWT em auth.getUser antes de qualquer consulta ou cota.
+verify_jwt = false
+[functions.planejar-trajeto]
+# O JWT é validado por auth.getUser e a empresa pela RPC antes de chamar o provedor.
+verify_jwt = false
+
+[functions.calendario-externo]
+# Assinatura somente leitura, autenticada por segredo aleatório revogável.
+verify_jwt = false
+

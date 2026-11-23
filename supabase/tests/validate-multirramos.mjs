@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {criarBancoLocal} from './banco-local.mjs';
+const db=await criarBancoLocal('20261013000800');
+const owner=randomUUID(), outsider=randomUUID(), staff=randomUUID();
+const scalar=async(sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
+const login=id=>db.exec(`reset role;select set_config('request.jwt.claim.sub','${id}',false);set role authenticated`);
+let checks=0;
+const ok=(v,m)=>{assert.ok(v,m);checks++;console.log('PASS',m);};
+async function rejeita(f,m){await assert.rejects(f);ok(true,m);}
+try {
+ await db.exec('alter table auth.users add column email_confirmed_at timestamptz');
+ await db.exec(`insert into auth.users(id,email_confirmed_at) values('${owner}',now()),('${outsider}',now()),('${staff}',now())`);
+ await login(owner);
+ const chave=randomUUID();
+ await rejeita(()=>scalar("select configurar_nova_empresa($1,$2,$3,$4,$5,case $5 when 'assistencia_tecnica' then 'assistencia_geral' when 'manutencao_campo' then 'manutencao_geral' when 'limpeza' then 'limpeza_geral' else 'mecanica' end)",[chave,'Inválida','',{},'outro']),'Ramo inválido não cria empresa');
+ ok(Number(await scalar('select count(*) from public.oficinas'))===0,'Validação acontece antes da inserção');
+ const auto=await scalar("select criar_oficina('Automotivo legado',null)");
+ ok((await scalar('select consultar_meu_acesso()')).find(x=>x.id===auto).ramo==='automotivo','Empresas legadas continuam automotivas');
+ await rejeita(()=>scalar('select consultar_servicos($1)',[auto]),'Automotivo não acessa os cadastros dos novos ramos');
+ let primeira;
+ for(const ramo of ['assistencia_tecnica','manutencao_campo','limpeza']){
+  const chave=randomUUID(),w=await scalar("select configurar_nova_empresa($1,$2,$3,$4,$5,case $5 when 'assistencia_tecnica' then 'assistencia_geral' when 'manutencao_campo' then 'manutencao_geral' when 'limpeza' then 'limpeza_geral' else 'mecanica' end)",[chave,`Teste ${ramo}`,'',{},ramo]);primeira ||= w;
+  ok((await scalar('select consultar_meu_acesso()')).find(x=>x.id===w).ramo===ramo,`Acesso identifica ${ramo}`);
+  ok(await scalar("select configurar_nova_empresa($1,$2,$3,$4,$5,case $5 when 'assistencia_tecnica' then 'assistencia_geral' when 'manutencao_campo' then 'manutencao_geral' when 'limpeza' then 'limpeza_geral' else 'mecanica' end)",[chave,`Teste ${ramo}`,'',{},ramo])===w,'Repetir cadastro não duplica empresa');
+  await rejeita(()=>scalar("select configurar_nova_empresa($1,$2,$3,$4,$5,case $5 when 'assistencia_tecnica' then 'assistencia_geral' when 'manutencao_campo' then 'manutencao_geral' when 'limpeza' then 'limpeza_geral' else 'mecanica' end)",[chave,'Outra','',{},'automotivo']),'Chave concluída não muda o ramo');
+  const c=await scalar('select salvar_cliente($1,$2)',[w,{nome:'Cliente multirramos'}]);
+  const objeto=randomUUID(),d={cliente_id:c.id,nome:'Objeto de atendimento',dados:{endereco:'Endereço de teste'},arquivado:false};
+  await scalar('select salvar_objeto_atendimento($1,$2,$3)',[w,objeto,d]);
+  await rejeita(()=>scalar('select salvar_atendimento_servico($1,$2,$3)',[w,randomUUID(),{}]),'Plano básico não cria atendimento');
+  await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='intermediate' where oficina_id='${w}';insert into public.membros_oficina(oficina_id,usuario_id,perfil) values('${w}','${staff}','staff')`);await login(owner);
+  await rejeita(()=>scalar("select cadastrar_veiculo_orcamento($1,$2,'Veículo indevido',null)",[w,c.id]),'Não aceita veículos nos novos ramos');
+  const recurso=randomUUID();await scalar('select salvar_recurso_agenda($1,$2,$3,true)',[w,recurso,'Equipe A']);
+  const atendimento=randomUUID(),t={cliente_id:c.id,objeto_id:objeto,titulo:'Serviço completo de teste',situacao:'aprovado',dados:{solicitacao:'Teste'},valor_centavos:25000,vencimento:'2026-10-10'};
+  await scalar('select salvar_atendimento_servico($1,$2,$3)',[w,atendimento,t]);
+  await rejeita(()=>scalar('select salvar_objeto_atendimento($1,$2,$3,9)',[w,objeto,d]),'Revisão antiga do cadastro rejeitada');
+  const id=randomUUID(),g={atendimento_id:atendimento,recurso_id:recurso,inicio:'2026-10-10T09:00:00-03:00',fim:'2026-10-10T10:00:00-03:00',situacao:'confirmado',observacoes:''};
+  await scalar('select salvar_agenda_servico($1,$2,$3)',[w,id,g]);
+  await rejeita(()=>scalar('select salvar_agenda_servico($1,$2,$3)',[w,randomUUID(),{...g,inicio:'2026-10-10T09:30:00-03:00'}]),'Sobreposição de equipe bloqueada');
+  await scalar('select salvar_agenda_servico($1,$2,$3)',[w,randomUUID(),{...g,inicio:'2026-10-10T10:00:00-03:00',fim:'2026-10-10T11:00:00-03:00'}]);ok(true,'Horários adjacentes permitidos');
+  await rejeita(()=>scalar('select salvar_agenda_servico($1,$2,$3,7)',[w,id,g]),'Remarcação com revisão antiga rejeitada');
+  const serie=randomUUID();await scalar('select agendar_serie_servico($1,$2,$3,3,7)',[w,serie,{...g,inicio:'2026-10-12T09:00:00-03:00',fim:'2026-10-12T10:00:00-03:00'}]);
+  await scalar('select agendar_serie_servico($1,$2,$3,3,7)',[w,serie,{...g,inicio:'2026-10-12T09:00:00-03:00',fim:'2026-10-12T10:00:00-03:00'}]);
+  ok((await scalar('select consultar_servicos($1)',[w])).agenda.length===5,'Série recorrente idempotente');
+  await rejeita(()=>scalar('select agendar_serie_servico($1,$2,$3,3,7)',[w,randomUUID(),{...g,inicio:'2026-10-05T09:00:00-03:00',fim:'2026-10-05T10:00:00-03:00'}]),'Conflito em qualquer ocorrência rejeita a série');
+  ok((await scalar('select consultar_servicos($1)',[w])).agenda.length===5,'Série conflitante não deixa reservas parciais');
+  const titulo=await scalar('select faturar_atendimento_servico($1,$2)',[w,atendimento]);
+  ok(await scalar('select faturar_atendimento_servico($1,$2)',[w,atendimento])===titulo,'Faturamento não duplica cobrança');
+  await rejeita(()=>scalar('select salvar_atendimento_servico($1,$2,$3,1)',[w,atendimento,{...t,valor_centavos:2}]),'Atendimento faturado não diverge do financeiro');
+  const alertas=await scalar('select consultar_alertas($1)',[w]);ok(alertas.some(x=>x.tipo==='servico')&&alertas.some(x=>x.tipo==='agenda')&&alertas.some(x=>x.tipo==='financeiro'),'Alertas incluem atendimento, agenda e cobrança');
+  await login(staff);ok(!(await scalar('select consultar_alertas($1)',[w])).some(x=>x.tipo==='financeiro'),'Colaborador não recebe alertas financeiros');
+  await rejeita(()=>scalar('select faturar_atendimento_servico($1,$2)',[w,atendimento]),'Colaborador não fatura');
+  await rejeita(()=>scalar('select salvar_recurso_agenda($1,$2,$3,true)',[w,randomUUID(),'Equipe indevida']),'Colaborador não gerencia equipes');
+  await login(outsider);await rejeita(()=>scalar('select consultar_servicos($1)',[w]),'Outra conta não lê os cadastros');await rejeita(()=>scalar('select salvar_agenda_servico($1,$2,$3)',[w,randomUUID(),g]),'Outra conta não agenda');
+  await login(owner);
+  await scalar('select salvar_recurso_agenda($1,$2,$3,false,1)',[w,recurso,'Equipe A']);
+  await scalar('select salvar_agenda_servico($1,$2,$3,1)',[w,id,{...g,situacao:'cancelado'}]);
+  ok((await scalar('select consultar_servicos($1)',[w])).agenda.find(x=>x.id===id).situacao==='cancelado','Pode cancelar reserva de equipe inativa');
+  await scalar('select salvar_objeto_atendimento($1,$2,$3,1)',[w,objeto,{...d,arquivado:true}]);
+  await scalar('select salvar_atendimento_servico($1,$2,$3,1)',[w,atendimento,{...t,situacao:'concluido'}]);
+  ok((await scalar('select consultar_servicos($1)',[w])).atendimentos.find(x=>x.id===atendimento).situacao==='concluido','Cadastro arquivado não impede concluir serviço existente');
+ }
+ await db.exec(`reset role;update public.assinaturas_oficina set codigo_plano='basic' where oficina_id='${primeira}'`);await login(owner);
+ const basico=await scalar('select consultar_servicos($1)',[primeira]);ok(basico.atendimentos.length===0&&basico.agenda.length===0&&basico.cobrancas.length===0,'Downgrade não expõe módulos bloqueados');
+ console.log(`${checks} verificações multirramos passaram.`);
+} finally {await db.close();}

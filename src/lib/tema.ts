@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from "react";
 export type Tema = "claro" | "escuro" | "sistema";
 const chave = "patio_tema";
+let temaSemArmazenamento: Tema | undefined;
 function ler(): Tema {
+  if (temaSemArmazenamento) return temaSemArmazenamento;
   try {
     const t = localStorage.getItem(chave);
     return t === "claro" || t === "escuro" ? t : "sistema";
@@ -18,8 +20,9 @@ export function aplicarTema() {
 export function definirTema(t: Tema) {
   try {
     localStorage.setItem(chave, t);
+    temaSemArmazenamento = undefined;
   } catch {
-    /* Aparência ainda pode ser usada sem armazenamento. */
+    temaSemArmazenamento = t;
   }
   document.documentElement.dataset.tema =
     t === "sistema" ? (preferencia.matches ? "escuro" : "claro") : t;
@@ -34,7 +37,11 @@ function assinar(fn: () => void) {
   };
 }
 preferencia.addEventListener("change", aplicarTema);
-window.addEventListener("storage", aplicarTema);
+window.addEventListener("storage", (evento) => {
+  if (evento.key !== null && evento.key !== chave) return;
+  temaSemArmazenamento = undefined;
+  aplicarTema();
+});
 aplicarTema();
 export function useTema() {
   return useSyncExternalStore(assinar, ler, () => "sistema" as Tema);

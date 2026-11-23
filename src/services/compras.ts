@@ -1,4 +1,8 @@
-import { rpc } from "./orcamentos";
+import { novoId } from "../lib/uuid.ts";
+import { rpc } from "../lib/rpc";
+import { transacaoDemo } from "../lib/transacaoDemo";
+import type { PlanoPagamentoCompra } from "../lib/pagamentoCompra";
+
 import { lerEstoqueDemo, type MovimentoEstoque } from "./estoque";
 import {
   hoje,
@@ -20,6 +24,7 @@ export type Fornecedor = {
 export type ItemCompra = {
   produto_id: string;
   descricao?: string;
+  unidade?: string;
   quantidade: number;
   custo_centavos: number;
   total_centavos?: number;
@@ -39,11 +44,14 @@ export type Compra = {
   motivo_cancelamento?: string;
   itens: ItemCompra[];
   titulo: TituloFinanceiro;
+  titulos?: TituloFinanceiro[];
   vencimento: string;
   baixado_centavos: number;
   aberto_centavos: number;
 };
 export type NovaCompra = {
+  pagamento?: PlanoPagamentoCompra;
+  deposito_id?: string | null;
   id: string;
   fornecedor_id: string;
   documento: string;
@@ -68,22 +76,13 @@ const lerFinanceiro = (): {
   );
 // All changes are computed before persistence; restore previous values on storage failure.
 export function gravarConjuntoDemo(valores: Record<string, unknown>) {
-  const antigos = Object.fromEntries(
-    Object.keys(valores).map((k) => [k, localStorage.getItem(k)]),
-  );
-  try {
+  transacaoDemo(Object.keys(valores), () => {
     for (const [k, v] of Object.entries(valores))
       localStorage.setItem(k, JSON.stringify(v));
-  } catch (e) {
-    for (const [k, v] of Object.entries(antigos)) {
-      if (v === null) localStorage.removeItem(k);
-      else localStorage.setItem(k, v);
-    }
-    throw e;
-  }
+  });
 }
 export const novoFornecedor = (): Fornecedor => ({
-  id: crypto.randomUUID(),
+  id: novoId(),
   nome: "",
   documento: "",
   telefone: "",
@@ -99,14 +98,19 @@ export async function listarFornecedores(
   busca = "",
   arquivados = false,
   pagina = 0,
+  signal?: AbortSignal,
 ) {
   if (!demo)
-    return rpc<{ itens: Fornecedor[]; total: number }>("listar_fornecedores", {
-      p_oficina: oficina,
-      p_busca: busca,
-      p_arquivados: arquivados,
-      p_pagina: pagina,
-    });
+    return rpc<{ itens: Fornecedor[]; total: number }>(
+      "listar_fornecedores",
+      {
+        p_oficina: oficina,
+        p_busca: busca,
+        p_arquivados: arquivados,
+        p_pagina: pagina,
+      },
+      signal,
+    );
   const itens = lerFornecedores()
     .filter(
       (f) =>
@@ -119,11 +123,7 @@ export async function listarFornecedores(
     total: itens.length,
   };
 }
-export async function salvarFornecedor(
-  demo: boolean,
-  oficina: string,
-  f: Fornecedor,
-) {
+export async function salvarFornecedor(demo: boolean, oficina: string, f: Fornecedor) {
   if (!demo)
     return rpc("salvar_fornecedor", {
       p_oficina: oficina,
@@ -136,13 +136,10 @@ export async function salvarFornecedor(
   if (anterior && !f.revisao) return;
   if (anterior && (anterior.revisao !== f.revisao || anterior.arquivado_em))
     throw new Error("Fornecedor alterado. Atualize a tela.");
-  if (f.nome.trim().length < 2)
-    throw new Error("Informe o nome do fornecedor.");
+  if (f.nome.trim().length < 2) throw new Error("Informe o nome do fornecedor.");
   if (
     f.documento &&
-    lista.some(
-      (x) => x.id !== f.id && !x.arquivado_em && x.documento === f.documento,
-    )
+    lista.some((x) => x.id !== f.id && !x.arquivado_em && x.documento === f.documento)
   )
     throw new Error("Já existe um fornecedor com este documento.");
   gravarConjuntoDemo({
@@ -166,14 +163,11 @@ export async function arquivarFornecedor(
     });
   const lista = lerFornecedores();
   const atual = lista.find((x) => x.id === f.id);
-  if (!atual || atual.revisao !== f.revisao)
-    throw new Error("Atualize o fornecedor.");
+  if (!atual || atual.revisao !== f.revisao) throw new Error("Atualize o fornecedor.");
   if (
     f.arquivado_em &&
     f.documento &&
-    lista.some(
-      (x) => x.id !== f.id && !x.arquivado_em && x.documento === f.documento,
-    )
+    lista.some((x) => x.id !== f.id && !x.arquivado_em && x.documento === f.documento)
   )
     throw new Error("Documento já usado por outro fornecedor ativo.");
   atual.arquivado_em = f.arquivado_em ? null : new Date().toISOString();
@@ -181,21 +175,28 @@ export async function arquivarFornecedor(
   gravarConjuntoDemo({ patio_fornecedores_v1: lista });
 }
 function atualizarSaldo(c: Compra) {
-  const d = lerFinanceiro(),
-    t = d.titulos.find((t) => t.compra_id === c.id)!;
-  const pago = d.baixas
-    .filter((b) => b.titulo_id === t.id)
-    .reduce((s, b) => s + (b.estorno_de ? -1 : 1) * b.valor_centavos, 0);
+  const d = lerFinanceiro();
+  const titulos = d.titulos
+    .filter((t) => t.compra_id === c.id)
+    .map((t) => {
+      const pago = d.baixas
+        .filter((b) => b.titulo_id === t.id)
+        .reduce((s, b) => s + (b.estorno_de ? -1 : 1) * b.valor_centavos, 0);
+      return {
+        ...t,
+        baixado_centavos: pago,
+        aberto_centavos: t.cancelado_em ? 0 : t.valor_centavos - pago,
+      };
+    });
+  const t = titulos[0],
+    pago = titulos.reduce((s, t) => s + t.baixado_centavos, 0);
   return {
     ...c,
-    titulo: {
-      ...t,
-      baixado_centavos: pago,
-      aberto_centavos: t.valor_centavos - pago,
-    },
+    titulo: t,
+    titulos,
     vencimento: t.vencimento,
     baixado_centavos: pago,
-    aberto_centavos: t.valor_centavos - pago,
+    aberto_centavos: titulos.reduce((s, t) => s + t.aberto_centavos, 0),
   };
 }
 export async function listarCompras(
@@ -203,18 +204,21 @@ export async function listarCompras(
   oficina: string,
   busca = "",
   pagina = 0,
+  signal?: AbortSignal,
 ) {
   if (!demo)
-    return rpc<{ itens: Compra[]; total: number }>("listar_compras_estoque", {
-      p_oficina: oficina,
-      p_busca: busca,
-      p_pagina: pagina,
-    });
+    return rpc<{ itens: Compra[]; total: number }>(
+      "listar_compras_estoque",
+      {
+        p_oficina: oficina,
+        p_busca: busca,
+        p_pagina: pagina,
+      },
+      signal,
+    );
   const itens = lerCompras()
     .filter((c) =>
-      `${c.nome_fornecedor} ${c.documento}`
-        .toLowerCase()
-        .includes(busca.toLowerCase()),
+      `${c.nome_fornecedor} ${c.documento}`.toLowerCase().includes(busca.toLowerCase()),
     )
     .sort((a, b) => b.data.localeCompare(a.data));
   return {
@@ -226,23 +230,27 @@ export async function consultarCompra(
   demo: boolean,
   oficina: string,
   id: string,
+  signal?: AbortSignal,
 ) {
   if (!demo)
-    return rpc<Compra>("consultar_compra_estoque", {
-      p_oficina: oficina,
-      p_compra: id,
-    });
+    return rpc<Compra>(
+      "consultar_compra_estoque",
+      {
+        p_oficina: oficina,
+        p_compra: id,
+      },
+      signal,
+    );
   const c = lerCompras().find((c) => c.id === id);
   if (!c) throw new Error("Compra não encontrada.");
   return atualizarSaldo(c);
 }
-export async function registrarCompra(
-  demo: boolean,
-  oficina: string,
-  c: NovaCompra,
-) {
+export async function registrarCompra(demo: boolean, oficina: string, c: NovaCompra) {
+  if (!demo && c.pagamento)
+    return rpc("registrar_compra_com_pagamento", { p_oficina: oficina, p_dados: c });
   if (!demo)
-    return rpc("registrar_compra_estoque", {
+    return rpc("registrar_compra_deposito", {
+      p_deposito: c.deposito_id ?? null,
       p_oficina: oficina,
       p_id: c.id,
       p_fornecedor: c.fornecedor_id,
@@ -257,17 +265,12 @@ export async function registrarCompra(
     });
   const compras = lerCompras();
   if (compras.some((x) => x.id === c.id)) return;
-  const f = lerFornecedores().find(
-    (x) => x.id === c.fornecedor_id && !x.arquivado_em,
-  );
+  const f = lerFornecedores().find((x) => x.id === c.fornecedor_id && !x.arquivado_em);
   if (!f) throw new Error("Selecione um fornecedor ativo.");
   if (
     c.documento &&
     compras.some(
-      (x) =>
-        !x.cancelado_em &&
-        x.fornecedor_id === f.id &&
-        x.documento === c.documento,
+      (x) => !x.cancelado_em && x.fornecedor_id === f.id && x.documento === c.documento,
     )
   )
     throw new Error("Este documento já foi registrado para o fornecedor.");
@@ -296,8 +299,7 @@ export async function registrarCompra(
       !p ||
       i.quantidade <= 0 ||
       i.quantidade > 1e6 ||
-      Math.abs(Math.round(i.quantidade * 1000) - i.quantidade * 1000) >
-        0.000001 ||
+      Math.abs(Math.round(i.quantidade * 1000) - i.quantidade * 1000) > 0.000001 ||
       !Number.isSafeInteger(i.custo_centavos) ||
       i.custo_centavos < 0
     )
@@ -317,7 +319,7 @@ export async function registrarCompra(
     p.saldo = Math.round((p.saldo! + i.quantidade) * 1000) / 1000;
     p.revisao = linha.revisao_apos;
     estoque.movimentos.unshift({
-      id: crypto.randomUUID(),
+      id: novoId(),
       item_catalogo_id: p.id,
       tipo: "entrada",
       quantidade: i.quantidade,
@@ -329,7 +331,7 @@ export async function registrarCompra(
       numero_os: null,
       criado_em: new Date().toISOString(),
       estornado: false,
-      chave: crypto.randomUUID(),
+      chave: novoId(),
       compra_id: c.id,
     } as MovimentoEstoque);
     return linha;
@@ -345,19 +347,40 @@ export async function registrarCompra(
     compra_id: c.id,
     revisao: 1,
   };
-  fin.titulos.push(t);
-  if (c.pago)
+  const plano = c.pagamento;
+  if (
+    plano &&
+    (plano.parcelas.length < 1 ||
+      plano.parcelas.length > 60 ||
+      plano.parcelas.reduce((s, p) => s + p.valor_centavos, 0) !== total ||
+      plano.parcelas.some((p) => !p.vencimento || p.valor_centavos <= 0))
+  )
+    throw Error("Confira o pagamento da compra.");
+  const titulos = plano
+    ? plano.parcelas.map((p, i) => ({
+        ...t,
+        id: i ? novoId() : t.id,
+        valor_centavos: p.valor_centavos,
+        vencimento: p.vencimento,
+        descricao:
+          t.descricao +
+          (plano.parcelas.length > 1 ? ` · ${i + 1}/${plano.parcelas.length}` : ""),
+      }))
+    : [t];
+  fin.titulos.push(...titulos);
+  const pago = plano ? (plano.modo === "pago" ? total : 0) : c.pago;
+  if (pago)
     fin.baixas.push({
-      id: crypto.randomUUID(),
+      id: novoId(),
       titulo_id: t.id,
-      valor_centavos: c.pago,
+      valor_centavos: pago,
       taxa_centavos: 0,
-      data: c.data,
-      conta: c.conta,
-      forma: c.forma,
+      data: plano?.data || c.data,
+      conta: plano?.conta || c.conta,
+      forma: plano?.forma || c.forma,
       observacao: "Pagamento informado na compra",
       estorno_de: null,
-      chave: crypto.randomUUID(),
+      chave: novoId(),
       criado_em: new Date().toISOString(),
     });
   compras.unshift({
@@ -366,9 +389,10 @@ export async function registrarCompra(
     total_centavos: total,
     cancelado_em: null,
     itens,
-    titulo: t,
-    baixado_centavos: c.pago,
-    aberto_centavos: total - c.pago,
+    titulo: titulos[0],
+    titulos,
+    baixado_centavos: pago,
+    aberto_centavos: total - pago,
   });
   gravarConjuntoDemo({
     patio_estoque_v1: estoque,
@@ -406,31 +430,29 @@ export async function cancelarCompra(
     p.custo_centavos = i.custo_anterior!;
     p.revisao!++;
     const m = estoque.movimentos.find(
-      (m) =>
-        m.compra_id === id &&
-        m.item_catalogo_id === p.id &&
-        m.tipo === "entrada",
+      (m) => m.compra_id === id && m.item_catalogo_id === p.id && m.tipo === "entrada",
     )!;
     m.estornado = true;
     estoque.movimentos.unshift({
       ...m,
-      id: crypto.randomUUID(),
+      id: novoId(),
       tipo: "estorno",
       quantidade: -i.quantidade,
       saldo_apos: p.saldo,
       motivo,
       estorno_de: m.id,
       estornado: false,
-      chave: crypto.randomUUID(),
+      chave: novoId(),
       criado_em: new Date().toISOString(),
     });
   }
   c.cancelado_em = new Date().toISOString();
   c.motivo_cancelamento = motivo;
-  const t = fin.titulos.find((t) => t.compra_id === id)!;
-  t.cancelado_em = c.cancelado_em;
-  t.motivo_cancelamento = motivo;
-  t.revisao++;
+  for (const t of fin.titulos.filter((t) => t.compra_id === id)) {
+    t.cancelado_em = c.cancelado_em;
+    t.motivo_cancelamento = motivo;
+    t.revisao++;
+  }
   gravarConjuntoDemo({
     patio_estoque_v1: estoque,
     patio_financeiro_v1: fin,

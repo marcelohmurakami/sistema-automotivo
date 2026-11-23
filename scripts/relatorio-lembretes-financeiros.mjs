@@ -1,0 +1,54 @@
+import {readFile,writeFile,readdir} from 'node:fs/promises';
+import {resolve,relative} from 'node:path';
+import {createHash} from 'node:crypto';
+const dir=resolve('output/lembretes-financeiros-20261117');
+const json=async nome=>JSON.parse(await readFile(resolve(dir,nome),'utf8'));
+const banco=await json('banco.json'),ui=await json('interface.json'),layouts=await json('layouts.json'),adversos=await json('interface-adversos.json');
+const h=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const media=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const numero=n=>Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const linhas=ui.resultados.flatMap(r=>r.etapas.map(e=>({perfil:r.perfil,dispositivo:r.mobile?'Celular':'Desktop',...e})));
+const csv=['Subsistema;Dispositivo;Etapa;Segundos',...linhas.map(r=>[r.perfil,r.dispositivo,r.nome,numero(r.segundos)].join(';'))].join('\n');
+await writeFile(resolve(dir,'tempos.csv'),'\ufeff'+csv);
+const arquivos=[
+ 'src/services/lembretesFinanceiros.ts','src/components/financeiro/contextoLembretes.ts','src/components/financeiro/ProvedorLembretesFinanceiros.tsx',
+ 'src/components/financeiro/FaixaLembretesFinanceiros.tsx','src/components/financeiro/PainelLembretesFinanceiros.tsx','src/components/financeiro/LembretesFinanceiros.css',
+ 'src/components/AlertasOficina.tsx','src/pages/Financeiro.tsx','src/layouts/LayoutEmpresa.tsx','src/layouts/LayoutSistema.tsx','src/layouts/EstruturaAssistencia.tsx','src/lib/atualizarIntegracoes.ts',
+ 'supabase/migrations/20261117200926_lembretes_financeiros_pessoais.sql','supabase/tests/validate-lembretes-financeiros.mjs','scripts/testar-lembretes-financeiros.mjs','scripts/testar-lembretes-layouts.mjs',
+ 'scripts/fixtures/lembretes-financeiros.jsx','scripts/fixtures/lembretes-financeiros.html',
+];
+const manifesto=[];for(const arquivo of arquivos){const texto=await readFile(arquivo);manifesto.push({arquivo,sha256:createHash('sha256').update(texto).digest('hex'),bytes:texto.length})}
+await writeFile(resolve(dir,'arquivos.json'),JSON.stringify(manifesto,null,2));
+const aprovados=banco.ok&&ui.resultados.length===52&&!ui.falhas.length&&layouts.resultados.length===52&&!layouts.falhas.length&&adversos.resultados.length>0&&!adversos.falhas.length;
+const resumo={geradoEm:new Date().toISOString(),aprovados,ambiente:'Local, sem publicação do frontend e sem aplicar a migração no Supabase',banco:banco.checks,interface:ui.resultados.reduce((s,r)=>s+r.checks.length,0),layouts:layouts.resultados.reduce((s,r)=>s+r.checks,0),adversos:adversos.resultados.reduce((s,r)=>s+r.checks.length,0),subsistemas:banco.resultados.length,cenarios:ui.resultados.length};
+await writeFile(resolve(dir,'resumo.json'),JSON.stringify(resumo,null,2));
+const duracoes=[...new Set(linhas.map(x=>x.nome))].map(nome=>{const d=linhas.filter(x=>x.nome===nome&&x.dispositivo==='Desktop').map(x=>x.segundos),m=linhas.filter(x=>x.nome===nome&&x.dispositivo==='Celular').map(x=>x.segundos);return `<tr><td>${h(nome)}</td><td>${numero(media(d))} s</td><td>${numero(media(m))} s</td><td>${numero(Math.max(...d,...m))} s</td></tr>`}).join('');
+const subsistemas=banco.resultados.map(r=>{const casos=ui.resultados.filter(x=>x.perfil===r.perfil),visual=layouts.resultados.filter(x=>x.perfil===r.perfil);return `<tr><td>${h(r.perfil)}</td><td>${r.checks}</td><td>${casos.find(x=>!x.mobile)?.checks.length??'—'}</td><td>${casos.find(x=>x.mobile)?.checks.length??'—'}</td><td>${visual.length===2?'Desktop e celular aprovados':'Pendente'}</td></tr>`}).join('');
+const imagens=(await readdir(dir)).filter(f=>/^layout-(retifica|assistencia_celulares|manutencao_climatizacao|limpeza_geral)-(desktop|celular)\.png$/.test(f));
+const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lembretes financeiros · implementação e testes</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f2;color:#243326;font:16px/1.6 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:34px 22px}h1{font-size:clamp(26px,4vw,42px);line-height:1.15}h2{margin-top:38px}p{max-width:85ch}.status{background:#fff5d7;border-left:5px solid #ad751b;padding:18px;border-radius:10px}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}.cards article{background:white;padding:18px;border:1px solid #dce2d6;border-radius:14px}.cards strong{display:block;font-size:30px}table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:12px;text-align:left;border-bottom:1px solid #cbd6c4}th{background:#e6eddf}tr:nth-child(even){background:#fff}.tabela{overflow:auto}a{color:#315914}code{overflow-wrap:anywhere;font-size:.9em}figure{margin:20px 0;background:#fff;border-radius:12px;padding:14px}img{display:block;max-width:100%;max-height:760px;margin:auto}figcaption{text-align:center;margin-top:12px}li{margin:8px 0}small{color:#4d614e}@media(max-width:600px){main{padding:22px 14px}td,th{padding:8px;font-size:12px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media print{body{background:white}main{padding:0}.tabela{overflow:visible}figure{break-inside:avoid}a{color:inherit}}
+</style></head><body><main><small>Pátio · ${new Date().toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'})}</small><h1>Lembretes para registrar o dinheiro que entrou e saiu</h1>
+<p>Implementação compartilhada pelos 26 subsistemas, com registro rápido, conferência diária e preferências pessoais por empresa.</p>
+<div class="status"><strong>Entrega local ${aprovados?'validada':'em validação'}.</strong> A migração ainda não foi aplicada ao Supabase: as três tentativas retornaram confirmação expirada, e a consulta posterior confirmou que a função não existe no projeto. O frontend não foi publicado. Estes resultados não representam testes do novo módulo no site em produção.</div>
+<h2>O que foi implementado</h2><ul>
+<li>Resumo na página inicial com contas vencidas ou que vencem hoje. Contas quitadas, canceladas e pagamentos combinados para datas futuras ficam fora desse resumo.</li>
+<li>Botão <strong>Registrar agora</strong> abre o formulário existente com a conta e o saldo confirmados novamente. Um aviso antigo de uma conta já quitada não abre novo pagamento.</li>
+<li>Ações <strong>Recebi</strong> e <strong>Paguei</strong> para lançar dinheiro ainda não registrado. O usuário confirma o registro; nenhum aviso paga uma conta sozinho.</li>
+<li>Conferência diária com horário configurável, todos os dias ou de segunda a sexta. Padrão: dias úteis, a partir das 17h, horário de São Paulo. Pode ser desativada.</li>
+<li><strong>Lembrar depois</strong>: uma hora, amanhã às 9h ou data e horário escolhidos. Adiar não altera vencimento nem saldo. Ao voltar, um aviso adiado que estava lido chama atenção novamente; exclusões explícitas são preservadas.</li>
+<li>Contas agrupadas no sininho, com recebimentos e pagamentos separados. A opção existente de excluir todos continua disponível.</li>
+<li>Preferências e adiamentos por usuário e empresa. Regras de acesso, plano, papel e MFA verificadas no servidor.</li>
+</ul><p><strong>Limite dos lembretes:</strong> são avisos dentro do sistema. Não enviam push, e-mail ou WhatsApp quando o aplicativo está fechado. Ao voltar, a conferência do dia aparece se ainda estiver pendente. As consultas se atualizam aproximadamente a cada minuto; o relógio da interface, a cada 30 segundos.</p>
+<h2>Evidências de validação</h2><div class="cards"><article><strong>${resumo.banco}</strong>verificações de banco</article><article><strong>${resumo.interface}</strong>verificações de fluxo</article><article><strong>${resumo.layouts}</strong>verificações de layout</article><article><strong>${resumo.adversos}</strong>verificações no reteste dirigido</article></div>
+<p>Banco: PostgreSQL local via PGlite com as migrações reais. Fluxos: componentes React e funções SQL reais, conectados por uma API de teste local; a sessão é fornecida pela bancada. Autorização, isolamento e MFA são testados separadamente no banco. Layout: build completo em demonstração. Desktop 1920 × 1080; celular 390 × 844, com CPU 4× mais lenta nos fluxos.</p>
+<p>Os cenários incluem recebimento parcial e quitação, pagamento, duplo clique, saldos exatos, persistência após recarregar, exclusão sem apagar dívidas, adiamento e reativação, aviso antigo de conta quitada, falha de rede, datas inválidas, paginação, conta mensal com valor desconhecido, usuário de outra empresa, funcionário sem acesso financeiro, restrição personalizada, plano sem financeiro e MFA.</p>
+<h2>Tempos medidos</h2><p>Segundos de automação local, sem digitação humana e sem a latência do Supabase publicado. Não são promessas de tempo para produção. A primeira consulta dos lembretes aguarda 1,5 segundo após montar o componente, fora do caminho de abertura da página; as telas de configuração carregam sob demanda.</p>
+<div class="tabela"><table><thead><tr><th>Etapa</th><th>Média desktop</th><th>Média celular</th><th>Maior tempo</th></tr></thead><tbody>${duracoes}</tbody></table></div>
+<p><a href="tempos.csv">Todos os tempos por subsistema em CSV</a></p>
+<h2>Cobertura por subsistema</h2><div class="tabela"><table><thead><tr><th>Subsistema</th><th>Banco</th><th>Fluxo desktop</th><th>Fluxo celular</th><th>Layout</th></tr></thead><tbody>${subsistemas}</tbody></table></div>
+<h2>Ajustes durante a validação</h2><p>Corrigida a ambiguidade entre variável e coluna na função de adiamento. Ajustado o retorno de avisos já lidos e a atualização do sininho ao reativá-los. Na bancada, corrigidas a espera por uma linha após quitar todas as contas e a comparação textual de 199,9 com 199,90; são o mesmo valor numérico. A primeira tentativa do navegador foi bloqueada pelo sandbox para 127.0.0.1 e foi repetida com acesso local autorizado.</p>
+<h2>Telas conferidas</h2>${imagens.map(f=>`<figure><img src="${f}" alt="${h(f.replace('.png','').replaceAll('-',' '))}" loading="lazy"><figcaption>${h(f.replace('.png','').replaceAll('-',' '))}</figcaption></figure>`).join('')}
+<h2>Arquivos e resultados completos</h2><ul><li><a href="banco.json">Resultados do banco</a></li><li><a href="interface.json">Fluxos, tempos e consultas locais</a></li><li><a href="layouts.json">Layouts nos 26 subsistemas</a></li><li><a href="interface-adversos.json">Falhas de rede e retestes dirigidos</a></li><li><a href="arquivos.json">Arquivos da entrega e SHA-256</a></li></ul>
+<p>Migração preparada: <code>supabase/migrations/20261117200926_lembretes_financeiros_pessoais.sql</code>. Contém preferências e adiamentos pessoais, consultas e validações; não registra pagamentos nem altera valores de OS ou compras. Não foi necessário alterar regras de cálculo financeiro.</p>
+</main></body></html>`;
+await writeFile(resolve(dir,'relatorio.html'),html);console.log(JSON.stringify(resumo));
