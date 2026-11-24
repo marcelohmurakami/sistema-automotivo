@@ -1,3 +1,4 @@
+import { OpcoesOrcamento, ResumoOrcamento } from "./LayoutOrcamento";
 import { novoId } from "../../lib/uuid.ts";
 import { CamposTaxaDiagnostico } from "../TaxaDiagnostico";
 import { taxaDoFormulario } from "../../lib/diagnosticoOrcamento";
@@ -278,7 +279,10 @@ export function EditorOrcamento({
     );
   }
   return (
-    <form className="formulario-cliente editor-proposta" onSubmit={enviar}>
+    <form
+      className="formulario-cliente editor-proposta orcamento-simples"
+      onSubmit={enviar}
+    >
       {anterior && anterior.situacao !== "draft" && (
         <p className="texto-suave">
           Cria uma nova versão para aprovação e preserva a anterior no histórico.
@@ -292,55 +296,49 @@ export function EditorOrcamento({
         </div>
       )}
       <fieldset disabled={ocupado || criando || pacoteOcupado}>
-        <SelecaoClienteVeiculo
-          selecionarUnicoAoAbrir={!anterior && !recuperado && !!clienteInicial}
-          entradaLivreRetifica={retifica}
-          permitirAvulso
-          dadosAvulsos={dadosAvulsos}
-          alterarAvulsos={setDadosAvulsos}
-          aux={aux}
-          cliente={cliente}
-          veiculo={veiculo}
-          selecionarCliente={setCliente}
-          selecionarVeiculo={setVeiculo}
-          aoProcessar={setCriando}
-        />
-        {retifica && (
-          <div className="dupla-campos">
-            <label>
-              Carro
-              <input
-                required
-                maxLength={100}
-                value={carroLivre}
-                onChange={(e) => setCarroLivre(e.target.value)}
-                placeholder="Ex.: Gol, Uno, Golf"
-              />
-            </label>
-            <label>
-              Motor
-              <input
-                required
-                maxLength={160}
-                value={motorLivre}
-                onChange={(e) => setMotorLivre(e.target.value)}
-                placeholder="Ex.: AP, CHT, Fiasa, TSI"
-              />
-            </label>
-          </div>
-        )}
-        <CamposPagamentoAtendimento
-          inicial={tecnico}
-          alterar={(dados) =>
-            setTecnico((v) => ({
-              ...v,
-              forma_pagamento: dados.forma_pagamento || "Carteira",
-              vencimento_pagamento: dados.vencimento_pagamento || null,
-            }))
-          }
-        />
+        <div className="orcamento-identificacao">
+          <SelecaoClienteVeiculo
+            focoInicial={false}
+            selecionarUnicoAoAbrir={!anterior && !recuperado && !!clienteInicial}
+            entradaLivreRetifica={retifica}
+            permitirAvulso
+            dadosAvulsos={dadosAvulsos}
+            alterarAvulsos={setDadosAvulsos}
+            aux={aux}
+            cliente={cliente}
+            veiculo={veiculo}
+            selecionarCliente={setCliente}
+            selecionarVeiculo={setVeiculo}
+            aoProcessar={setCriando}
+          />
+          {retifica && (
+            <div className="dupla-campos">
+              <label>
+                Carro
+                <input
+                  required
+                  maxLength={100}
+                  value={carroLivre}
+                  onChange={(e) => setCarroLivre(e.target.value)}
+                  placeholder="Ex.: Gol, Uno, Golf"
+                />
+              </label>
+              <label>
+                Motor
+                <input
+                  required
+                  maxLength={160}
+                  value={motorLivre}
+                  onChange={(e) => setMotorLivre(e.target.value)}
+                  placeholder="Ex.: AP, CHT, Fiasa, TSI"
+                />
+              </label>
+            </div>
+          )}
+        </div>
         <EditorItensOS
           contexto="orçamento"
+          simplificado
           itens={itensEditor}
           alterar={setItens}
           catalogo={aux.catalogo}
@@ -348,230 +346,241 @@ export function EditorOrcamento({
           aoProcessar={setCriando}
           aoEditarItem={setEditandoItem}
           detalhesItem={detalhesItem}
-          rodape={
-            <label>
-              Observações (opcional)
-              <textarea
-                name="observacoes"
-                rows={2}
-                className="atendimento-observacoes-compactas"
-                maxLength={4000}
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Informações e orientações para o cliente"
-              />
-            </label>
-          }
         />
-        <div className="formulario-opcionais">
-          <CampoTipoServico
-            inicial={tecnico.tipo_servico}
-            aoAlterar={(tipo_servico) => setTecnico((v) => ({ ...v, tipo_servico }))}
-          >
-            {tecnico.ficha_especialidade.especialidade === "estetica" ? (
-              <EditorFichaEspecialidade
-                valor={tecnico.ficha_especialidade}
-                alterar={(ficha_especialidade) =>
-                  setTecnico((v) => ({ ...v, ficha_especialidade }))
-                }
-                mostrarChecklist={false}
-              />
-            ) : (
-              <RecepcaoEspecializada
-                valor={tecnico.ficha_especialidade}
-                alterar={(ficha_especialidade) =>
-                  setTecnico((v) => ({ ...v, ficha_especialidade }))
-                }
-              />
-            )}
-          </CampoTipoServico>
-          <SelecionarPacote
-            quantidade={itens.length}
-            aoProcessar={setPacoteOcupado}
-            adicionar={(novos) =>
-              setItens((atuais) => [
-                ...atuais,
-                ...novos.map((i) => ({ ...i, id: novoId() })),
-              ])
+        <OpcoesOrcamento desconto={controleDesconto}>
+          <CamposPagamentoAtendimento
+            inicial={tecnico}
+            alterar={(dados) =>
+              setTecnico((v) => ({
+                ...v,
+                forma_pagamento: dados.forma_pagamento || "Carteira",
+                vencimento_pagamento: dados.vencimento_pagamento || null,
+              }))
             }
           />
-          <MargemOrcamento
-            itens={itens}
-            desconto={desconto}
-            outros={outrosCustos}
-            alterar={setOutrosCustos}
-          />
-          <details
-            className="os-detalhes os-informacoes-adicionais orcamento-informacoes-adicionais"
-            onInvalidCapture={(e) => {
-              e.currentTarget.open = true;
-            }}
-          >
-            <summary>Informações adicionais do orçamento (opcional)</summary>
-            {acesso.permite("finance") && acesso.oficina?.perfil !== "staff" && (
-              <CamposTaxaDiagnostico taxa={taxa} alterar={setTaxa} />
-            )}
-            {tecnico.ficha_especialidade.especialidade !== "estetica" && (
-              <EditorFichaEspecialidade
-                valor={tecnico.ficha_especialidade}
-                alterar={(ficha_especialidade) =>
-                  setTecnico((v) => ({ ...v, ficha_especialidade }))
-                }
-                mostrarChecklist={false}
-                ocultarCampos={
-                  perfilAtendimento(tecnico.ficha_especialidade.especialidade)
-                    .recepcaoRapida
-                }
-              />
-            )}
-            <details className="os-detalhes">
-              <summary>Relação de peças (opcional)</summary>
-              <div className="orcamento-campos-opcionais">
-                <label>
-                  Peças trocadas ou a trocar (opcional)
-                  <textarea
-                    rows={2}
-                    maxLength={5000}
-                    value={tecnico.pecas_a_trocar}
-                    onChange={(e) =>
-                      setTecnico((v) => ({ ...v, pecas_a_trocar: e.target.value }))
-                    }
-                    placeholder="Ex.: 1 jogo de juntas — cliente vai providenciar"
-                  />
-                </label>
-                <p className="texto-suave">
-                  Lista informativa, sem somar valores ou movimentar o estoque.
-                </p>
-              </div>
-            </details>
-            <details className="os-detalhes">
-              <summary>Relato, diagnóstico e responsável (opcional)</summary>
-              <div className="orcamento-campos-opcionais">
-                <CampoResponsavel
-                  inicial={tecnico}
-                  alterar={(campo, valor) =>
-                    setTecnico((v) => ({ ...v, [campo]: valor }))
+          <label>
+            Observações (opcional)
+            <textarea
+              name="observacoes"
+              rows={2}
+              className="atendimento-observacoes-compactas"
+              maxLength={4000}
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+              placeholder="Informações e orientações para o cliente"
+            />
+          </label>
+          <div className="formulario-opcionais">
+            <CampoTipoServico
+              inicial={tecnico.tipo_servico}
+              aoAlterar={(tipo_servico) => setTecnico((v) => ({ ...v, tipo_servico }))}
+            >
+              {tecnico.ficha_especialidade.especialidade === "estetica" ? (
+                <EditorFichaEspecialidade
+                  valor={tecnico.ficha_especialidade}
+                  alterar={(ficha_especialidade) =>
+                    setTecnico((v) => ({ ...v, ficha_especialidade }))
+                  }
+                  mostrarChecklist={false}
+                />
+              ) : (
+                <RecepcaoEspecializada
+                  valor={tecnico.ficha_especialidade}
+                  alterar={(ficha_especialidade) =>
+                    setTecnico((v) => ({ ...v, ficha_especialidade }))
                   }
                 />
-                <AtendimentoExpresso
-                  compacto
-                  aplicar={(c) => {
-                    setObservacoes((v) =>
-                      [
-                        v,
-                        c.relato,
-                        c.quilometragem != null
-                          ? `KM informado: ${c.quilometragem}`
-                          : "",
-                        c.placa ? `Placa lida: ${c.placa}` : "",
-                      ]
-                        .filter(Boolean)
-                        .join("\n")
-                        .slice(0, 4000),
-                    );
-                    setItens((v) =>
-                      [
-                        ...v,
-                        ...c.itens.map((i) => ({
-                          ...i,
-                          id: novoId(),
-                          unidade: "un",
-                          preco_unitario_centavos: 0,
-                        })),
-                      ].slice(0, 100),
-                    );
-                    if (c.placa) {
-                      const v = aux.veiculos.find(
-                        (v) => v.placa?.replace(/[^A-Z0-9]/g, "") === c.placa,
-                      );
-                      const vinculo =
-                        v && aux.vinculos.find((x) => x.veiculo_id === v.id);
-                      if (v && vinculo) {
-                        setCliente(vinculo.cliente_id);
-                        setVeiculo(v.id);
-                      }
-                    }
-                  }}
-                />
-                <p className="texto-suave">
-                  Relato, diagnóstico, códigos e fotos aparecem para o cliente e
-                  acompanham a OS.
-                </p>
-                <CampoDetalhesServico
-                  observacoes={tecnico.detalhes_especialidade}
-                  aoAlterar={(detalhes_especialidade) =>
-                    setTecnico((v) => ({ ...v, detalhes_especialidade }))
+              )}
+            </CampoTipoServico>
+            <SelecionarPacote
+              quantidade={itens.length}
+              aoProcessar={setPacoteOcupado}
+              adicionar={(novos) =>
+                setItens((atuais) => [
+                  ...atuais,
+                  ...novos.map((i) => ({ ...i, id: novoId() })),
+                ])
+              }
+            />
+            <MargemOrcamento
+              itens={itens}
+              desconto={desconto}
+              outros={outrosCustos}
+              alterar={setOutrosCustos}
+            />
+            <details
+              className="os-detalhes os-informacoes-adicionais orcamento-informacoes-adicionais"
+              onInvalidCapture={(e) => {
+                e.currentTarget.open = true;
+              }}
+            >
+              <summary>Informações adicionais do orçamento (opcional)</summary>
+              {acesso.permite("finance") && acesso.oficina?.perfil !== "staff" && (
+                <CamposTaxaDiagnostico taxa={taxa} alterar={setTaxa} />
+              )}
+              {tecnico.ficha_especialidade.especialidade !== "estetica" && (
+                <EditorFichaEspecialidade
+                  valor={tecnico.ficha_especialidade}
+                  alterar={(ficha_especialidade) =>
+                    setTecnico((v) => ({ ...v, ficha_especialidade }))
+                  }
+                  mostrarChecklist={false}
+                  ocultarCampos={
+                    perfilAtendimento(tecnico.ficha_especialidade.especialidade)
+                      .recepcaoRapida
                   }
                 />
-                {(
-                  [
-                    ["queixa_cliente", "O que o cliente relatou?"],
-                    ["diagnostico", "Diagnóstico técnico"],
-                    ["codigos_falha", "Códigos de falha / resultados de testes"],
-                  ] as const
-                ).map(([campo, titulo]) => (
-                  <label key={campo}>
-                    {titulo} (opcional)
+              )}
+              <details className="os-detalhes">
+                <summary>Relação de peças (opcional)</summary>
+                <div className="orcamento-campos-opcionais">
+                  <label>
+                    Peças trocadas ou a trocar (opcional)
                     <textarea
-                      rows={3}
+                      rows={2}
                       maxLength={5000}
-                      value={tecnico[campo]}
+                      value={tecnico.pecas_a_trocar}
                       onChange={(e) =>
-                        setTecnico((v) => ({ ...v, [campo]: e.target.value }))
+                        setTecnico((v) => ({ ...v, pecas_a_trocar: e.target.value }))
                       }
+                      placeholder="Ex.: 1 jogo de juntas — cliente vai providenciar"
                     />
                   </label>
-                ))}
-              </div>
-            </details>
-            <details className="os-detalhes">
-              <summary>Fotos e condições do orçamento (opcional)</summary>
-              <div className="orcamento-campos-opcionais">
-                {anterior ? (
-                  <>
-                    <FotosOrcamento
-                      versao={anterior.versao.id}
-                      rascunho={!anterior.versao.publicado_em}
-                      aoProcessar={setCriando}
-                    />
-                    {anterior.versao.publicado_em && (
-                      <p>
-                        Salve a nova versão para acrescentar fotos. As fotos atuais
-                        serão preservadas.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <div className="orcamento-fotos-rascunho">
-                    <p>
-                      Salve o rascunho para anexar fotos. Elas acompanham as próximas
-                      versões e a OS.
-                    </p>
-                    <button
-                      type="submit"
-                      name="anexar_fotos"
-                      className="botao-secundario"
-                      disabled={editandoItem}
-                    >
-                      Salvar e anexar fotos
-                    </button>
-                  </div>
-                )}
-
-                <label>
-                  Condições de pagamento e execução (opcional)
-                  <textarea
-                    name="condicoes"
-                    rows={3}
-                    maxLength={4000}
-                    value={condicoes}
-                    onChange={(e) => setCondicoes(e.target.value)}
+                  <p className="texto-suave">
+                    Lista informativa, sem somar valores ou movimentar o estoque.
+                  </p>
+                </div>
+              </details>
+              <details className="os-detalhes">
+                <summary>Relato, diagnóstico e responsável (opcional)</summary>
+                <div className="orcamento-campos-opcionais">
+                  <CampoResponsavel
+                    inicial={tecnico}
+                    alterar={(campo, valor) =>
+                      setTecnico((v) => ({ ...v, [campo]: valor }))
+                    }
                   />
-                </label>
-              </div>
+                  <AtendimentoExpresso
+                    compacto
+                    aplicar={(c) => {
+                      setObservacoes((v) =>
+                        [
+                          v,
+                          c.relato,
+                          c.quilometragem != null
+                            ? `KM informado: ${c.quilometragem}`
+                            : "",
+                          c.placa ? `Placa lida: ${c.placa}` : "",
+                        ]
+                          .filter(Boolean)
+                          .join("\n")
+                          .slice(0, 4000),
+                      );
+                      setItens((v) =>
+                        [
+                          ...v,
+                          ...c.itens.map((i) => ({
+                            ...i,
+                            id: novoId(),
+                            unidade: "un",
+                            preco_unitario_centavos: 0,
+                          })),
+                        ].slice(0, 100),
+                      );
+                      if (c.placa) {
+                        const v = aux.veiculos.find(
+                          (v) => v.placa?.replace(/[^A-Z0-9]/g, "") === c.placa,
+                        );
+                        const vinculo =
+                          v && aux.vinculos.find((x) => x.veiculo_id === v.id);
+                        if (v && vinculo) {
+                          setCliente(vinculo.cliente_id);
+                          setVeiculo(v.id);
+                        }
+                      }
+                    }}
+                  />
+                  <p className="texto-suave">
+                    Relato, diagnóstico, códigos e fotos aparecem para o cliente e
+                    acompanham a OS.
+                  </p>
+                  <CampoDetalhesServico
+                    observacoes={tecnico.detalhes_especialidade}
+                    aoAlterar={(detalhes_especialidade) =>
+                      setTecnico((v) => ({ ...v, detalhes_especialidade }))
+                    }
+                  />
+                  {(
+                    [
+                      ["queixa_cliente", "O que o cliente relatou?"],
+                      ["diagnostico", "Diagnóstico técnico"],
+                      ["codigos_falha", "Códigos de falha / resultados de testes"],
+                    ] as const
+                  ).map(([campo, titulo]) => (
+                    <label key={campo}>
+                      {titulo} (opcional)
+                      <textarea
+                        rows={3}
+                        maxLength={5000}
+                        value={tecnico[campo]}
+                        onChange={(e) =>
+                          setTecnico((v) => ({ ...v, [campo]: e.target.value }))
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+              </details>
+              <details className="os-detalhes">
+                <summary>Fotos e condições do orçamento (opcional)</summary>
+                <div className="orcamento-campos-opcionais">
+                  {anterior ? (
+                    <>
+                      <FotosOrcamento
+                        versao={anterior.versao.id}
+                        rascunho={!anterior.versao.publicado_em}
+                        aoProcessar={setCriando}
+                      />
+                      {anterior.versao.publicado_em && (
+                        <p>
+                          Salve a nova versão para acrescentar fotos. As fotos atuais
+                          serão preservadas.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="orcamento-fotos-rascunho">
+                      <p>
+                        Salve o rascunho para anexar fotos. Elas acompanham as próximas
+                        versões e a OS.
+                      </p>
+                      <button
+                        type="submit"
+                        name="anexar_fotos"
+                        className="botao-secundario"
+                        disabled={editandoItem}
+                      >
+                        Salvar e anexar fotos
+                      </button>
+                    </div>
+                  )}
+
+                  <label>
+                    Condições de pagamento e execução (opcional)
+                    <textarea
+                      name="condicoes"
+                      rows={3}
+                      maxLength={4000}
+                      value={condicoes}
+                      onChange={(e) => setCondicoes(e.target.value)}
+                    />
+                  </label>
+                </div>
+              </details>
             </details>
-          </details>
-        </div>
+          </div>
+        </OpcoesOrcamento>
+        <ResumoOrcamento subtotal={subtotal} desconto={desconto} />
       </fieldset>
       {(erro || erroLocal) && (
         <p className="erro-formulario" role="alert">

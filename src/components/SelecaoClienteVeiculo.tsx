@@ -23,7 +23,9 @@ export function SelecaoClienteVeiculo({
   alterarAvulsos,
   campoAoLadoDoCliente,
   selecionarUnicoAoAbrir = false,
+  focoInicial = true,
 }: {
+  focoInicial?: boolean;
   selecionarUnicoAoAbrir?: boolean;
   campoAoLadoDoCliente?: ReactNode;
   entradaLivreRetifica?: boolean;
@@ -220,7 +222,7 @@ export function SelecaoClienteVeiculo({
           rotulo="Cliente"
           valor={cliente}
           obrigatorio
-          autoFocus={!cliente}
+          autoFocus={focoInicial && !cliente}
           placeholder="Nome, telefone ou placa…"
           aoBuscar={consulta.buscarCliente}
           carregando={consulta.carregandoClientes}

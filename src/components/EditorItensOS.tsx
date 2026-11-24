@@ -41,6 +41,7 @@ export function EditorItensOS({
   vincularEstoque = true,
   especialidade,
   somenteLocal = false,
+  simplificado = false,
 }: {
   contexto?: "OS" | "orçamento";
   detalhesItem?: (item: ItemEditorOS, indice: number) => ReactNode;
@@ -56,6 +57,7 @@ export function EditorItensOS({
   vincularEstoque?: boolean;
   especialidade?: string;
   somenteLocal?: boolean;
+  simplificado?: boolean;
 }) {
   const acesso = useAcesso();
   const ramo = especialidades[especialidade || ""]?.ramo || acesso.oficina?.ramo;
@@ -71,7 +73,11 @@ export function EditorItensOS({
   const [indiceBusca, setIndiceBusca] = useState(-1);
   const retomarBusca = useRef(false);
   const listaBusca = useRef<HTMLDivElement>(null);
-  const consultaCatalogo = useCatalogoBusca(busca, "", !somenteLocal);
+  const consultaCatalogo = useCatalogoBusca(
+    busca,
+    "",
+    !somenteLocal && (!simplificado || !!busca.trim()),
+  );
   const buscaRef = useRef<HTMLInputElement>(null);
   const [adicionado, setAdicionado] = useState("");
   const [removidos, setRemovidos] = useState<ItemEditorOS[]>([]);
@@ -105,6 +111,7 @@ export function EditorItensOS({
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
   const encontrados = useMemo(() => {
+    if (simplificado && !busca.trim()) return [];
     const local = acesso.demo || somenteLocal;
     const origem = local
       ? catalogo
@@ -132,6 +139,7 @@ export function EditorItensOS({
     consultaCatalogo.aguardando,
     consultaCatalogo.data,
     busca,
+    simplificado,
   ]);
   function novoItem(c?: Auxiliares["catalogo"][number]): ItemEditorOS {
     return {
@@ -225,6 +233,18 @@ export function EditorItensOS({
     !!rascunho &&
     (!!rascunho.item_catalogo_id ||
       !!anterior?.itens.some((i) => i.id === rascunho.id));
+  const botaoAvulso = (
+    <button
+      type="button"
+      className="botao-secundario"
+      disabled={limite || !!rascunho}
+      aria-expanded={!!rascunho && !editando}
+      aria-controls={painelId}
+      onClick={() => abrirItem()}
+    >
+      <Plus size={17} /> {simplificado ? "Item avulso" : itemAvulso}
+    </button>
+  );
   if (anterior?.orcamento_aguardando_id)
     return (
       <section className="os-editor-itens">
@@ -236,11 +256,15 @@ export function EditorItensOS({
       </section>
     );
   return (
-    <section className="os-editor-itens" aria-label={`${tituloItens}: ${contexto}`}>
+    <section
+      className={`os-editor-itens${simplificado ? " os-editor-itens--simples" : ""}`}
+      aria-label={`${tituloItens}: ${contexto}`}
+    >
       <div className="os-editor-itens-topo">
         <div>
-          <h3>{tituloItens}</h3>
+          <h3>{simplificado ? "Itens" : tituloItens}</h3>
         </div>
+        {simplificado && botaoAvulso}
         <span>
           {itens.length} {itens.length === 1 ? "item" : "itens"}
         </span>
@@ -248,7 +272,9 @@ export function EditorItensOS({
       {(somenteLocal || acesso.permite("catalog")) && (
         <>
           <label className="os-editor-busca">
-            Buscar no catálogo
+            {simplificado
+              ? `Buscar serviço ou ${estoque.singular}`
+              : "Buscar no catálogo"}
             <div>
               <Search size={17} />
               <input
@@ -298,7 +324,7 @@ export function EditorItensOS({
           {!somenteLocal && consultaCatalogo.isError && (
             <p role="alert">{erroPublico(consultaCatalogo.error)}</p>
           )}
-          {!!encontrados.length && !rascunho && (
+          {!!encontrados.length && !rascunho && (!simplificado || !!busca.trim()) && (
             <div
               className="os-editor-catalogo"
               ref={listaBusca}
@@ -326,10 +352,11 @@ export function EditorItensOS({
                   <span>
                     {c.favorito && <Star size={12} />} {c.descricao}
                     <small>
-                      {dinheiro(c.preco_padrao_centavos)} ·{" "}
+                      {!simplificado && <>{dinheiro(c.preco_padrao_centavos)} · </>}
                       {c.tipo === "service" ? "Serviço" : nomeItem}
                     </small>
                   </span>
+                  {simplificado && <strong>{dinheiro(c.preco_padrao_centavos)}</strong>}
                 </button>
               ))}
             </div>
@@ -352,16 +379,7 @@ export function EditorItensOS({
         </p>
       )}
       <div className="os-editor-atalhos">
-        <button
-          type="button"
-          className="botao-secundario"
-          disabled={limite || !!rascunho}
-          aria-expanded={!!rascunho && !editando}
-          aria-controls={painelId}
-          onClick={() => abrirItem()}
-        >
-          <Plus size={17} /> {itemAvulso}
-        </button>
+        {!simplificado && botaoAvulso}
         {rascunho && (
           <div
             ref={painel}
@@ -552,8 +570,11 @@ export function EditorItensOS({
           />
         )}
       </div>
-      {!itens.length && <p className="os-editor-vazio">Nenhum item adicionado.</p>}
+      {!simplificado && !itens.length && (
+        <p className="os-editor-vazio">Nenhum item adicionado.</p>
+      )}
       <ListaItensOS
+        compacto={simplificado}
         itens={itens}
         nomeMaterial={nomeItem}
         contexto={contexto}
@@ -583,16 +604,18 @@ export function EditorItensOS({
         </div>
       )}
       {limite && <p className="texto-suave">Limite de 100 itens por {contexto}.</p>}
-      <div className="os-editor-valores">
-        <CampoDesconto
-          controle={desconto}
-          nota={contexto === "OS" ? nota : undefined}
-        />
-        <div className="os-editor-total">
-          <small>Total {contexto === "OS" ? "da OS" : "do orçamento"}</small>
-          <strong>{dinheiro(Math.max(0, subtotal - desconto.centavos) || 0)}</strong>
+      {!simplificado && (
+        <div className="os-editor-valores">
+          <CampoDesconto
+            controle={desconto}
+            nota={contexto === "OS" ? nota : undefined}
+          />
+          <div className="os-editor-total">
+            <small>Total {contexto === "OS" ? "da OS" : "do orçamento"}</small>
+            <strong>{dinheiro(Math.max(0, subtotal - desconto.centavos) || 0)}</strong>
+          </div>
         </div>
-      </div>
+      )}
       {anterior?.orcamento_origem_id && (
         <p className="texto-suave">
           As alterações valem para esta OS. O orçamento aprovado permanece registrado no

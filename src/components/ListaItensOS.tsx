@@ -13,7 +13,9 @@ export const ListaItensOS = memo(function ListaItensOS({
   remover,
   alterarQuantidade,
   detalhesItem,
+  compacto = false,
 }: {
+  compacto?: boolean;
   itens: ItemEditorOS[];
   nomeMaterial: string;
   contexto: string;
@@ -66,7 +68,7 @@ export const ListaItensOS = memo(function ListaItensOS({
                       onClick={() => editar(i)}
                       aria-label={`Editar ${i.descricao || `item ${n + 1}`}: ${contexto}`}
                     >
-                      <Pencil size={16} /> Editar
+                      <Pencil size={16} /> {!compacto && "Editar"}
                     </button>
                     <button
                       type="button"
@@ -76,7 +78,7 @@ export const ListaItensOS = memo(function ListaItensOS({
                       disabled={desabilitado}
                       onClick={() => remover(i)}
                     >
-                      <Trash2 size={16} /> Remover
+                      <Trash2 size={16} /> {!compacto && "Remover"}
                     </button>
                   </div>
                   {detalhesItem && (

@@ -1,3 +1,4 @@
+import { OpcoesOrcamento, ResumoOrcamento } from "../orcamentos/LayoutOrcamento";
 import { AgendamentoRecorrente } from "../AgendamentoRecorrente";
 import { regraFormulario } from "../../services/calendarioOperacao";
 import { useQuery } from "@tanstack/react-query";
@@ -125,6 +126,8 @@ export function FormularioServico({
   ) => void;
 }) {
   const acesso = useAcesso();
+  const orcamentoSimples =
+    editor.tipo === "atendimento" && editor.item.dados.documento === "orcamento";
   const destinoFotos = useRef(false);
   const destinoImpressao = useRef(false);
   const [servicoPronto, setServicoPronto] = useState(false);
@@ -483,9 +486,31 @@ export function FormularioServico({
         </p>
       </>
     ) : null;
+  const campoDataServico =
+    editor.tipo === "atendimento" ? (
+      <label>
+        Data do serviço
+        <input
+          name="data_servico"
+          type="date"
+          required
+          defaultValue={editor.item.data_servico || diaLocal(new Date())}
+        />
+      </label>
+    ) : null;
+  const campoPagamento =
+    editor.tipo === "atendimento" ? (
+      <CamposPagamentoAtendimento
+        vencimentoDireto
+        inicial={{
+          forma_pagamento: editor.item.dados.forma_pagamento || "Carteira",
+          vencimento_pagamento: item.revisao ? editor.item.vencimento : "",
+        }}
+      />
+    ) : null;
   return (
     <form
-      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}`}
+      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${orcamentoSimples ? " orcamento-simples" : ""}`}
       onSubmit={enviar}
     >
       {editor.tipo === "atendimento" && !!item.revisao && detalhes.isPending && (
@@ -590,15 +615,7 @@ export function FormularioServico({
                   setObjetoEscolhido(undefined);
                 }}
               />
-              <label>
-                Data do serviço
-                <input
-                  name="data_servico"
-                  type="date"
-                  required
-                  defaultValue={editor.item.data_servico || diaLocal(new Date())}
-                />
-              </label>
+              {!orcamentoSimples && campoDataServico}
               <input type="hidden" name="objeto_id" value={objetoId} />
               <SelecaoOperacao
                 tipo="objetos"
@@ -631,7 +648,7 @@ export function FormularioServico({
               }}
             />
 
-            {linguagem.limpeza && (
+            {linguagem.limpeza && !orcamentoSimples && (
               <label className="assistencia-campo-largo">
                 Escopo combinado com o cliente
                 <textarea
@@ -684,25 +701,20 @@ export function FormularioServico({
                   )}
                 </label>
               )}
-              <CamposPagamentoAtendimento
-                vencimentoDireto
-                inicial={{
-                  forma_pagamento: editor.item.dados.forma_pagamento || "Carteira",
-                  vencimento_pagamento: item.revisao ? editor.item.vencimento : "",
-                }}
-              />
+              {!orcamentoSimples && campoPagamento}
             </div>
             {!item.revisao && podeEditarValores && (
               <div className="assistencia-campo-largo">
                 <EditorItensOS
                   especialidade={ficha.especialidade}
+                  simplificado={orcamentoSimples}
                   contexto={
                     editor.item.situacao === "orcamento" &&
                     editor.item.dados.documento === "orcamento"
                       ? "orçamento"
                       : "OS"
                   }
-                  rodape={rodapeItens}
+                  rodape={orcamentoSimples ? undefined : rodapeItens}
                   itens={itens}
                   alterar={setItens}
                   catalogo={
@@ -746,188 +758,226 @@ export function FormularioServico({
                   emCampo={!linguagem.assistencia}
                 />
               )}
-            {acesso.permite("service_media") && (
-              <section
-                className="servicos-atalho-fotos"
-                aria-label="Fotos do atendimento"
-              >
-                <div>
-                  <strong>
-                    <Camera size={18} aria-hidden="true" /> Fotos antes e depois
-                  </strong>
-                  <p>Salve os dados e envie as fotos do equipamento ou serviço.</p>
-                </div>
-                <button
-                  type="submit"
-                  name="apos_salvar"
-                  value="fotos"
-                  className="botao-secundario"
-                  disabled={
-                    ocupado ||
-                    editandoItem ||
-                    criandoItem ||
-                    cadastroAberto ||
-                    (!!item.revisao && !detalhes.data)
-                  }
-                >
-                  Salvar e adicionar fotos
-                </button>
-              </section>
-            )}
-            <div className="formulario-opcionais servicos-opcionais">
-              <CampoTipoServico
-                key={ficha.especialidade}
-                especialidade={ficha.especialidade}
-                inicial={editor.item.dados.tipo_servico}
-              >
-                <RecepcaoEspecializada valor={ficha} alterar={setFicha} />
-              </CampoTipoServico>
-              <details className="os-detalhes os-informacoes-adicionais">
-                <summary>Informações adicionais do atendimento (opcional)</summary>
-                <div className="dupla-campos">
-                  <label>
-                    Especialidade do atendimento
-                    <select
-                      value={ficha.especialidade}
-                      disabled={
-                        !!editor.item.revisao && !!editor.item.ficha_especialidade
-                      }
-                      onChange={(e) => {
-                        fichasEmEdicao.current[ficha.especialidade] = ficha;
-                        setFicha(
-                          fichasEmEdicao.current[e.target.value] ||
-                            novaFichaEspecialidade(e.target.value),
-                        );
-                      }}
-                    >
-                      {subsetoresDoRamo(ramo).map(([id, p]) => (
-                        <option key={id} value={id}>
-                          {p.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {!!item.revisao && (
-                    <>
-                      <label>
-                        Situação
-                        <select name="situacao" defaultValue={editor.item.situacao}>
-                          {Object.entries(estadosServico)
-                            .filter(
-                              ([k]) =>
-                                item.revisao || !["concluido", "cancelado"].includes(k),
-                            )
-                            .map(([k, v]) => (
-                              <option key={k} value={k}>
-                                {k === "orcamento" && linguagem.assistencia
-                                  ? "Recebido / orçamento em análise"
-                                  : v}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    </>
-                  )}
-                </div>
+            <OpcoesOrcamento
+              ativo={orcamentoSimples}
+              desconto={
+                !item.revisao && podeEditarValores ? controleDesconto : undefined
+              }
+            >
+              {linguagem.limpeza && orcamentoSimples && (
+                <label className="assistencia-campo-largo">
+                  Escopo combinado com o cliente
+                  <textarea
+                    name="solicitacao"
+                    rows={2}
+                    maxLength={2000}
+                    defaultValue={editor.item.dados.solicitacao || ""}
+                    placeholder="Ambientes ou bens incluídos, prioridades e o que será feito nesta visita."
+                  />
+                </label>
+              )}
 
-                {podeEditarValores &&
-                  acesso.permite("finance") &&
-                  editor.item.situacao === "orcamento" && (
-                    <CamposTaxaDiagnostico
-                      bloqueado={!!item.revisao && !detalhes.data}
-                      key={`${item.id}:${detalhes.data?.atendimento.revisao || 0}`}
-                      taxa={detalhes.data?.taxa_diagnostico}
-                    />
-                  )}
-                {linguagem.assistencia && (
-                  <details className="os-detalhes assistencia-campo-largo">
-                    <summary>Recepção e defeito relatado (opcional)</summary>
-                    <label className="assistencia-campo-largo">
-                      Defeito relatado pelo cliente
-                      <textarea
-                        rows={2}
-                        maxLength={1500}
-                        value={ficha.campos.defeito || ""}
-                        placeholder="O que não funciona? Quando começou? Em quais condições acontece?"
-                        onChange={(e) =>
-                          setFicha({
-                            ...ficha,
-                            campos: { ...ficha.campos, defeito: e.target.value },
-                          })
+              {orcamentoSimples && (
+                <>
+                  {campoDataServico}
+                  {campoPagamento}
+                  {!item.revisao && podeEditarValores && rodapeItens}
+                </>
+              )}
+              {acesso.permite("service_media") && (
+                <section
+                  className="servicos-atalho-fotos"
+                  aria-label="Fotos do atendimento"
+                >
+                  <div>
+                    <strong>
+                      <Camera size={18} aria-hidden="true" /> Fotos antes e depois
+                    </strong>
+                    <p>Salve os dados e envie as fotos do equipamento ou serviço.</p>
+                  </div>
+                  <button
+                    type="submit"
+                    name="apos_salvar"
+                    value="fotos"
+                    className="botao-secundario"
+                    disabled={
+                      ocupado ||
+                      editandoItem ||
+                      criandoItem ||
+                      cadastroAberto ||
+                      (!!item.revisao && !detalhes.data)
+                    }
+                  >
+                    Salvar e adicionar fotos
+                  </button>
+                </section>
+              )}
+              <div className="formulario-opcionais servicos-opcionais">
+                <CampoTipoServico
+                  key={ficha.especialidade}
+                  especialidade={ficha.especialidade}
+                  inicial={editor.item.dados.tipo_servico}
+                >
+                  <RecepcaoEspecializada valor={ficha} alterar={setFicha} />
+                </CampoTipoServico>
+                <details className="os-detalhes os-informacoes-adicionais">
+                  <summary>Informações adicionais do atendimento (opcional)</summary>
+                  <div className="dupla-campos">
+                    <label>
+                      Especialidade do atendimento
+                      <select
+                        value={ficha.especialidade}
+                        disabled={
+                          !!editor.item.revisao && !!editor.item.ficha_especialidade
                         }
+                        onChange={(e) => {
+                          fichasEmEdicao.current[ficha.especialidade] = ficha;
+                          setFicha(
+                            fichasEmEdicao.current[e.target.value] ||
+                              novaFichaEspecialidade(e.target.value),
+                          );
+                        }}
+                      >
+                        {subsetoresDoRamo(ramo).map(([id, p]) => (
+                          <option key={id} value={id}>
+                            {p.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {!!item.revisao && (
+                      <>
+                        <label>
+                          Situação
+                          <select name="situacao" defaultValue={editor.item.situacao}>
+                            {Object.entries(estadosServico)
+                              .filter(
+                                ([k]) =>
+                                  item.revisao ||
+                                  !["concluido", "cancelado"].includes(k),
+                              )
+                              .map(([k, v]) => (
+                                <option key={k} value={k}>
+                                  {k === "orcamento" && linguagem.assistencia
+                                    ? "Recebido / orçamento em análise"
+                                    : v}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                      </>
+                    )}
+                  </div>
+
+                  {podeEditarValores &&
+                    acesso.permite("finance") &&
+                    editor.item.situacao === "orcamento" && (
+                      <CamposTaxaDiagnostico
+                        bloqueado={!!item.revisao && !detalhes.data}
+                        key={`${item.id}:${detalhes.data?.atendimento.revisao || 0}`}
+                        taxa={detalhes.data?.taxa_diagnostico}
+                      />
+                    )}
+                  {linguagem.assistencia && (
+                    <details className="os-detalhes assistencia-campo-largo">
+                      <summary>Recepção e defeito relatado (opcional)</summary>
+                      <label className="assistencia-campo-largo">
+                        Defeito relatado pelo cliente
+                        <textarea
+                          rows={2}
+                          maxLength={1500}
+                          value={ficha.campos.defeito || ""}
+                          placeholder="O que não funciona? Quando começou? Em quais condições acontece?"
+                          onChange={(e) =>
+                            setFicha({
+                              ...ficha,
+                              campos: { ...ficha.campos, defeito: e.target.value },
+                            })
+                          }
+                        />
+                      </label>
+                    </details>
+                  )}
+
+                  <EditorFichaEspecialidade
+                    etapasPermitidas={
+                      editor.item.situacao === "concluido"
+                        ? undefined
+                        : etapasEmAndamento(ficha.especialidade)
+                    }
+                    etapaBloqueada={
+                      linguagem.assistencia && editor.item.situacao === "concluido"
+                    }
+                    valor={ficha}
+                    alterar={setFicha}
+                    mostrarEtapa
+                    gruposRecolhiveis
+                    ocultarCampos={[
+                      "prazo_servico",
+                      ...(linguagem.assistencia ? ["defeito"] : []),
+                      ...(perfilAtendimento(ficha.especialidade).recepcaoRapida || []),
+                    ]}
+                  />
+                  <details className="os-detalhes ficha-anotacoes">
+                    <summary>Anotações complementares (opcional)</summary>
+                    <CampoDetalhesServico
+                      especialidade={ficha.especialidade}
+                      observacoes={editor.item.dados.detalhes_especialidade}
+                    />
+                    {camposAtendimento[ramo]
+                      .filter(
+                        ([k]) =>
+                          k !== "observacoes_cliente" &&
+                          !(linguagem.limpeza && k === "solicitacao"),
+                      )
+                      .filter(
+                        ([k]) =>
+                          !(linguagem.assistencia || linguagem.manutencao) ||
+                          k !== "solicitacao",
+                      )
+                      .map(([k, v]) => (
+                        <label key={k}>
+                          {v}
+                          <textarea
+                            name={k}
+                            maxLength={3000}
+                            rows={2}
+                            defaultValue={editor.item.dados[k] || ""}
+                          />
+                        </label>
+                      ))}
+                    <label>
+                      Checklist de execução (um item por linha)
+                      <textarea
+                        name="checklist"
+                        maxLength={3000}
+                        rows={3}
+                        defaultValue={editor.item.dados.checklist || ""}
+                      />
+                    </label>
+                    <label>
+                      Conferência final / aceite do cliente
+                      <textarea
+                        name="conferencia"
+                        maxLength={3000}
+                        rows={2}
+                        defaultValue={editor.item.dados.conferencia || ""}
                       />
                     </label>
                   </details>
-                )}
-
-                <EditorFichaEspecialidade
-                  etapasPermitidas={
-                    editor.item.situacao === "concluido"
-                      ? undefined
-                      : etapasEmAndamento(ficha.especialidade)
-                  }
-                  etapaBloqueada={
-                    linguagem.assistencia && editor.item.situacao === "concluido"
-                  }
-                  valor={ficha}
-                  alterar={setFicha}
-                  mostrarEtapa
-                  gruposRecolhiveis
-                  ocultarCampos={[
-                    "prazo_servico",
-                    ...(linguagem.assistencia ? ["defeito"] : []),
-                    ...(perfilAtendimento(ficha.especialidade).recepcaoRapida || []),
-                  ]}
-                />
-                <details className="os-detalhes ficha-anotacoes">
-                  <summary>Anotações complementares (opcional)</summary>
-                  <CampoDetalhesServico
-                    especialidade={ficha.especialidade}
-                    observacoes={editor.item.dados.detalhes_especialidade}
-                  />
-                  {camposAtendimento[ramo]
-                    .filter(
-                      ([k]) =>
-                        k !== "observacoes_cliente" &&
-                        !(linguagem.limpeza && k === "solicitacao"),
-                    )
-                    .filter(
-                      ([k]) =>
-                        !(linguagem.assistencia || linguagem.manutencao) ||
-                        k !== "solicitacao",
-                    )
-                    .map(([k, v]) => (
-                      <label key={k}>
-                        {v}
-                        <textarea
-                          name={k}
-                          maxLength={3000}
-                          rows={2}
-                          defaultValue={editor.item.dados[k] || ""}
-                        />
-                      </label>
-                    ))}
-                  <label>
-                    Checklist de execução (um item por linha)
-                    <textarea
-                      name="checklist"
-                      maxLength={3000}
-                      rows={3}
-                      defaultValue={editor.item.dados.checklist || ""}
-                    />
-                  </label>
-                  <label>
-                    Conferência final / aceite do cliente
-                    <textarea
-                      name="conferencia"
-                      maxLength={3000}
-                      rows={2}
-                      defaultValue={editor.item.dados.conferencia || ""}
-                    />
-                  </label>
                 </details>
-              </details>
-            </div>
+              </div>
+            </OpcoesOrcamento>
+            {orcamentoSimples && !item.revisao && podeEditarValores && (
+              <ResumoOrcamento
+                subtotal={itens.reduce(
+                  (total, i) =>
+                    total + Math.round(i.quantidade * i.preco_unitario_centavos),
+                  0,
+                )}
+                desconto={desconto}
+              />
+            )}
           </>
         ) : (
           <>
