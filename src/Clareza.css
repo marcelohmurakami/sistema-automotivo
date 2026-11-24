@@ -343,10 +343,10 @@
   background: var(--ui-painel);
 }
 .estrutura-sistema .os-painel {
-  padding: 20px;
+  padding: 16px;
 }
 .estrutura-sistema .registros-cabecalho {
-  padding: 20px;
+  padding: 16px;
 }
 .estrutura-sistema .registros-cabecalho h2 {
   font-size: 16px;
@@ -537,7 +537,7 @@
   background: var(--ui-painel);
   border-color: var(--ui-borda);
   border-radius: 12px;
-  padding: 18px;
+  padding: 14px;
   gap: 10px;
 }
 .estrutura-sistema .os-cartao h2 {
@@ -568,8 +568,8 @@
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  min-height: 54px;
-  padding: 14px 16px;
+  min-height: 44px;
+  padding: 10px 14px;
   cursor: pointer;
 }
 .secao-recolhivel > summary::-webkit-details-marker {
@@ -598,7 +598,7 @@
   border-bottom: 1px solid var(--ui-borda);
 }
 .secao-recolhivel-conteudo {
-  padding: 16px;
+  padding: 14px;
 }
 .secao-recolhivel-conteudo > .os-painel {
   border: 0;
@@ -945,7 +945,7 @@
   }
   .estrutura-sistema .os-painel,
   .estrutura-sistema .registros-cabecalho {
-    padding: 16px;
+    padding: 12px;
   }
   .estrutura-sistema .dialogo-interior {
     --dialogo-recuo: 16px;
@@ -1042,10 +1042,10 @@
     width: 100%;
   }
   .secao-recolhivel > summary {
-    padding: 12px 14px;
+    padding: 10px 12px;
   }
   .secao-recolhivel-conteudo {
-    padding: 14px;
+    padding: 12px;
   }
   .estrutura-sistema .rodape-pagina {
     padding: 16px;

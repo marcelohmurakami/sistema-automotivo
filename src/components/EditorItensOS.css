@@ -1,10 +1,10 @@
 .os-editor-itens {
   border: 1px solid var(--borda);
   border-radius: 14px;
-  padding: 18px;
+  padding: 14px;
   display: grid;
-  gap: 14px;
-  margin-block: 16px;
+  gap: 12px;
+  margin-block: 12px;
 }
 .os-editor-catalogo button.os-catalogo-ativo {
   outline: 2px solid var(--ui-acento, #88a75f);
@@ -95,7 +95,7 @@
 .os-editor-painel {
   display: grid;
   gap: 12px;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--borda);
   border-radius: 12px;
   background: var(--gestao-suave);
@@ -128,8 +128,8 @@
 }
 .os-editor-adicionados {
   display: grid;
-  gap: 10px;
-  padding-top: 8px;
+  gap: 8px;
+  padding-top: 4px;
 }
 .os-editor-adicionados h4 {
   margin: 0;
@@ -376,9 +376,9 @@
 }
 .os-editor-complemento {
   display: grid;
-  gap: 18px;
-  margin-top: 24px;
-  padding: 24px 4px 4px;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 0 0;
   border-top: 1px solid var(--ui-borda);
 }
 .os-editor-complemento > p {

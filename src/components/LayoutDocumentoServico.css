@@ -1,14 +1,19 @@
 .documento-simples > fieldset {
   display: grid;
-  gap: 20px;
   min-width: 0;
+}
+.documento-simples > fieldset,
+.estrutura-sistema .documento-simples > fieldset {
+  gap: 12px;
 }
 .documento-simples .os-editor-itens {
   margin: 0;
+  padding: 12px;
+  gap: 10px;
 }
 .documento-simples .documento-identificacao {
   display: grid;
-  gap: 14px;
+  gap: 10px;
   min-width: 0;
 }
 .documento-simples .atalhos-cadastro {
@@ -32,7 +37,8 @@
   flex-wrap: wrap;
   gap: 6px 12px;
   align-items: center;
-  padding: 16px 18px;
+  min-height: 44px;
+  padding: 10px 12px;
   cursor: pointer;
   list-style: none;
 }
@@ -53,17 +59,17 @@
 }
 .documento-mais-opcoes-conteudo {
   display: grid;
-  gap: 18px;
-  padding: 0 18px 18px;
+  gap: 12px;
+  padding: 0 12px 12px;
 }
 .documento-resumo-simples {
   width: min(100%, 440px);
   margin-left: auto;
-  padding: 16px 20px;
+  padding: 12px 14px;
   border: 1px solid var(--borda);
   border-radius: 14px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 .documento-resumo-simples > div {
   display: flex;
@@ -83,7 +89,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 12px;
 }
 .documento-fechamento--com-acao .documento-resumo-simples {
   width: 100%;
@@ -91,7 +97,7 @@
 @media (max-width: 600px) {
   .documento-fechamento--com-acao {
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    gap: 8px;
   }
 }
 .documento-resumo-total > strong {
@@ -99,7 +105,7 @@
 }
 .documento-resumo-simples > div + .documento-resumo-total {
   border-top: 1px solid var(--borda);
-  padding-top: 12px;
+  padding-top: 8px;
 }
 .documento-simples .os-editor-itens--simples .os-editor-catalogo {
   grid-template-columns: minmax(0, 1fr);
@@ -111,7 +117,7 @@
 .documento-simples .os-editor-catalogo > button {
   border: 0;
   border-radius: 0;
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 .documento-simples .os-editor-catalogo > button + button {
   border-top: 1px solid var(--borda);
@@ -125,8 +131,8 @@
   white-space: nowrap;
 }
 .documento-simples .os-editor-item {
-  padding: 12px;
-  gap: 12px;
+  padding: 8px 10px;
+  gap: 8px;
 }
 .documento-simples .os-editor-item-acoes button {
   width: 44px;
@@ -150,6 +156,7 @@
 }
 .documento-simples .os-editor-busca > div input {
   background: transparent;
+  padding-inline: 4px;
 }
 @media (max-width: 480px) {
   .documento-simples .os-editor-item-acoes {
@@ -186,35 +193,23 @@
   position: sticky;
   bottom: 0;
   background: var(--superficie);
-  padding-block: 14px;
+  padding-block: 10px;
   border-top: 1px solid var(--borda);
   z-index: 2;
 }
 @media (max-width: 600px) {
-  .documento-simples > fieldset {
-    gap: 16px;
-  }
-  .documento-simples .os-editor-itens {
-    padding: 14px;
-  }
-  .documento-mais-opcoes > summary {
-    padding: 14px;
-  }
   .documento-mais-opcoes > summary > span {
     display: none;
   }
-  .documento-mais-opcoes-conteudo {
-    padding-inline: 14px;
-  }
   .documento-resumo-simples {
     width: 100%;
-    padding: 14px;
+    padding: 10px 12px;
   }
   .documento-resumo-total > strong {
     font-size: 20px;
   }
   .documento-simples .os-editor-catalogo > button {
     gap: 8px;
-    padding: 12px 10px;
+    padding: 10px;
   }
 }
