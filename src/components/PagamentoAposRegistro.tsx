@@ -72,9 +72,13 @@ export function PerguntaPagamento({
   const restante = Math.max(0, (dados?.total ?? 0) - pago);
   const indisponivel = dados?.cancelado || dados?.titulo?.cancelado_em;
   const conferirEntrega = registro.contexto === "entrega";
+  const vencimentoCombinado = dados?.titulo?.pagamento_combinado
+    ? dados.titulo.vencimento
+    : undefined;
+  const dataCombinada = vencimentoCombinado?.split("-").reverse().join("/");
   const conferindo = conferirEntrega && !concluido && !acao && q.isFetching;
   // Espera uma consulta atual, inclusive depois de recarregar ou trocar de aparelho.
-  // Um adiantamento ou prazo já combinado não deve ser solicitado de novo na entrega.
+  // Saldo pendente precisa ser conferido, mesmo com sinal ou prazo combinado.
   const dispensar =
     conferirEntrega &&
     !concluido &&
@@ -143,6 +147,7 @@ export function PerguntaPagamento({
                         {dinheiro(pago)} já {receber ? "recebidos" : "pagos"}
                       </small>
                     )}
+                    {dataCombinada && <small>Combinado para {dataCombinada}</small>}
                   </div>
                   <div className="pagamento-registro-opcoes">
                     <button onClick={() => setAcao("pagar")}>
@@ -176,7 +181,10 @@ export function PerguntaPagamento({
                 onClick={fechar}
               >
                 {restante > 0 && !indisponivel
-                  ? (continuacao?.rotuloAdiar ?? "Agora não")
+                  ? (continuacao?.rotuloAdiar ??
+                    (conferirEntrega && dataCombinada
+                      ? `Manter pagamento para ${dataCombinada}`
+                      : "Agora não"))
                   : (continuacao?.rotulo ?? "Fechar")}
               </button>
             </>
@@ -197,7 +205,8 @@ export function PerguntaPagamento({
           }
           vencimentoInicial={
             receber
-              ? dados.os?.vencimento_pagamento ||
+              ? vencimentoCombinado ||
+                dados.os?.vencimento_pagamento ||
                 (registro.tipo === "atendimento"
                   ? dados.titulo?.vencimento
                   : undefined) ||

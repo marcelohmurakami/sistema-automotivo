@@ -57,6 +57,43 @@ async function iniciar(width, extra = "") {
 }
 
 const btn = (name) => p.getByRole("button", { name, exact: true });
+async function conferirSaldoNaEntrega(modo) {
+  if (modo === "total") {
+    await p
+      .getByText("Conferindo o pagamento já registrado…", { exact: true })
+      .waitFor({ state: "hidden" });
+    await pergunta().waitFor({ state: "hidden" });
+    return;
+  }
+  await pergunta().getByRole("button", { name: "Já recebi", exact: false }).waitFor();
+  assert.match(
+    await pergunta().locator(".pagamento-registro-saldo strong").innerText(),
+    modo === "parcial" ? /100,00/ : /150,00/,
+  );
+  assert(await pergunta().evaluate((d) => d.scrollWidth <= d.clientWidth + 1));
+  if (["parcial", "prazo"].includes(modo)) {
+    await pergunta().getByText("Combinado para 24/12/2026", { exact: true }).waitFor();
+    await pergunta().getByRole("button", { name: "A receber", exact: false }).click();
+    assert.equal(
+      await p.getByLabel("Receber em", { exact: true }).inputValue(),
+      "2026-12-24",
+    );
+    await p
+      .getByRole("dialog", { name: "Combinar pagamento", exact: true })
+      .getByRole("button", { name: "Fechar janela", exact: true })
+      .click();
+  }
+}
+async function manterPendente(modo) {
+  await pergunta()
+    .getByRole("button", {
+      name: ["parcial", "prazo"].includes(modo)
+        ? "Manter pagamento para 24/12/2026"
+        : "Agora não",
+      exact: true,
+    })
+    .click();
+}
 const entrega = () =>
   p.getByRole("dialog", {
     name: /^(O serviço já foi entregue ao cliente|O cliente já conferiu e aceitou o serviço)\?$/,
@@ -206,7 +243,7 @@ try {
       const antes = await os(auto);
       assert.equal(antes.situacao, auto ? "ready" : "concluido");
       assert(await entrega().evaluate((d) => d.scrollWidth <= d.clientWidth + 1));
-      const entregue = width === 1366;
+      const entregue = width === 1366 && !process.argv.includes("--entrega-pendente");
       await entrega()
         .getByRole("button", {
           name: entregue ? /^Sim, já foi (entregue|aceito)$/ : "Não, deixar aguardando",
@@ -242,28 +279,60 @@ try {
           await p.waitForFunction(
             () => JSON.parse(localStorage.patio_os_v1).at(-1).situacao === "delivered",
           );
+          await conferirSaldoNaEntrega(modo);
+          if (modo !== "total") await manterPendente(modo);
+          assert.deepEqual((await financeiro()).baixas, f.baixas);
         } else assert.equal(await btn("Entregar OS 1 para Entregue").count(), 0);
       }
       await p.goto(
         base + "?perfil=" + perfil + "&" + (auto ? "os" : "detalhe") + "=" + salvo.id,
       );
       await p.locator("dialog[open]").first().waitFor();
+      if (!auto && !entregue) {
+        if (perfil.startsWith("assistencia_")) {
+          await btn("Registrar retirada").click();
+          await btn("Confirmar retirada").click();
+        } else {
+          await btn("Registrar conferência / aceite").click();
+          await p
+            .getByLabel("Quem conferiu o serviço?", { exact: true })
+            .fill("Cliente QA");
+          await btn("Salvar conferência").click();
+        }
+        await conferirSaldoNaEntrega(modo);
+        if (modo !== "total") await manterPendente(modo);
+        assert.deepEqual((await financeiro()).baixas, f.baixas);
+      }
       await p
         .getByRole("button", { name: "Fechar janela", exact: true })
         .last()
         .click();
       await btn("Conferir entrega QA").click();
-      if (modo === "adiar")
+      await conferirSaldoNaEntrega(modo);
+      assert.deepEqual((await financeiro()).baixas, f.baixas);
+      if (modo !== "total") {
         await pergunta()
           .getByRole("button", { name: "Já recebi", exact: false })
-          .waitFor();
-      else {
+          .click();
+        assert.equal(
+          Number(await p.getByLabel("Valor pago (R$)", { exact: true }).inputValue()),
+          modo === "parcial" ? 100 : 150,
+        );
+        await btn("Confirmar pagamento").click();
         await p
-          .getByText("Conferindo o pagamento já registrado…", { exact: true })
-          .waitFor({ state: "hidden" });
-        assert.equal(await pergunta().count(), 0);
+          .getByRole("dialog", { name: "Financeiro atualizado", exact: true })
+          .getByRole("button", { name: "Concluir", exact: true })
+          .click();
+        const quitado = await financeiro();
+        assert.equal(
+          quitado.baixas.reduce((s, b) => s + b.valor_centavos, 0),
+          15000,
+        );
+        assert.equal(quitado.baixas.length, modo === "parcial" ? 2 : 1);
+        await btn("Conferir entrega QA").click();
+        await conferirSaldoNaEntrega("total");
+        assert.deepEqual((await financeiro()).baixas, quitado.baixas);
       }
-      assert.deepEqual((await financeiro()).baixas, f.baixas);
       passou(
         perfil +
           " " +
@@ -306,7 +375,9 @@ try {
       await btn("Adicionar peça").click();
     }
     if (caso === "sem-marcar")
-      await p.getByLabel("O serviço já está pronto para entrega", { exact: true }).uncheck();
+      await p
+        .getByLabel("O serviço já está pronto para entrega", { exact: true })
+        .uncheck();
     if (caso === "falha-criacao")
       await p.evaluate(() => {
         window.qaFalhaSalvar = true;
