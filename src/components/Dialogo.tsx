@@ -8,6 +8,7 @@ export function Dialogo({
   fechar,
   titulo,
   acoesCabecalho,
+  complementoCabecalho,
   children,
   classe = "",
 }: {
@@ -15,6 +16,7 @@ export function Dialogo({
   fechar: () => void;
   titulo: string;
   acoesCabecalho?: ReactNode;
+  complementoCabecalho?: ReactNode;
   children: ReactNode;
   classe?: string;
 }) {
@@ -58,6 +60,11 @@ export function Dialogo({
             >
               <X size={20} />
             </button>
+            {complementoCabecalho && (
+              <div className="dialogo-complemento-cabecalho">
+                {complementoCabecalho}
+              </div>
+            )}
           </div>
           {children}
         </div>

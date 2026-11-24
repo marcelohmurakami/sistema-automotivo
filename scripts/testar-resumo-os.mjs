@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
 import { createServer } from "vite";
 
 const server = await createServer({
@@ -14,6 +15,9 @@ const server = await createServer({
 try {
   const { ResumoOS } = await server.ssrLoadModule(
     "/src/components/ordens-servico/ResumoOS.tsx",
+  );
+  const { AndamentoOS } = await server.ssrLoadModule(
+    "/src/components/ordens-servico/AndamentoOS.tsx",
   );
   const item = (id, situacao = "pending", tipo = "service") => ({
     id,
@@ -42,11 +46,8 @@ try {
     renderToStaticMarkup(
       h(ResumoOS, {
         os: { ...base, ...dados },
-        ocupado: false,
         permitePagamento,
         verSecao() {},
-        editar() {},
-        avancar() {},
       }),
     );
   const html = resumo();
@@ -57,29 +58,61 @@ try {
   assert.doesNotMatch(html, /Item cancelado|Diagnóstico reservado|Anotação interna/);
   assert.match(html.replaceAll("\u00a0", " "), /R\$ 80,00/);
   assert.match(html, /Desconto de/);
-  assert.match(html, /Iniciar serviço/);
+  assert.match(html, /Dados do atendimento/);
   assert.match(html, /Ver pagamento/);
   assert.doesNotMatch(resumo({}, false), /Ver pagamento/);
   console.log(
     "PASS resumo preserva valores, distingue serviços realizados e pendentes e não expõe dados internos",
   );
+  const andamento = (dados = {}, ocupado = false) =>
+    renderToStaticMarkup(
+      h(
+        MemoryRouter,
+        null,
+        h(AndamentoOS, {
+          os: { ...base, ...dados },
+          ocupado,
+          erro: "",
+          avancar() {},
+          operar: async () => true,
+          limparErro() {},
+        }),
+      ),
+    );
+  assert.match(andamento(), /Iniciar serviço/);
+  assert.match(andamento(), /Pausar serviço/);
+  assert.match(andamento({ situacao: "in_progress" }), /Conferir serviço/);
+  assert.match(andamento({ situacao: "quality_check" }), /Concluir serviço/);
   for (const situacao of ["delivered", "cancelled"])
     assert.doesNotMatch(
-      resumo({ situacao }),
+      andamento({ situacao }),
       /Editar OS|Iniciar serviço|Registrar entrega/,
     );
   assert.doesNotMatch(
-    resumo({ arquivado_em: "2026-10-14" }),
+    andamento({ arquivado_em: "2026-10-14" }),
     /Editar OS|Iniciar serviço/,
   );
   assert.doesNotMatch(
-    resumo({ orcamento_aguardando_id: "pendente" }),
-    /Iniciar serviço/,
+    andamento({ orcamento_aguardando_id: "pendente" }),
+    /Iniciar serviço|Retomar serviço|<button\b/,
   );
-  const parado = resumo({ paradas: [{ encerrado_em: null }] });
-  assert.match(parado, /Ver pendência/);
+  const parado = andamento({
+    paradas: [
+      {
+        id: "parada",
+        motivo: "parts",
+        detalhes: "Peça chega amanhã",
+        encerrado_em: null,
+      },
+    ],
+  });
+  assert.match(parado, /Ver motivo da pausa/);
+  assert.match(parado, /Peça chega amanhã/);
+  assert.match(parado, /Retomar serviço/);
   assert.doesNotMatch(parado, /Iniciar serviço/);
-  assert.match(resumo({ situacao: "ready" }), /Registrar entrega/);
+  assert.match(andamento({ situacao: "ready" }), /Registrar entrega/);
+  assert.doesNotMatch(andamento({ situacao: "ready" }), />Pausar serviço</);
+  assert.match(andamento({}, true), /disabled/);
   console.log("PASS ações respeitam OS encerrada, excluída, sem aprovação e parada");
   const muitos = resumo({
     itens: Array.from({ length: 30 }, (_, i) => item(`Serviço ${i + 1}`)),

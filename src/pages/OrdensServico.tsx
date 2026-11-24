@@ -24,6 +24,9 @@ import { novoId } from "../lib/uuid.ts";
 import { FiltrosSituacao } from "../components/FiltrosSituacao";
 
 import { ResumoOS } from "../components/ordens-servico/ResumoOS";
+import { AndamentoOS } from "../components/ordens-servico/AndamentoOS";
+import { executarAcaoNoMapa, type AcaoRapidaMapa } from "../services/mapaOficina";
+import { destinoNoMapa } from "../lib/movimentacaoMapa";
 import {
   ConfirmarAutorizacao,
   type ManifestacaoEquipe,
@@ -282,7 +285,9 @@ export function OrdensServico() {
           e !== null &&
           "code" in e &&
           ["PT409", "40001"].includes(String(e.code))) ||
-        (acesso.demo && e instanceof Error && e.message.startsWith("OS alterada."));
+        (acesso.demo &&
+          e instanceof Error &&
+          /^(?:Esta )?OS (?:foi )?alterada/.test(e.message));
       const idAlterado = editor ? (edicao?.id ?? id) : id;
       if (conflito && idAlterado) {
         // Preserva o formulário digitado. Ao fechar e reabrir, usa a revisão atual,
@@ -376,6 +381,22 @@ export function OrdensServico() {
     setAviso("Situação atualizada.");
     if (devePerguntarPagamentoOS(atual.situacao, destino))
       perguntarPagamento({ tipo: "os", id: atual.id, contexto: "entrega" });
+  }
+  async function acaoAndamento(acao: AcaoRapidaMapa) {
+    if (!o) return false;
+    let salvo = false;
+    await executar(async () => {
+      await executarAcaoNoMapa(acesso.demo, oficina, o.id, o.revisao, acao);
+      salvo = true;
+      setAviso(
+        acao.acao === "parar"
+          ? "Serviço pausado."
+          : acao.acao === "retomar"
+            ? "Serviço retomado."
+            : "Serviço concluído. OS pronta para entrega.",
+      );
+    });
+    return salvo;
   }
   function formulario(
     e: FormEvent<HTMLFormElement>,
@@ -937,6 +958,27 @@ export function OrdensServico() {
           )
         }
         classe="dialogo-orcamento dialogo-detalhes-os"
+        complementoCabecalho={
+          o &&
+          !encerrada &&
+          !o.arquivado_em && (
+            <AndamentoOS
+              key={o.id}
+              os={o}
+              ocupado={ocupado}
+              erro={erro}
+              limparErro={() => setErro("")}
+              operar={acaoAndamento}
+              avancar={(destino) => {
+                if (destino === "delivered") {
+                  setNovaSituacao(destino);
+                  setMotivo("");
+                  setErro("");
+                } else void executar(() => alterarSituacao(o, destino));
+              }}
+            />
+          )
+        }
       >
         {erro && (
           <p role="alert" className="erro-formulario">
@@ -1110,13 +1152,7 @@ export function OrdensServico() {
               {aba === "atendimento" && (
                 <ResumoOS
                   os={o}
-                  ocupado={ocupado}
                   verSecao={setAba}
-                  avancar={(situacao) => {
-                    setNovaSituacao(situacao);
-                    setMotivo("");
-                    setErro("");
-                  }}
                   permitePagamento={
                     acesso.permite("finance") && acesso.oficina?.perfil !== "staff"
                   }
@@ -1132,11 +1168,12 @@ export function OrdensServico() {
               {aba === "detalhes" && (
                 <div className="os-secao">
                   <div className="os-resumo-operacao">
-                    {(!encerrada || o.paradas.some((p) => !p.encerrado_em)) && (
-                      <BlocoDetalhesOS titulo="Andamento do serviço">
-                        {!encerrada && (
-                          <div className="os-proximos">
-                            {proximasOS[o.situacao].map((s) => (
+                    {!encerrada && !o.arquivado_em && (
+                      <BlocoDetalhesOS titulo="Outras alterações de situação">
+                        <div className="os-proximos">
+                          {proximasOS[o.situacao]
+                            .filter((s) => s !== destinoNoMapa(o.situacao, "avancar"))
+                            .map((s) => (
                               <button
                                 className={
                                   s === "cancelled" ||
@@ -1177,22 +1214,7 @@ export function OrdensServico() {
                                 <ArrowRight size={16} />
                               </button>
                             ))}
-                          </div>
-                        )}
-                        {o.paradas.some((p) => !p.encerrado_em) && (
-                          <button
-                            className="os-bloqueio"
-                            onClick={() => setAba("execucao")}
-                          >
-                            <strong>Serviço parado</strong>
-                            <span>
-                              {o.paradas.find((p) => !p.encerrado_em)?.detalhes}
-                            </span>
-                            <span className="os-link-pendencia">
-                              Ver pendência <ArrowRight size={15} />
-                            </span>
-                          </button>
-                        )}
+                        </div>
                       </BlocoDetalhesOS>
                     )}
                     <EntregaPrometidaOS
@@ -1428,43 +1450,6 @@ export function OrdensServico() {
                           )}
                         </div>
                       ))}
-                    {!encerrada && o.situacao !== "ready" && (
-                      <details className="os-detalhes">
-                        <summary>Registrar motivo de parada</summary>
-                        <form
-                          className="formulario-cliente"
-                          onSubmit={(e) =>
-                            formulario(e, (f) =>
-                              operar("registrar_parada_os", {
-                                p_motivo: f.get("motivo"),
-                                p_detalhes: f.get("detalhes"),
-                              }),
-                            )
-                          }
-                        >
-                          <fieldset disabled={ocupado}>
-                            <label>
-                              Motivo
-                              <select name="motivo">
-                                <option value="parts">Aguardando peças</option>
-                                <option value="approval">Aguardando aprovação</option>
-                                <option value="third_party">
-                                  Serviço de terceiros
-                                </option>
-                                <option value="capacity">Falta de capacidade</option>
-                                <option value="diagnosis">Em diagnóstico</option>
-                                <option value="other">Outro</option>
-                              </select>
-                            </label>
-                            <label>
-                              O que está impedindo o serviço?
-                              <textarea name="detalhes" required maxLength={2000} />
-                            </label>
-                            <button className="botao-primario">Registrar parada</button>
-                          </fieldset>
-                        </form>
-                      </details>
-                    )}
                   </BlocoDetalhesOS>
                 </div>
               )}

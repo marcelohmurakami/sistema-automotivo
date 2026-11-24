@@ -1,0 +1,129 @@
+.estrutura-sistema
+  .dialogo.dialogo-detalhes-os
+  > .dialogo-interior
+  > .dialogo-cabecalho {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+}
+.dialogo-detalhes-os > .dialogo-interior > .dialogo-cabecalho > .botao-icone {
+  grid-column: 3;
+  grid-row: 1;
+}
+.dialogo-detalhes-os
+  > .dialogo-interior
+  > .dialogo-cabecalho
+  > .dialogo-complemento-cabecalho {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+.os-andamento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-borda);
+  border-left: 4px solid var(--ui-destaque, #a3c56c);
+  border-radius: 12px;
+  background: var(--ui-fundo);
+}
+.os-andamento-etapa {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.os-andamento-etapa > span,
+.os-andamento-etapa > small {
+  color: var(--ui-suave);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.os-andamento-etapa > strong {
+  font-size: 15px;
+  line-height: 1.4;
+}
+.os-andamento-acoes {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.estrutura-sistema .dialogo-detalhes-os .os-andamento-acoes > :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  text-decoration: none;
+}
+.os-andamento-acoes svg {
+  flex-shrink: 0;
+}
+.os-andamento-pausado {
+  border-left-color: #c49a47;
+}
+.os-andamento-pendencias {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.os-andamento-pendencias summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+.os-andamento-pendencias ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  max-height: 110px;
+  overflow-y: auto;
+}
+.os-andamento-pendencias li + li {
+  margin-top: 6px;
+}
+.os-andamento-pendencias p {
+  margin: 8px 0 0;
+  color: var(--ui-suave);
+}
+.estrutura-sistema .dialogo.dialogo-detalhes-os {
+  scroll-padding-block-start: 170px;
+}
+.estrutura-sistema .dialogo.dialogo-pausar-os {
+  max-width: 480px;
+}
+@media (max-width: 700px) {
+  .os-andamento {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .os-andamento-etapa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+  }
+  .os-andamento-etapa small {
+    flex-basis: 100%;
+  }
+  .os-andamento-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .os-andamento-acoes > :only-child {
+    grid-column: 1 / -1;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-andamento-acoes > :is(button, a) {
+    padding: 10px 8px;
+    gap: 6px;
+  }
+  .estrutura-sistema .dialogo.dialogo-detalhes-os {
+    scroll-padding-block-start: 215px;
+  }
+}

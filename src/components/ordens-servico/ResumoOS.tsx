@@ -1,37 +1,20 @@
-import { ArrowRight, CheckCircle2, Clock3, Pencil } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock3 } from "lucide-react";
 import type { OrdemServico } from "../../services/ordensServico";
 import { dinheiro } from "../../lib/formatacao";
 import { quantidadeDocumento } from "../../lib/documentoCliente";
 
 export function ResumoOS({
   os,
-  ocupado,
   verSecao,
-  editar,
-  avancar,
   permitePagamento,
 }: {
   os: OrdemServico;
-  ocupado: boolean;
   verSecao: (secao: string) => void;
-  editar?: () => void;
-  avancar: (situacao: string) => void;
   permitePagamento: boolean;
 }) {
   const itens = os.itens.filter((i) => i.situacao !== "cancelled");
   const servicos = itens.filter((i) => i.tipo === "service");
   const concluidos = servicos.filter((i) => i.situacao === "done").length;
-  const encerrada =
-    !!os.arquivado_em || ["delivered", "cancelled"].includes(os.situacao);
-  const parada = os.paradas.some((p) => !p.encerrado_em);
-  const proxima = (
-    {
-      open: ["in_progress", "Iniciar serviço"],
-      in_progress: ["quality_check", "Conferir serviço"],
-      quality_check: ["ready", "Pronto para entrega"],
-      ready: ["delivered", "Registrar entrega"],
-    } as Record<string, [string, string]>
-  )[os.situacao];
   return (
     <div className="os-resumo-limpo">
       <section className="os-servicos-resumo" aria-label="Serviços e peças da OS">
@@ -107,35 +90,10 @@ export function ResumoOS({
       </section>
       <div className="os-resumo-acoes">
         <div>
-          {!encerrada && editar && (
-            <button className="botao-secundario" disabled={ocupado} onClick={editar}>
-              <Pencil size={16} aria-hidden="true" /> Editar OS
-            </button>
-          )}
           <button className="botao-secundario" onClick={() => verSecao("detalhes")}>
-            Andamento e entrega
+            Dados do atendimento
           </button>
         </div>
-        {!encerrada &&
-          (parada ? (
-            <button
-              className="botao-secundario os-resumo-parada"
-              onClick={() => verSecao("execucao")}
-            >
-              Serviço parado · Ver pendência <ArrowRight size={16} aria-hidden="true" />
-            </button>
-          ) : (
-            proxima &&
-            !os.orcamento_aguardando_id && (
-              <button
-                className="botao-secundario"
-                disabled={ocupado}
-                onClick={() => avancar(proxima[0])}
-              >
-                {proxima[1]} <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            )
-          ))}
       </div>
     </div>
   );
