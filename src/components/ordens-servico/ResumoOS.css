@@ -291,6 +291,141 @@
 .dialogo-compartilhar-os {
   max-width: 560px;
 }
+
+/* A consulta no desktop usa a largura para identificar a OS e alinhar as ações. */
+@media (min-width: 701px) {
+  .estrutura-sistema .dialogo-detalhes-os .os-cabecalho-resumo {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 16px 24px;
+    padding: 18px 20px;
+    border: 1px solid var(--ui-borda);
+    border-radius: 14px;
+    background: var(--ui-fundo);
+  }
+  .dialogo-detalhes-os .os-identificacao-principal .os-resumo-rotulo {
+    display: inline;
+    margin: 0 0 0 10px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-identificacao-principal h2 {
+    display: block;
+    margin: 8px 0 4px;
+    font-size: 24px;
+    overflow-wrap: anywhere;
+  }
+  .dialogo-detalhes-os .os-data-principal {
+    padding: 10px 14px;
+    gap: 10px;
+    background: var(--ui-painel);
+  }
+  .dialogo-detalhes-os .os-data-principal time {
+    font-size: 16px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-cabecalho-acoes {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--ui-borda);
+  }
+  .dialogo-detalhes-os .os-impressao-rapida {
+    display: contents;
+  }
+  .dialogo-detalhes-os .os-cabecalho-acoes > button,
+  .dialogo-detalhes-os .os-impressao-rapida > :is(button, a) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: normal;
+    text-align: center;
+  }
+  .dialogo-detalhes-os .os-impressao-rapida > a {
+    border: 1px solid var(--ui-borda);
+    border-radius: 10px;
+    color: var(--ui-texto);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .dialogo-detalhes-os .os-impressao-rapida > a:hover {
+    background: var(--ui-hover);
+  }
+  .dialogo-detalhes-os .os-impressao-rapida > a:focus-visible {
+    outline: 2px solid var(--ui-texto);
+    outline-offset: 2px;
+  }
+  .dialogo-detalhes-os .os-impressao-rapida > [role="alert"] {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .dialogo-detalhes-os .os-cabecalho-acoes svg {
+    flex-shrink: 0;
+  }
+  .dialogo-detalhes-os > .dialogo-interior > .aviso-cliente[role="status"] {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  .dialogo-detalhes-os .ferramentas-atendimento {
+    margin-top: 4px;
+  }
+  .dialogo-detalhes-os .ferramentas-atendimento > summary {
+    min-height: 44px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    align-items: stretch;
+    margin: 8px 0 16px;
+    background: var(--ui-fundo);
+    border-radius: 12px;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples > button {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-abas-simples > button[aria-current] {
+    border-color: var(--ui-borda);
+    background: var(--ui-painel);
+  }
+  .estrutura-sistema .dialogo-detalhes-os .os-mais-secoes {
+    grid-column: auto;
+  }
+  .dialogo-detalhes-os .os-servicos-resumo-topo {
+    padding: 14px 20px;
+    background: var(--ui-fundo);
+  }
+  .dialogo-detalhes-os .os-servicos-resumo-lista > li {
+    padding-block: 14px;
+  }
+  .dialogo-detalhes-os .os-servicos-resumo-lista > li:nth-child(even) {
+    background: var(--ui-fundo);
+  }
+  .dialogo-detalhes-os .os-servicos-resumo-total {
+    padding-block: 14px;
+  }
+}
+@media (min-width: 901px) {
+  .estrutura-sistema .dialogo.dialogo-detalhes-os {
+    width: min(1120px, calc(100vw - 48px));
+    max-width: 1120px;
+  }
+}
+@media (min-width: 701px) and (max-width: 900px) {
+  .estrutura-sistema .dialogo-detalhes-os .os-cabecalho-acoes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .os-compartilhar-conteudo {
   display: grid;
   gap: 16px;
