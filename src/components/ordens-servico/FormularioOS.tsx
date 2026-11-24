@@ -287,11 +287,6 @@ export function FormularioOS({
         {!anterior && (
           <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
         )}
-        <FotosCriacaoOS
-          fotos={fotos}
-          alterar={setFotos}
-          processando={setPreparandoFotos}
-        />
         <div className="formulario-opcionais">
           <CampoTipoServico inicial={anterior?.tipo_servico}>
             {ficha.especialidade === "estetica" ? (
@@ -302,6 +297,11 @@ export function FormularioOS({
           </CampoTipoServico>
           <details className="os-detalhes os-informacoes-adicionais">
             <summary>Informações adicionais do atendimento (opcional)</summary>
+            <FotosCriacaoOS
+              fotos={fotos}
+              alterar={setFotos}
+              processando={setPreparandoFotos}
+            />
             {ficha.especialidade !== "estetica" && (
               <EditorFichaEspecialidade
                 valor={ficha}

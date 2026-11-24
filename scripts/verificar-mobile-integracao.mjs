@@ -76,6 +76,10 @@ try {
     .fill("QA MOBILE FOTO " + Date.now());
   await p.getByLabel("Carro", { exact: true }).fill("Veículo fictício QA");
   await p.getByLabel("Motor", { exact: true }).fill("Motor QA");
+  const adicionaisFotos = p.locator(".os-informacoes-adicionais");
+  assert.equal(await adicionaisFotos.evaluate((e) => e.open), false);
+  assert.equal(await p.locator(".fotos-criacao-os").isVisible(), false);
+  await adicionaisFotos.locator(":scope > summary").click();
   const imagem = {
     name: "teste-mobile.png",
     mimeType: "image/png",
@@ -96,6 +100,7 @@ try {
     .getByLabel("Tirar foto do atendimento", { exact: true })
     .setInputFiles(imagem);
   await p.getByRole("img", { name: "Foto do atendimento 1", exact: true }).waitFor();
+  await adicionaisFotos.locator(":scope > summary").click();
   const upload = "**/storage/v1/object/workshop-files/**";
   await p.route(upload, (r) =>
     r.request().method() === "POST" ? r.abort("internetdisconnected") : r.continue(),

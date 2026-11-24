@@ -257,6 +257,10 @@ try {
     .fill("QA Foto capturada mobile");
   await p.getByLabel("Carro", { exact: true }).fill("Fiat Palio");
   await p.getByLabel("Motor", { exact: true }).fill("Fire");
+  const adicionaisFotos = p.locator(".os-informacoes-adicionais");
+  assert.equal(await adicionaisFotos.evaluate((e) => e.open), false);
+  assert.equal(await p.locator(".fotos-criacao-os").isVisible(), false);
+  await adicionaisFotos.locator(":scope > summary").click();
   const imagem = {
     name: "foto-qa.png",
     mimeType: "image/png",
@@ -277,6 +281,15 @@ try {
     .getByLabel("Tirar foto do atendimento", { exact: true })
     .setInputFiles(imagem);
   await p.getByRole("img", { name: "Foto do atendimento 1", exact: true }).waitFor();
+  await adicionaisFotos.locator(":scope > summary").click();
+  assert.equal(await p.locator(".fotos-criacao-os").isVisible(), false);
+  await adicionaisFotos.locator(":scope > summary").click();
+  assert(
+    await p
+      .getByRole("img", { name: "Foto do atendimento 1", exact: true })
+      .isVisible(),
+  );
+  await adicionaisFotos.locator(":scope > summary").click();
   await p.getByRole("button", { name: "Abrir ordem de serviço", exact: true }).click();
   await p.locator(".os-cabecalho-resumo").waitFor();
   await p.getByRole("button", { name: "Fotos", exact: true }).click();
@@ -294,7 +307,9 @@ try {
   await p
     .getByRole("img", { name: "Foto registrada na criação da OS", exact: true })
     .waitFor();
-  pass("Criar OS avulsa com foto, salvar e reabrir preserva imagem");
+  pass(
+    "Fotos começam recolhidas; selecionar, recolher, salvar e reabrir preserva imagem",
+  );
   await p.getByRole("button", { name: "Editar OS", exact: true }).click();
   await p
     .getByText("Informações adicionais do atendimento (opcional)", { exact: true })
