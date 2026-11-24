@@ -13,7 +13,6 @@ const PainelAssistencia = componenteSobDemanda(async () => ({
 }));
 import { diasCalendario } from "../lib/calendarioAgenda";
 import { AtalhoLocalizacao } from "../components/AtalhoLocalizacao";
-import { usePagamentoAposRegistro } from "../lib/pagamentoAposRegistro";
 import { abrirJanelaNotaOS } from "../services/impressaoNotaOS";
 import { imprimirNotaAtendimento } from "../services/impressaoAtendimento";
 import { novoId } from "../lib/uuid.ts";
@@ -89,8 +88,6 @@ export function Servicos({ tela }: { tela: string }) {
   const local = useLocation();
   const [ultimoAtalho, setUltimoAtalho] = useState<string | null>(null);
   const [detalhe, setDetalhe] = useState<string | null>(null);
-  const [pagamentoDaCriacao, setPagamentoDaCriacao] = useState(false);
-  const perguntarPagamento = usePagamentoAposRegistro();
   const [abrirAprovacao, setAbrirAprovacao] = useState(false);
   useEffect(() => {
     const fecharFicha = () => {
@@ -196,7 +193,6 @@ export function Servicos({ tela }: { tela: string }) {
       janela?: Window | null;
     }) => gravarServico(funcao, oficina, args, a.demo),
     onSuccess: async (id, variaveis) => {
-      if (variaveis.imprimir) setPagamentoDaCriacao(true);
       setAbrirFotos(!!variaveis.fotos);
       setEditor(null);
       setAviso(
@@ -215,23 +211,8 @@ export function Servicos({ tela }: { tela: string }) {
       ) {
         setDetalhe(id);
         if (variaveis.imprimir) {
-          perguntarPagamento(
-            { tipo: "atendimento", id },
-            {
-              rotulo: "Concluir e imprimir",
-              rotuloAdiar: "Agora não, só imprimir",
-              executar: () => {
-                setPagamentoDaCriacao(false);
-                void imprimirNotaAtendimento(
-                  a.demo,
-                  oficina,
-                  id,
-                  variaveis.janela === undefined
-                    ? abrirJanelaNotaOS()
-                    : variaveis.janela,
-                ).catch((e) => setAviso(erroPublico(e)));
-              },
-            },
+          void imprimirNotaAtendimento(a.demo, oficina, id, variaveis.janela).catch(
+            (e) => setAviso(erroPublico(e)),
           );
         }
       }
@@ -250,7 +231,6 @@ export function Servicos({ tela }: { tela: string }) {
     },
     onError: (_erro, variaveis) => {
       variaveis.janela?.close();
-      setPagamentoDaCriacao(false);
     },
   });
   const nomeCliente = useCallback(
@@ -784,7 +764,7 @@ export function Servicos({ tela }: { tela: string }) {
         </>
       )}
       {!editor && salvar.isError && <p role="alert">{erroPublico(salvar.error)}</p>}
-      {(detalhe || atendimentoLink) && !editor && !pagamentoDaCriacao && (
+      {(detalhe || atendimentoLink) && !editor && (
         <DetalhesAtendimento
           key={`${detalhe || atendimentoLink!.id}:${abrirFotos}:${abrirAprovacao}`}
           abaInicial={abrirFotos ? "fotos" : abrirAprovacao ? "aprovacao" : "resumo"}
@@ -862,10 +842,7 @@ export function Servicos({ tela }: { tela: string }) {
                 args,
                 fotos,
                 imprimir,
-                janela:
-                  imprimir && (!a.permite("finance") || a.oficina?.perfil === "staff")
-                    ? abrirJanelaNotaOS()
-                    : undefined,
+                janela: imprimir ? abrirJanelaNotaOS() : undefined,
               })
             }
           />

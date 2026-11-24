@@ -68,10 +68,14 @@ export async function criarAtendimentoComItens(
                     .etapas[0],
                   campos: {
                     ...entrada.ficha_especialidade.campos,
-                    situacao_aceite: "Pendente",
-                    aceite: "",
-                    data_aceite: "",
-                    ressalvas_aceite: "",
+                    ...(temAceiteServico(entrada)
+                      ? {
+                          situacao_aceite: "Pendente",
+                          aceite: "",
+                          data_aceite: "",
+                          ressalvas_aceite: "",
+                        }
+                      : {}),
                   },
                 },
               }

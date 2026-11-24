@@ -265,7 +265,6 @@ export function OrdensServico() {
   });
   const o = detalhe.data;
   const [conferirPecas, setConferirPecas] = useState(false);
-  const [pagamentoDaCriacao, setPagamentoDaCriacao] = useState<string | null>(null);
   const encerrada = !!o && ["delivered", "cancelled"].includes(o.situacao);
   async function executar(fn: () => Promise<unknown>, alterou = true) {
     if (emExecucao.current) return;
@@ -827,13 +826,9 @@ export function OrdensServico() {
             salvar={(d, fotos) => {
               if (emExecucao.current) return;
               const prontoNaCriacao = !edicao && d.servico_pronto === true;
-              const podeRegistrarPagamento =
-                acesso.permite("finance") && acesso.oficina?.perfil !== "staff";
-              // Quem não acessa o financeiro mantém a impressão direta, no clique inicial.
-              const janela =
-                prontoNaCriacao && !podeRegistrarPagamento
-                  ? abrirJanelaNotaOS()
-                  : undefined;
+              // Reserva a impressão no clique para não ser bloqueada pelo navegador.
+              // O pagamento será conferido na entrega, não ao deixar a OS pronta.
+              const janela = prontoNaCriacao ? abrirJanelaNotaOS() : undefined;
               void executar(async () => {
                 let salvo: OrdemServico;
                 let avisoFotos = "";
@@ -907,28 +902,11 @@ export function OrdensServico() {
                     : "Atendimento salvo.") + avisoFotos,
                 );
                 if (prontoNaCriacao) {
-                  // A navegação pode terminar depois que o pagamento abrir. Mantenha
-                  // o resumo fechado para não encobrir a pergunta com outro modal.
-                  setPagamentoDaCriacao(salvo.id);
-                  perguntarPagamento(
-                    { tipo: "os", id: salvo.id },
-                    {
-                      rotulo: "Concluir e imprimir",
-                      rotuloAdiar: "Agora não, só imprimir",
-                      executar: () => {
-                        setPagamentoDaCriacao(null);
-                        void imprimirNotaOS(
-                          acesso.demo,
-                          oficina,
-                          salvo.id,
-                          janela,
-                        ).catch(() =>
-                          setAviso(
-                            "OS salva como pronta. Não foi possível abrir a impressão; use Imprimir nota da OS ou Visualizar / PDF.",
-                          ),
-                        );
-                      },
-                    },
+                  void imprimirNotaOS(acesso.demo, oficina, salvo.id, janela).catch(
+                    () =>
+                      setAviso(
+                        "OS salva como pronta. Não foi possível abrir a impressão; use Imprimir nota da OS ou Visualizar / PDF.",
+                      ),
                   );
                 }
               }, false);
@@ -939,7 +917,7 @@ export function OrdensServico() {
         )}
       </Dialogo>
       <Dialogo
-        aberto={!!id && !editor && !pagamentoDaCriacao}
+        aberto={!!id && !editor}
         fechar={() => {
           if (!ocupado) {
             setId(null);

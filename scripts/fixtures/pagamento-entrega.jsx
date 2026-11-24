@@ -7,8 +7,12 @@ import {ProvedorPagamentoAposRegistro} from '../../src/components/ProvedorPagame
 import {MapaOficina} from '../../src/pages/MapaOficina';
 import {usePagamentoAposRegistro} from '../../src/lib/pagamentoAposRegistro';
 import {OrdensServico} from '../../src/pages/OrdensServico';
+import {Servicos} from '../../src/pages/Servicos';
+import {especialidades} from '../../src/lib/especialidades';
 import '../../src/index.css';import '../../src/App.css';import '../../src/Tema.css';import '../../src/Clareza.css';
 const p=new URLSearchParams(location.search);
+const especialidade=p.get('perfil')||'retifica', ramo=especialidades[especialidade].ramo;
+const inicio=p.has('os')?`/ordens-servico?os=${p.get('os')}`:p.has('detalhe')?`/atendimentos?atendimento=${p.get('detalhe')}`:p.has('mapa')?'/':ramo==='automotivo'?'/ordens-servico?nova=1':'/atendimentos?novo=1';
 document.documentElement.dataset.tema=p.get('tema')||'escuro';
 window.qaDialogos=[];const mostrar=HTMLDialogElement.prototype.showModal;HTMLDialogElement.prototype.showModal=function(){window.qaDialogos.push(this.getAttribute('aria-label'));return mostrar.call(this)};
 window.qaImpressoes=[];window.qaJanelas=0;window.qaImpressaoIniciada=0;
@@ -23,8 +27,8 @@ const setItem=Storage.prototype.setItem;
 Storage.prototype.setItem=function(k,v){if(window.qaFalhaSalvar&&k==='patio_os_v1')throw Error('Falha de gravação simulada');if(window.qaFalhaPagamento&&k==='patio_financeiro_v1')throw Error('Falha de pagamento simulada');return setItem.call(this,k,v)};
 createRoot(document.getElementById('root')).render(
  <QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false,refetchOnWindowFocus:false}}})}>
-  <ContextoAcesso.Provider value={{demo:true,usuario:'qa',oficina:{id:'demo',nome:'Oficina QA',perfil:p.has('staff')?'staff':'owner',ramo:'automotivo',especialidade:p.get('perfil')||'retifica',codigo_plano:'complete',recursos:['finance']},permite:r=>!(p.has('semFinanceiro')&&r==='finance')}}>
-   <MemoryRouter initialEntries={[p.has('mapa')?'/':'/ordens-servico?nova=1']}><ProvedorPagamentoAposRegistro><main className="estrutura-sistema" style={{display:'block',padding:24}}><nav><Link to="/">Mapa QA</Link><Link to="/ordens-servico">Ordens QA</Link><Reabrir/></nav><Routes><Route path="/" element={<MapaOficina/>}/><Route path="/ordens-servico" element={<OrdensServico/>}/></Routes></main></ProvedorPagamentoAposRegistro></MemoryRouter>
+  <ContextoAcesso.Provider value={{demo:true,usuario:'qa',oficina:{id:'demo',nome:'Oficina QA',perfil:p.has('staff')?'staff':'owner',ramo,especialidade,codigo_plano:'complete',recursos:['finance']},permite:r=>!(p.has('semFinanceiro')&&r==='finance')}}>
+   <MemoryRouter initialEntries={[inicio]}><ProvedorPagamentoAposRegistro><main className="estrutura-sistema" style={{display:'block',padding:24}}><nav><Link to="/">Mapa QA</Link><Link to="/ordens-servico">Ordens QA</Link><Reabrir/></nav><Routes><Route path="/" element={<MapaOficina/>}/><Route path="/ordens-servico" element={<OrdensServico/>}/><Route path="/atendimentos" element={<Servicos tela="/atendimentos"/>}/></Routes></main></ProvedorPagamentoAposRegistro></MemoryRouter>
   </ContextoAcesso.Provider>
  </QueryClientProvider>
 );

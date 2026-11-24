@@ -74,7 +74,7 @@ export function PerguntaPagamento({
   const conferirEntrega = registro.contexto === "entrega";
   const conferindo = conferirEntrega && !concluido && !acao && q.isFetching;
   // Espera uma consulta atual, inclusive depois de recarregar ou trocar de aparelho.
-  // A criação continua perguntando antes de imprimir, independentemente desta regra.
+  // Um adiantamento ou prazo já combinado não deve ser solicitado de novo na entrega.
   const dispensar =
     conferirEntrega &&
     !concluido &&

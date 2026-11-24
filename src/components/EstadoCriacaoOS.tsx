@@ -33,8 +33,9 @@ export function EstadoCriacaoOS({
         </label>
       </div>
       <p className="texto-suave">
-        {emCampo ? "Conclui o serviço." : "Deixa a OS pronta para retirada."} Antes de
-        imprimir, você confere se o cliente já pagou ou vai pagar depois.
+        {emCampo
+          ? "Conclui e imprime o serviço. O pagamento é conferido no aceite do cliente."
+          : "Deixa a OS pronta e imprime a nota. O pagamento é conferido na entrega."}
       </p>
     </section>
   );
