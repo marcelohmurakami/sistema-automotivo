@@ -59,7 +59,6 @@ try {
         "Data do serviço",
         "Desconto (%)",
         "Forma de pagamento (opcional)",
-        "Sim · salvar como pronto e imprimir",
       ])
         assert.equal(
           await form.getByLabel(nome, { exact: true }).isVisible(),
@@ -68,6 +67,11 @@ try {
         );
       assert.equal(
         await form.getByRole("region", { name: "Fotos do atendimento" }).isVisible(),
+        false,
+      );
+      assert(await form.getByLabel("Salvar como pronto", { exact: true }).isVisible());
+      assert.equal(
+        await form.getByLabel("Salvar como pronto", { exact: true }).isChecked(),
         false,
       );
       const auto = await btn("Cliente sem cadastro").isVisible();

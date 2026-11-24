@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 export type RegistroParaPagamento = {
   tipo: "os" | "compra" | "atendimento";
   id: string;
-  contexto?: "entrega";
+  contexto?: "entrega" | "criacao-pronta";
 };
 
 export type ContinuacaoPagamento = {

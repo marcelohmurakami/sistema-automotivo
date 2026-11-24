@@ -122,7 +122,7 @@ export function FormularioServico({
     f: string,
     args: Record<string, unknown>,
     abrirFotos?: boolean,
-    imprimir?: boolean,
+    pronto?: boolean,
   ) => void;
 }) {
   const acesso = useAcesso();
@@ -131,7 +131,7 @@ export function FormularioServico({
   const formularioSimples =
     orcamentoSimples || (editor.tipo === "atendimento" && !editor.item.revisao);
   const destinoFotos = useRef(false);
-  const destinoImpressao = useRef(false);
+  const destinoPronto = useRef(false);
   const [servicoPronto, setServicoPronto] = useState(false);
   const [entregaPrevista, setEntregaPrevista] = useState(
     editor.tipo === "atendimento" ? editor.item.dados.entrega_prevista_em || "" : "",
@@ -141,7 +141,7 @@ export function FormularioServico({
       f,
       args,
       editor.tipo === "atendimento" && destinoFotos.current,
-      editor.tipo === "atendimento" && destinoImpressao.current,
+      editor.tipo === "atendimento" && destinoPronto.current,
     );
   }
   const podeEditarValores = acesso.oficina?.perfil !== "staff";
@@ -254,7 +254,7 @@ export function FormularioServico({
       editor.item.dados.documento === "ordem" &&
       servicoPronto &&
       !destinoFotos.current;
-    destinoImpressao.current = pronto;
+    destinoPronto.current = pronto;
     if (
       ocupado ||
       calculandoTrajeto ||
@@ -762,15 +762,6 @@ export function FormularioServico({
                 !item.revisao && podeEditarValores ? controleDesconto : undefined
               }
             >
-              {!item.revisao &&
-                editor.item.dados.documento === "ordem" &&
-                podeEditarValores && (
-                  <EstadoCriacaoOS
-                    pronto={servicoPronto}
-                    alterar={setServicoPronto}
-                    emCampo={!linguagem.assistencia}
-                  />
-                )}
               {linguagem.limpeza && formularioSimples && (
                 <label className="assistencia-campo-largo">
                   Escopo combinado com o cliente
@@ -977,6 +968,14 @@ export function FormularioServico({
             </OpcoesDocumento>
             {formularioSimples && !item.revisao && podeEditarValores && (
               <ResumoDocumento
+                acao={
+                  editor.item.dados.documento === "ordem" ? (
+                    <EstadoCriacaoOS
+                      pronto={servicoPronto}
+                      alterar={setServicoPronto}
+                    />
+                  ) : undefined
+                }
                 contexto={orcamentoSimples ? "orçamento" : "OS"}
                 subtotal={itens.reduce(
                   (total, i) =>
@@ -1197,7 +1196,7 @@ export function FormularioServico({
                 ? editor.item.dados.documento === "orcamento"
                   ? "Salvar orçamento"
                   : servicoPronto
-                    ? "Salvar como pronto e imprimir"
+                    ? "Salvar e informar pagamento"
                     : "Abrir ordem de serviço"
                 : "Salvar"}
       </button>

@@ -177,12 +177,14 @@ export const gravarServico = async (
   oficina: string,
   dados: Record<string, unknown>,
   demo = false,
+  opcoes?: { avisarConclusao?: boolean },
 ) => {
   if (funcao === "criar_atendimento_com_itens") {
     const { criarAtendimentoComItens } = await import("./servicosCompletos");
     const id = await criarAtendimentoComItens(demo, oficina, dados);
     if (
       !demo &&
+      opcoes?.avisarConclusao !== false &&
       (dados.p_dados as AtendimentoServico)?.situacao === "concluido" &&
       typeof window !== "undefined"
     )
@@ -201,6 +203,7 @@ export const gravarServico = async (
     validarLimpeza(entrada);
   }
   const avisar =
+    opcoes?.avisarConclusao !== false &&
     funcao === "salvar_atendimento_servico" &&
     entrada?.situacao === "concluido" &&
     !entrada.concluido_em;

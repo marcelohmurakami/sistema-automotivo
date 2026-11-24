@@ -76,6 +76,24 @@
 .documento-resumo-total {
   align-items: center;
 }
+.documento-fechamento {
+  min-width: 0;
+}
+.documento-fechamento--com-acao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+}
+.documento-fechamento--com-acao .documento-resumo-simples {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .documento-fechamento--com-acao {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
 .documento-resumo-total > strong {
   font-size: 22px;
 }

@@ -1,0 +1,183 @@
+import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAcesso } from "../auth/contexto";
+import { Dialogo } from "./Dialogo";
+import { PecasNaEntrega } from "./PecasNaEntrega";
+import { faltaOrigemPeca } from "../lib/origemPecas";
+import { erroPublico } from "../lib/supabase";
+import { atualizarIntegracoes } from "../lib/atualizarIntegracoes";
+import { consultarDetalhesAtendimento } from "../services/servicosCompletos";
+import { entregarAposCriacao } from "../services/entregaAposCriacao";
+import { abrirJanelaNotaOS, imprimirNotaOS } from "../services/impressaoNotaOS";
+import { imprimirNotaAtendimento } from "../services/impressaoAtendimento";
+import "./PagamentoAposRegistro.css";
+
+export function EntregaAposCriacao({
+  tipo,
+  id,
+  fechar,
+}: {
+  tipo: "os" | "atendimento";
+  id: string;
+  fechar: () => void;
+}) {
+  const a = useAcesso(),
+    oficina = a.oficina!.id,
+    qc = useQueryClient();
+  const emCampo = ["manutencao_campo", "limpeza"].includes(a.oficina!.ramo || "");
+  const [recebedor, setRecebedor] = useState<string>();
+  const [ocupado, setOcupado] = useState(false),
+    [erro, setErro] = useState("");
+  const [conferirPecas, setConferirPecas] = useState(false);
+  const [decidido, setDecidido] = useState(false);
+  const trava = useRef(false);
+  const q = useQuery({
+    queryKey: ["destinatario-entrega-criacao", a.demo, oficina, id],
+    queryFn: () => consultarDetalhesAtendimento(a.demo, oficina, id),
+    enabled: tipo === "atendimento",
+  });
+  async function imprimir(janela: Window | null) {
+    // A decisão já foi salva. Uma falha de impressão nunca repete pagamento ou entrega.
+    setDecidido(true);
+    try {
+      if (tipo === "os") await imprimirNotaOS(a.demo, oficina, id, janela);
+      else await imprimirNotaAtendimento(a.demo, oficina, id, janela);
+      fechar();
+    } catch (e) {
+      setErro(erroPublico(e));
+    }
+  }
+  async function concluir(entregue: boolean) {
+    if (trava.current) return;
+    trava.current = true;
+    setOcupado(true);
+    setErro("");
+    // Reserva somente após a decisão do usuário, antes da chamada de entrega.
+    const janela = abrirJanelaNotaOS();
+    try {
+      if (entregue) {
+        await entregarAposCriacao(
+          a.demo,
+          oficina,
+          tipo,
+          id,
+          recebedor ?? q.data?.cliente.nome ?? "",
+        );
+        void atualizarIntegracoes(qc, []);
+      }
+      setConferirPecas(false);
+      await imprimir(janela);
+    } catch (e) {
+      janela?.close();
+      if (tipo === "os" && faltaOrigemPeca(e)) setConferirPecas(true);
+      else {
+        setConferirPecas(false);
+        setErro(erroPublico(e));
+      }
+    } finally {
+      trava.current = false;
+      setOcupado(false);
+    }
+  }
+  return (
+    <>
+      <Dialogo
+        aberto={!conferirPecas}
+        fechar={() => !trava.current && fechar()}
+        titulo={
+          decidido
+            ? "OS salva"
+            : emCampo
+              ? "O cliente já conferiu e aceitou o serviço?"
+              : "O serviço já foi entregue ao cliente?"
+        }
+        classe="dialogo-pagamento-registro"
+      >
+        {decidido ? (
+          <p>A situação e o pagamento estão salvos. Falta apenas abrir a impressão.</p>
+        ) : (
+          <>
+            <p>
+              {emCampo
+                ? "Se ainda não, o serviço continua aguardando o aceite."
+                : "Se ainda não, a OS fica em Prontas, aguardando entrega."}
+            </p>
+            {tipo === "atendimento" && (
+              <>
+                {q.isPending ? (
+                  <p role="status">Consultando o cliente…</p>
+                ) : q.isError ? (
+                  <p role="alert">
+                    {erroPublico(q.error)}{" "}
+                    <button onClick={() => void q.refetch()}>Tentar novamente</button>
+                  </p>
+                ) : (
+                  <label className="entrega-criacao-destinatario">
+                    {emCampo
+                      ? "Quem conferiu o serviço?"
+                      : "Quem recebeu o equipamento?"}
+                    <input
+                      maxLength={1500}
+                      value={recebedor ?? q.data?.cliente.nome ?? ""}
+                      onChange={(e) => setRecebedor(e.target.value)}
+                      disabled={ocupado}
+                    />
+                  </label>
+                )}
+              </>
+            )}
+          </>
+        )}
+        {erro && <p role="alert">{erro}</p>}
+        <div className="compra-acoes">
+          {decidido ? (
+            <>
+              <button
+                className="botao-primario"
+                disabled={ocupado}
+                onClick={() => void concluir(false)}
+              >
+                Tentar imprimir novamente
+              </button>
+              <button className="botao-secundario" disabled={ocupado} onClick={fechar}>
+                Fechar
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="botao-primario"
+                disabled={
+                  ocupado ||
+                  (tipo === "atendimento" &&
+                    (!q.data || !(recebedor ?? q.data.cliente.nome).trim()))
+                }
+                onClick={() => void concluir(true)}
+              >
+                {ocupado
+                  ? "Salvando…"
+                  : emCampo
+                    ? "Sim, já foi aceito"
+                    : "Sim, já foi entregue"}
+              </button>
+              <button
+                className="botao-secundario"
+                disabled={ocupado}
+                onClick={() => void concluir(false)}
+              >
+                Não, deixar aguardando
+              </button>
+            </>
+          )}
+        </div>
+      </Dialogo>
+      {conferirPecas && (
+        <PecasNaEntrega
+          osId={id}
+          fechar={() => setConferirPecas(false)}
+          continuar={() => concluir(true)}
+        />
+      )}
+    </>
+  );
+}

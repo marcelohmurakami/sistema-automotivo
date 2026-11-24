@@ -54,7 +54,6 @@ import { useAgora } from "../lib/useAgora";
 import "./OrdensServico.css";
 import "../components/ordens-servico/ResumoOS.css";
 
-import { abrirJanelaNotaOS, imprimirNotaOS } from "../services/impressaoNotaOS";
 import { dataDocumento } from "../lib/documentoCliente";
 
 import {
@@ -847,18 +846,11 @@ export function OrdensServico() {
             salvar={(d, fotos) => {
               if (emExecucao.current) return;
               const prontoNaCriacao = !edicao && d.servico_pronto === true;
-              // Reserva a impressão no clique para não ser bloqueada pelo navegador.
-              // O pagamento será conferido na entrega, não ao deixar a OS pronta.
-              const janela = prontoNaCriacao ? abrirJanelaNotaOS() : undefined;
               void executar(async () => {
-                let salvo: OrdemServico;
+                let salvo = await salvarOS(acesso.demo, oficina, d, chave, edicao, {
+                  avisarPronta: !prontoNaCriacao,
+                });
                 let avisoFotos = "";
-                try {
-                  salvo = await salvarOS(acesso.demo, oficina, d, chave, edicao);
-                } catch (e) {
-                  janela?.close();
-                  throw e;
-                }
                 if (fotos.length) {
                   const { guardarFotosCriacaoOS, enviarFotosCriacaoOS } =
                     await import("../services/fotosCriacaoOS");
@@ -874,7 +866,6 @@ export function OrdensServico() {
                     } catch (e) {
                       // A OS já existe: uma nova tentativa deve editar a mesma OS.
                       setEdicao(salvo);
-                      janela?.close();
                       throw new Error(
                         `OS #${salvo.numero} salva. Não feche esta tela: não foi possível guardar as fotos no aparelho. ${erroPublico(e)}`,
                         { cause: e },
@@ -893,7 +884,6 @@ export function OrdensServico() {
                   } catch (e) {
                     if (acesso.demo) {
                       setEdicao(salvo);
-                      janela?.close();
                       throw e;
                     }
                     avisoFotos =
@@ -919,16 +909,15 @@ export function OrdensServico() {
                 setAba("atendimento");
                 setAviso(
                   (d.servico_pronto
-                    ? "OS salva como pronta para entrega."
+                    ? "OS salva."
                     : "Atendimento salvo.") + avisoFotos,
                 );
                 if (prontoNaCriacao) {
-                  void imprimirNotaOS(acesso.demo, oficina, salvo.id, janela).catch(
-                    () =>
-                      setAviso(
-                        "OS salva como pronta. Não foi possível abrir a impressão; use Imprimir nota da OS ou Visualizar / PDF.",
-                      ),
-                  );
+                  perguntarPagamento({
+                    tipo: "os",
+                    id: salvo.id,
+                    contexto: "criacao-pronta",
+                  });
                 }
               }, false);
             }}

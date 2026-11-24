@@ -19,7 +19,7 @@ window.qaImpressoes=[];window.qaJanelas=0;window.qaImpressaoIniciada=0;
 const abrir=window.open.bind(window);
 window.open=(...args)=>{window.qaJanelas++;const j=p.has('bloqueado')?null:abrir(...args);if(j){j.print=()=>{window.qaImpressaoIniciada++;window.qaImpressoes.push({html:j.document.documentElement.outerHTML,texto:j.document.body.innerText})}}return j};
 const getItem=Storage.prototype.getItem;Storage.prototype.getItem=function(k){if(window.qaFalhaConsulta&&k==='patio_financeiro_v1')throw Error('Falha de consulta simulada');return getItem.call(this,k)};
-function Reabrir(){const perguntar=usePagamentoAposRegistro();return <button onClick={()=>perguntar({tipo:'os',id:JSON.parse(localStorage.getItem('patio_os_v1')).at(-1).id,contexto:'entrega'})}>Conferir entrega QA</button>}
+function Reabrir(){const perguntar=usePagamentoAposRegistro();return <button onClick={()=>perguntar({tipo:ramo==='automotivo'?'os':'atendimento',id:ramo==='automotivo'?JSON.parse(localStorage.getItem('patio_os_v1')).at(-1).id:JSON.parse(localStorage.getItem('patio_servicos:demo')).atendimentos.at(-1).id,contexto:'entrega'})}>Conferir entrega QA</button>}
 const criar=URL.createObjectURL.bind(URL);
 URL.createObjectURL=blob=>criar(blob);
 // O teste usa os serviços reais no armazenamento demo, sem alterar dados de clientes.

@@ -372,6 +372,7 @@ export async function salvarOS(
   dados: Record<string, unknown>,
   chaveCriacao: string,
   anterior?: OrdemServico,
+  opcoes?: { avisarPronta?: boolean },
 ) {
   if (Object.hasOwn(dados, "data_servico")) validarDataServico(dados.data_servico);
   if (dados.ficha_especialidade != null)
@@ -391,7 +392,11 @@ export async function salvarOS(
         p_revisao: anterior?.revisao ?? null,
       },
     );
-    if (anterior?.situacao !== "ready" && salva.situacao === "ready")
+    if (
+      opcoes?.avisarPronta !== false &&
+      anterior?.situacao !== "ready" &&
+      salva.situacao === "ready"
+    )
       notificarOSPronta(oficina, salva.id);
     return salva;
   }
@@ -590,7 +595,11 @@ export async function salvarOS(
     else localStorage.setItem("patio_financeiro_v1", financeiroAntes);
     throw e;
   }
-  if (anterior?.situacao !== "ready" && o.situacao === "ready")
+  if (
+    opcoes?.avisarPronta !== false &&
+    anterior?.situacao !== "ready" &&
+    o.situacao === "ready"
+  )
     notificarOSPronta(oficina, o.id);
   return o;
 }

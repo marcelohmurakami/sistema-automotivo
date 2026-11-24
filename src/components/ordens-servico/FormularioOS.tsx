@@ -305,9 +305,6 @@ export function FormularioOS({
               />
             </>
           )}
-          {!anterior && (
-            <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
-          )}
           <div className="formulario-opcionais">
             <CampoTipoServico inicial={anterior?.tipo_servico}>
               {ficha.especialidade === "estetica" ? (
@@ -422,6 +419,7 @@ export function FormularioOS({
         </OpcoesDocumento>
         {!anterior && (
           <ResumoDocumento
+            acao={<EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />}
             contexto="OS"
             subtotal={controleDesconto.subtotal}
             desconto={desconto}
@@ -442,7 +440,7 @@ export function FormularioOS({
             : anterior
               ? "Salvar alterações da OS"
               : servicoPronto
-                ? "Salvar como pronto e imprimir"
+                ? "Salvar e informar pagamento"
                 : "Abrir ordem de serviço"}
         </button>
         {itemEmEdicao && (

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { build, preview } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { chromium } from "playwright";
 
-const pasta = resolve(process.env.QA_OUTPUT || "output/pagamento-na-entrega-20261124");
+const pasta = resolve(
+  process.env.QA_OUTPUT || "output/pronto-pagamento-entrega-20261124",
+);
 await mkdir(pasta, { recursive: true });
 const config = {
   configFile: false,
@@ -53,361 +55,349 @@ async function iniciar(width, extra = "") {
   await p.goto(base + "?" + extra);
   await p.locator("dialog[open]").first().waitFor();
 }
-async function preencher() {
-  await p.getByRole("combobox", { name: "Cliente", exact: true }).click();
-  await p
-    .getByRole("option", { name: "Informar cliente sem cadastrar", exact: true })
-    .click();
-  await p
-    .getByLabel("Nome do cliente", { exact: true })
-    .fill("QA Pagamento somente na entrega");
-  if (await p.getByLabel("Carro", { exact: true }).count()) {
-    await p.getByLabel("Carro", { exact: true }).fill("Fiat Palio");
-    await p.getByLabel("Motor", { exact: true }).fill("Fire 1.0");
+
+const btn = (name) => p.getByRole("button", { name, exact: true });
+const entrega = () =>
+  p.getByRole("dialog", {
+    name: /^(O serviço já foi entregue ao cliente|O cliente já conferiu e aceitou o serviço)\?$/,
+  });
+const os = (auto) =>
+  p.evaluate(
+    (auto) =>
+      auto
+        ? JSON.parse(localStorage.patio_os_v1).at(-1)
+        : JSON.parse(localStorage["patio_servicos:demo"]).atendimentos.at(-1),
+    auto,
+  );
+async function preencher(perfil, valor = "150") {
+  await btn("Abrir ordem de serviço").waitFor();
+  const form = p.locator("form.documento-simples");
+  const auto = await btn("Cliente sem cadastro").isVisible();
+  if (auto) {
+    await btn("Cliente sem cadastro").click();
+    await p
+      .getByLabel("Nome do cliente", { exact: true })
+      .fill("Cliente QA pagamento e entrega");
+    if (perfil === "retifica") {
+      await p.getByLabel("Carro", { exact: true }).fill("Fiat Palio");
+      await p.getByLabel("Motor", { exact: true }).fill("Fire 1.0");
+    } else {
+      await btn("Novo veículo").click();
+      await p
+        .getByLabel("Nome / modelo do veículo", { exact: true })
+        .fill("Fiat Palio QA");
+      await btn("Cadastrar e selecionar").click();
+    }
   } else {
-    await p.getByRole("button", { name: "Novo veículo", exact: true }).click();
+    await btn("Novo cliente").click();
     await p
-      .getByLabel("Nome / modelo do veículo", { exact: true })
-      .fill("Fiat Palio QA");
-    await p
-      .getByRole("button", { name: "Cadastrar e selecionar", exact: true })
-      .click();
+      .getByLabel("Nome do novo cliente", { exact: true })
+      .fill("Cliente QA pagamento e entrega");
+    await btn("Cadastrar e selecionar").click();
+    await form.locator(".cadastro-rapido-campos input").first().fill("Equipamento QA");
+    if (await p.getByLabel("Endereço completo", { exact: true }).isVisible())
+      await p
+        .getByLabel("Endereço completo", { exact: true })
+        .fill("Rua de testes, 10");
+    await btn("Cadastrar e selecionar").click();
   }
-  await p.getByRole("button", { name: "Item avulso", exact: true }).click();
-  await p.getByLabel("Nome do serviço ou peça", { exact: true }).fill("Revisão QA");
-  await p.getByLabel("Preço unitário (R$)", { exact: true }).fill("150");
-  await p.getByRole("button", { name: "Adicionar serviço", exact: true }).click();
+  await btn("Item avulso").click();
+  await p.getByLabel(/^Nome do serviço ou /).fill("Revisão QA");
+  await p.getByLabel("Preço unitário (R$)", { exact: true }).fill(valor);
+  await btn("Adicionar serviço").click();
+  const check = p.getByLabel("Salvar como pronto", { exact: true });
+  assert(await check.isVisible());
+  assert.equal(await check.isChecked(), false);
+  assert.equal(await form.locator(".documento-mais-opcoes").getAttribute("open"), null);
+  await check.check();
+  assert.equal(await form.locator(".documento-mais-opcoes").getAttribute("open"), null);
+  return auto;
 }
-async function marcarPronta() {
-  if (
-    !(await p
-      .getByLabel("Sim · salvar como pronto e imprimir", { exact: true })
-      .isVisible())
-  )
-    await p.locator(".documento-mais-opcoes > summary").click();
-  await p.getByLabel("Sim · salvar como pronto e imprimir", { exact: true }).check();
-}
-async function salvar(pronta = true, numero = 1, imprime = true) {
-  if (pronta) await marcarPronta();
-  await p
+async function pagar(modo, falha = false) {
+  await pergunta().getByRole("button", { name: "Já recebi", exact: false }).waitFor();
+  assert.equal(await p.evaluate(() => window.qaImpressaoIniciada), 0);
+  assert.equal(
+    await p.evaluate(() => window.qaJanelas),
+    0,
+    "Nenhuma janela antes da confirmação de entrega",
+  );
+  if (modo === "adiar") {
+    await pergunta().getByRole("button", { name: "Agora não", exact: true }).click();
+    return;
+  }
+  await pergunta()
     .getByRole("button", {
-      name: pronta ? "Salvar como pronto e imprimir" : "Abrir ordem de serviço",
-      exact: true,
+      name:
+        modo === "total"
+          ? "Já recebi"
+          : modo === "parcial"
+            ? "Recebi uma parte"
+            : "A receber",
+      exact: false,
     })
     .click();
-  await p
-    .getByRole("dialog", { name: `Ordem de serviço #${numero}`, exact: true })
-    .waitFor();
-  if (pronta && imprime) {
-    await p.waitForFunction((n) => window.qaImpressaoIniciada === n, numero);
-    const nota = await p.evaluate(() => window.qaImpressoes.at(-1));
-    assert(nota.texto.includes("QA Pagamento somente na entrega"));
-    assert(nota.texto.includes("150,00"));
-  }
-  assert.equal(await pergunta().count(), 0);
-  assert(
-    !(await p.evaluate(() => window.qaDialogos)).includes(
-      "Como ficou o pagamento da OS?",
-    ),
-  );
-  assert.equal((await financeiro()).baixas.length, 0);
-}
-async function mapa() {
-  await p.goto(base + "?mapa");
-  await p
-    .getByRole("button", { name: "Entregar OS 1 para Entregue", exact: true })
-    .waitFor();
-}
-async function entregar() {
-  await p
-    .getByRole("button", { name: "Entregar OS 1 para Entregue", exact: true })
-    .click();
-  await p.waitForFunction(
-    () => JSON.parse(localStorage.patio_os_v1)[0].situacao === "delivered",
-  );
-  await pergunta().getByRole("button", { name: "Já recebi", exact: false }).waitFor();
-}
-function passou(cenario) {
-  resultados.push({ cenario, ok: true });
-  console.log("PASS", cenario);
-}
-try {
-  if (!process.argv.includes("--servicos") && !process.argv.includes("--extras"))
-    for (const width of [390, 1366])
-      for (const perfil of ["retifica", "mecanica"])
-        for (const modo of ["total", "parcial", "prazo", "adiar"]) {
-          await iniciar(width, "perfil=" + perfil);
-          await preencher();
-          await salvar();
-          await mapa();
-          await entregar();
-          assert.equal((await financeiro()).baixas.length, 0);
-          assert.equal(
-            await p.evaluate(() => window.qaImpressaoIniciada),
-            0,
-            "Entregar não imprime novamente",
-          );
-          assert(
-            await p.evaluate(() =>
-              [...document.querySelectorAll("dialog[open]")].every(
-                (d) => d.scrollWidth <= d.clientWidth + 1,
-              ),
-            ),
-          );
-          if (modo === "adiar")
-            await pergunta()
-              .getByRole("button", { name: "Agora não", exact: true })
-              .click();
-          else {
-            await pergunta()
-              .getByRole("button", {
-                name:
-                  modo === "total"
-                    ? "Já recebi"
-                    : modo === "parcial"
-                      ? "Recebi uma parte"
-                      : "A receber",
-                exact: false,
-              })
-              .click();
-            if (modo === "prazo") {
-              await p.getByLabel("Receber em", { exact: true }).fill("2026-12-24");
-              await p
-                .getByRole("button", { name: "Salvar data combinada", exact: true })
-                .click();
-            } else {
-              await p
-                .getByLabel("Valor pago (R$)", { exact: true })
-                .fill(modo === "total" ? "150" : "50");
-              if (modo === "parcial")
-                await p
-                  .getByLabel("Vencimento do restante", { exact: true })
-                  .fill("2026-12-24");
-              await p
-                .getByRole("button", { name: "Confirmar pagamento", exact: true })
-                .click();
-            }
-            await p
-              .getByRole("dialog", { name: "Financeiro atualizado", exact: true })
-              .getByRole("button", { name: "Concluir", exact: true })
-              .click();
-          }
-          const f = await financeiro();
-          assert.equal(
-            f.baixas.reduce((s, b) => s + b.valor_centavos, 0),
-            modo === "total" ? 15000 : modo === "parcial" ? 5000 : 0,
-          );
-          assert.equal(f.titulos.length, 1);
-          if (["parcial", "prazo"].includes(modo))
-            assert.equal(f.titulos[0].vencimento, "2026-12-24");
-          await p.reload();
-          await p
-            .getByRole("button", { name: "Conferir entrega QA", exact: true })
-            .click();
-          if (modo === "adiar")
-            await pergunta()
-              .getByRole("button", { name: "Já recebi", exact: false })
-              .waitFor();
-          else {
-            await p
-              .getByText("Conferindo o pagamento já registrado…", { exact: true })
-              .waitFor({ state: "hidden" });
-            assert.equal(await pergunta().count(), 0);
-          }
-          assert.deepEqual((await financeiro()).baixas, f.baixas);
-          if (perfil === "retifica" && modo === "adiar")
-            await p.screenshot({ path: resolve(pasta, `entrega-${width}.png`) });
-          passou(
-            `${perfil} ${width}px: pronta imprime sem pagamento; entrega ${modo}; reabertura sem duplicação`,
-          );
-        }
-  if (!process.argv.includes("--servicos")) {
-    for (const width of [390, 1366]) {
-      await iniciar(width);
-      await preencher();
-      await salvar(false);
-      assert.equal(await p.evaluate(() => window.qaJanelas), 0);
-      await p
-        .getByRole("dialog", { name: "Ordem de serviço #1", exact: true })
-        .getByRole("button", { name: "Fechar janela", exact: true })
-        .click();
-      await p.getByRole("link", { name: "Mapa QA", exact: true }).click();
-      for (const etapa of ["Em execução", "Conferência"]) {
-        await p
-          .getByRole("button", { name: `Avançar OS 1 para ${etapa}`, exact: true })
-          .click();
-      }
-      await p
-        .getByRole("button", { name: "Concluir serviço da OS 1", exact: true })
-        .click();
-      await p
-        .getByRole("button", { name: "Entregar OS 1 para Entregue", exact: true })
-        .waitFor();
-      assert.equal(await pergunta().count(), 0);
-      assert.equal((await financeiro()).baixas.length, 0);
-      await p
-        .getByRole("dialog", { name: "Avisar o cliente que está pronto?", exact: true })
-        .getByRole("button", { name: "Fechar janela", exact: true })
-        .click();
-      await entregar();
-      passou(`${width}px: transições de etapas só perguntam na entrega`);
-
-      await iniciar(width);
-      await preencher();
-      await salvar();
-      const id = await p.evaluate(() => JSON.parse(localStorage.patio_os_v1)[0].id);
-      await p.goto(base + "?os=" + id);
-      await p
-        .getByRole("dialog", { name: "Ordem de serviço #1", exact: true })
-        .getByRole("button", { name: "Registrar entrega", exact: true })
-        .click();
-      await p.getByRole("button", { name: "Confirmar alteração", exact: true }).click();
-      await pergunta().getByRole("button", { name: "Já recebi", exact: false }).click();
+  if (modo === "prazo") {
+    await p.getByLabel("Receber em", { exact: true }).fill("2026-12-24");
+    await btn("Salvar data combinada").click();
+  } else {
+    await p
+      .getByLabel("Valor pago (R$)", { exact: true })
+      .fill(modo === "parcial" ? "50" : "150");
+    if (modo === "parcial")
+      await p.getByLabel("Vencimento do restante", { exact: true }).fill("2026-12-24");
+    if (falha)
       await p.evaluate(() => {
         window.qaFalhaPagamento = true;
       });
-      await p.getByRole("button", { name: "Confirmar pagamento", exact: true }).click();
+    await btn("Confirmar pagamento").click();
+    if (falha) {
       await p
         .getByRole("dialog", { name: "Registrar recebimento", exact: true })
         .getByRole("alert")
         .waitFor();
       assert.equal((await financeiro()).baixas.length, 0);
+      assert.equal(await entrega().count(), 0);
       await p.evaluate(() => {
         window.qaFalhaPagamento = false;
       });
-      await p.getByRole("button", { name: "Confirmar pagamento", exact: true }).click();
-      await p
-        .getByRole("dialog", { name: "Financeiro atualizado", exact: true })
-        .waitFor();
-      assert.equal((await financeiro()).baixas.length, 1);
-      passou(`${width}px: entrega nos detalhes e recuperação de erro sem duplicação`);
+      await btn("Confirmar pagamento").click();
     }
-    for (const permissao of ["staff", "semFinanceiro"]) {
-      await iniciar(1366, permissao);
-      await preencher();
-      await salvar();
-      passou(`Impressão direta preservada: ${permissao}`);
-    }
-    await iniciar(1366, "bloqueado");
-    await preencher();
-    await salvar(true, 1, false);
-    await p
-      .getByText(
-        "OS salva como pronta. Não foi possível abrir a impressão; use Imprimir nota da OS ou Visualizar / PDF.",
-        { exact: true },
-      )
-      .waitFor();
-    assert.equal(await p.evaluate(() => window.qaImpressaoIniciada), 0);
-    passou("Popup bloqueado preserva OS e oferece reimpressão sem abrir pagamento");
-    await iniciar(1366);
-    await preencher();
-    await p.evaluate(() => {
-      window.qaFalhaSalvar = true;
-    });
-    await marcarPronta();
-    await p
-      .getByRole("button", { name: "Salvar como pronto e imprimir", exact: true })
-      .click();
-    await p
-      .getByRole("dialog", { name: "Nova ordem de serviço", exact: true })
-      .getByRole("alert")
-      .waitFor();
-    assert.equal(await p.evaluate(() => window.qaImpressaoIniciada), 0);
-    assert.equal(await pergunta().count(), 0);
-    await p.evaluate(() => {
-      window.qaFalhaSalvar = false;
-    });
-    await salvar();
-    passou(
-      "Falha ao salvar fecha janela reservada; nova tentativa imprime sem pagamento",
-    );
   }
-  if (!process.argv.includes("--extras"))
-    for (const width of [390, 1366])
-      for (const perfil of [
-        "assistencia_celulares",
-        "manutencao_climatizacao",
-        "limpeza_residencial",
-      ]) {
-        await iniciar(width, "perfil=" + perfil);
-        const assistencia = perfil.startsWith("assistencia"),
-          objeto = assistencia
-            ? "equipamento"
-            : perfil.startsWith("manutencao")
-              ? "local / equipamento"
-              : "local";
-        await p.getByRole("button", { name: "Novo cliente", exact: true }).click();
+  await entrega().waitFor();
+}
+function passou(cenario) {
+  resultados.push({ cenario, ok: true });
+  console.log("PASS", cenario);
+}
+const fonte = await readFile("src/lib/especialidades.ts", "utf8");
+const perfis = [
+  ...fonte
+    .slice(fonte.indexOf("export const especialidades:"))
+    .matchAll(/^  (\w+): \{/gm),
+].map((m) => m[1]);
+try {
+  for (const [indice, perfil] of (process.argv.includes("--extras")
+    ? []
+    : perfis
+  ).entries())
+    for (const width of [390, 1366]) {
+      if (
+        process.argv.includes("--servicos") &&
+        !["assistencia_", "manutencao_", "limpeza_"].some((prefixo) =>
+          perfil.startsWith(prefixo),
+        )
+      )
+        continue;
+      await iniciar(width, "perfil=" + perfil);
+      const auto = await preencher(perfil);
+      const modo = ["total", "parcial", "prazo", "adiar"][indice % 4];
+      if (
+        ["retifica", "assistencia_celulares", "manutencao_climatizacao"].includes(
+          perfil,
+        )
+      ) {
         await p
-          .getByLabel("Nome do novo cliente", { exact: true })
-          .fill("QA Pagamento somente na entrega");
-        await p
-          .getByRole("button", { name: "Cadastrar e selecionar", exact: true })
-          .click();
-        await p.getByLabel(`Nome do ${objeto}`, { exact: true }).fill("Atendimento QA");
-        if (!assistencia)
-          await p
-            .getByLabel("Endereço completo", { exact: true })
-            .fill("Rua de testes, 10");
-        await p
-          .getByRole("button", { name: "Cadastrar e selecionar", exact: true })
-          .click();
-        await p.getByRole("button", { name: "Item avulso", exact: true }).click();
-        await p.getByLabel(/^Nome do serviço ou /).fill("Revisão QA");
-        await p.getByLabel("Preço unitário (R$)", { exact: true }).fill("150");
-        await p.getByRole("button", { name: "Adicionar serviço", exact: true }).click();
-        await marcarPronta();
-        await p
-          .getByRole("button", { name: "Salvar como pronto e imprimir", exact: true })
-          .click();
-        await p.waitForFunction(() => window.qaImpressaoIniciada === 1);
-        const nota = await p.evaluate(() => window.qaImpressoes[0]);
-        assert(nota.texto.includes("QA Pagamento somente na entrega"));
-        assert(nota.texto.includes("150,00"));
-        assert.equal(await pergunta().count(), 0);
-        assert.equal((await financeiro()).baixas.length, 0);
-        const id = await p.evaluate(
-          () =>
-            JSON.parse(localStorage.getItem("patio_servicos:demo")).atendimentos.find(
-              (a) => a.situacao === "concluido",
-            ).id,
+          .getByLabel("Salvar como pronto", { exact: true })
+          .scrollIntoViewIfNeeded();
+        await p.screenshot({ path: resolve(pasta, perfil + "-" + width + ".png") });
+      }
+      await btn("Salvar e informar pagamento").click();
+      await pagar(modo);
+      const antes = await os(auto);
+      assert.equal(antes.situacao, auto ? "ready" : "concluido");
+      assert(await entrega().evaluate((d) => d.scrollWidth <= d.clientWidth + 1));
+      const entregue = width === 1366;
+      await entrega()
+        .getByRole("button", {
+          name: entregue ? /^Sim, já foi (entregue|aceito)$/ : "Não, deixar aguardando",
+          exact: !entregue,
+        })
+        .click();
+      await p.waitForFunction(() => window.qaImpressaoIniciada === 1);
+      await entrega().waitFor({ state: "hidden" });
+      const salvo = await os(auto),
+        f = await financeiro();
+      assert.equal(
+        f.baixas.reduce((s, b) => s + b.valor_centavos, 0),
+        modo === "total" ? 15000 : modo === "parcial" ? 5000 : 0,
+      );
+      if (auto) assert.equal(salvo.situacao, entregue ? "delivered" : "ready");
+      else if (perfil.startsWith("assistencia_"))
+        assert.equal(salvo.ficha_especialidade.etapa === "Entregue", entregue);
+      else
+        assert.equal(
+          salvo.ficha_especialidade.campos.situacao_aceite === "Aceito",
+          entregue,
         );
-        await p.goto(base + "?perfil=" + perfil + "&detalhe=" + id);
-        if (assistencia) {
-          await p
-            .getByRole("button", { name: "Registrar retirada", exact: true })
-            .click();
-          await p
-            .getByRole("button", { name: "Confirmar retirada", exact: true })
-            .click();
-        } else {
-          await p
-            .getByRole("button", {
-              name: "Registrar conferência / aceite",
-              exact: true,
-            })
-            .click();
-          await p
-            .getByLabel("Quem conferiu o serviço?", { exact: true })
-            .fill("Cliente QA");
-          await p
-            .getByRole("button", { name: "Salvar conferência", exact: true })
-            .click();
-        }
+      assert.equal(
+        (await p.evaluate(() => window.qaDialogos)).filter(
+          (t) => t === "Como ficou o pagamento da OS?",
+        ).length,
+        1,
+      );
+      if (auto) {
+        await p.goto(base + "?perfil=" + perfil + "&mapa");
+        if (!entregue) {
+          await btn("Entregar OS 1 para Entregue").click();
+          await p.waitForFunction(
+            () => JSON.parse(localStorage.patio_os_v1).at(-1).situacao === "delivered",
+          );
+        } else assert.equal(await btn("Entregar OS 1 para Entregue").count(), 0);
+      }
+      await p.goto(
+        base + "?perfil=" + perfil + "&" + (auto ? "os" : "detalhe") + "=" + salvo.id,
+      );
+      await p.locator("dialog[open]").first().waitFor();
+      await p
+        .getByRole("button", { name: "Fechar janela", exact: true })
+        .last()
+        .click();
+      await btn("Conferir entrega QA").click();
+      if (modo === "adiar")
         await pergunta()
           .getByRole("button", { name: "Já recebi", exact: false })
-          .click();
-        await p
-          .getByRole("button", { name: "Confirmar pagamento", exact: true })
-          .click();
-        await p
-          .getByRole("dialog", { name: "Financeiro atualizado", exact: true })
           .waitFor();
-        assert.equal((await financeiro()).baixas.length, 1);
-        assert.equal((await financeiro()).baixas[0].valor_centavos, 15000);
-        passou(
-          `${perfil} ${width}px: imprime ao concluir; pagamento somente na entrega ou aceite`,
-        );
+      else {
+        await p
+          .getByText("Conferindo o pagamento já registrado…", { exact: true })
+          .waitFor({ state: "hidden" });
+        assert.equal(await pergunta().count(), 0);
       }
+      assert.deepEqual((await financeiro()).baixas, f.baixas);
+      passou(
+        perfil +
+          " " +
+          width +
+          "px: " +
+          modo +
+          "; " +
+          (entregue ? "entrega confirmada" : "aguarda entrega") +
+          "; impressão e reabertura sem duplicação",
+      );
+    }
+  for (const caso of process.argv.includes("--servicos")
+    ? []
+    : [
+        "falha-pagamento",
+        "falha-entrega",
+        "bloqueado",
+        "staff",
+        "semFinanceiro",
+        "falha-criacao",
+        "sem-marcar",
+        "peca-sem-origem",
+        "valor-zero",
+      ]) {
+    const casosSelecionados = process.argv
+      .find((a) => a.startsWith("--casos="))
+      ?.slice(8)
+      .split(",");
+    if (casosSelecionados && !casosSelecionados.includes(caso)) continue;
+    await iniciar(390, "perfil=retifica&" + caso);
+    await preencher("retifica", caso === "valor-zero" ? "0" : "150");
+    if (caso === "peca-sem-origem") {
+      await btn("Item avulso").click();
+      await p.getByLabel("Nome do serviço ou peça", { exact: true }).fill("Peça QA");
+      await p
+        .getByRole("group", { name: "Novo item avulso", exact: true })
+        .getByRole("combobox", { name: /^Tipo/ })
+        .selectOption("part");
+      await p.getByLabel("Preço unitário (R$)", { exact: true }).fill("0");
+      await btn("Adicionar peça").click();
+    }
+    if (caso === "sem-marcar")
+      await p.getByLabel("Salvar como pronto", { exact: true }).uncheck();
+    if (caso === "falha-criacao")
+      await p.evaluate(() => {
+        window.qaFalhaSalvar = true;
+      });
+    await btn(
+      caso === "sem-marcar" ? "Abrir ordem de serviço" : "Salvar e informar pagamento",
+    ).click();
+    if (caso === "falha-criacao") {
+      await p
+        .getByRole("dialog", { name: "Nova ordem de serviço", exact: true })
+        .getByRole("alert")
+        .waitFor();
+      assert.equal(await pergunta().count(), 0);
+      assert.equal(await p.evaluate(() => window.qaJanelas), 0);
+      await p.evaluate(() => {
+        window.qaFalhaSalvar = false;
+      });
+      await btn("Salvar e informar pagamento").click();
+    }
+    if (caso === "sem-marcar") {
+      await p
+        .getByRole("dialog", { name: "Ordem de serviço #1", exact: true })
+        .waitFor();
+      assert.equal((await os(true)).situacao, "open");
+      assert.equal(await pergunta().count(), 0);
+      assert.equal(await p.evaluate(() => window.qaJanelas), 0);
+      await btn("Fechar janela").click();
+      await p.getByRole("link", { name: "Mapa QA", exact: true }).click();
+      for (const etapa of ["Em execução", "Conferência"])
+        await btn("Avançar OS 1 para " + etapa).click();
+      await btn("Concluir serviço da OS 1").click();
+      await btn("Entregar OS 1 para Entregue").waitFor();
+      assert.equal(await pergunta().count(), 0);
+      await p
+        .getByRole("dialog", { name: "Avisar o cliente que está pronto?", exact: true })
+        .getByRole("button", { name: "Fechar janela", exact: true })
+        .click();
+      await btn("Entregar OS 1 para Entregue").click();
+      await pergunta().waitFor();
+      passou(caso + ": criação normal e pagamento na entrega");
+      continue;
+    }
+    if (["staff", "semFinanceiro"].includes(caso)) {
+      await entrega().waitFor();
+      assert.equal(await pergunta().count(), 0);
+    } else if (caso === "valor-zero") {
+      await pergunta()
+        .getByText("Não há valor a registrar.", { exact: true })
+        .waitFor();
+      await pergunta().getByRole("button", { name: "Fechar", exact: true }).click();
+    } else await pagar("total", caso === "falha-pagamento");
+    if (caso === "falha-entrega")
+      await p.evaluate(() => {
+        window.qaFalhaSalvar = true;
+      });
+    await entrega()
+      .getByRole("button", { name: "Sim, já foi entregue", exact: true })
+      .click();
+    if (caso === "falha-entrega") {
+      await entrega().getByRole("alert").waitFor();
+      assert.equal((await os(true)).situacao, "ready");
+      assert.equal((await financeiro()).baixas.length, 1);
+      await p.evaluate(() => {
+        window.qaFalhaSalvar = false;
+      });
+      await entrega()
+        .getByRole("button", { name: "Sim, já foi entregue", exact: true })
+        .click();
+    }
+    if (caso === "peca-sem-origem") {
+      await p
+        .getByRole("dialog", { name: "Conferir peças para entregar", exact: true })
+        .waitFor();
+      assert.equal((await os(true)).situacao, "ready");
+      assert.equal((await financeiro()).baixas.length, 1);
+      await p.getByLabel("Trazida pelo cliente", { exact: true }).check();
+      await btn("Salvar e concluir entrega").click();
+    }
+    if (caso === "bloqueado") {
+      await p
+        .getByRole("dialog", { name: "OS salva", exact: true })
+        .getByRole("alert")
+        .waitFor();
+      assert.equal((await os(true)).situacao, "delivered");
+      assert.equal((await financeiro()).baixas.length, 1);
+      await btn("Tentar imprimir novamente").click();
+      assert.equal((await financeiro()).baixas.length, 1);
+    } else await p.waitForFunction(() => window.qaImpressaoIniciada === 1);
+    assert.equal((await os(true)).situacao, "delivered");
+    passou(caso + ": dados preservados, sem duplicação");
+  }
   assert.deepEqual(erros, []);
 } catch (e) {
   process.exitCode = 1;
@@ -418,22 +408,19 @@ try {
   }
 } finally {
   await browser.close();
-  await new Promise((ok) => server.httpServer.close(ok));
+  await server.httpServer.close();
   await writeFile(
     resolve(
       pasta,
-      process.argv.includes("--servicos")
-        ? "resultado-servicos.json"
-        : process.argv.includes("--extras")
-          ? "resultado-extras.json"
-          : "resultado.json",
+      process.argv.includes("--extras") ? "resultado-extras.json" : "resultado.json",
     ),
     JSON.stringify(
       {
         ok: !process.exitCode,
         resultados,
         erros,
-        ambiente: "Demonstração isolada; nenhuma alteração em clientes reais",
+        ambiente:
+          "Demonstração isolada em Chrome local; nenhuma alteração em clientes reais",
       },
       null,
       2,

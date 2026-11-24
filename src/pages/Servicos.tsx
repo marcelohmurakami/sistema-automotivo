@@ -13,8 +13,7 @@ const PainelAssistencia = componenteSobDemanda(async () => ({
 }));
 import { diasCalendario } from "../lib/calendarioAgenda";
 import { AtalhoLocalizacao } from "../components/AtalhoLocalizacao";
-import { abrirJanelaNotaOS } from "../services/impressaoNotaOS";
-import { imprimirNotaAtendimento } from "../services/impressaoAtendimento";
+import { usePagamentoAposRegistro } from "../lib/pagamentoAposRegistro";
 import { novoId } from "../lib/uuid.ts";
 import { AcoesAgendamento } from "../components/AcoesAgendamento";
 import { usePublicarContextoAssistente } from "../lib/contextoAssistente";
@@ -77,6 +76,7 @@ import {
 import type { Editor } from "../components/servicos/tipos";
 
 export function Servicos({ tela }: { tela: string }) {
+  const perguntarPagamento = usePagamentoAposRegistro();
   const a = useAcesso(),
     oficina = a.oficina!.id,
     ramo = a.oficina!.ramo || "automotivo",
@@ -185,13 +185,13 @@ export function Servicos({ tela }: { tela: string }) {
     mutationFn: ({
       funcao,
       args,
+      pronto,
     }: {
       funcao: string;
       args: Record<string, unknown>;
       fotos?: boolean;
-      imprimir?: boolean;
-      janela?: Window | null;
-    }) => gravarServico(funcao, oficina, args, a.demo),
+      pronto?: boolean;
+    }) => gravarServico(funcao, oficina, args, a.demo, { avisarConclusao: !pronto }),
     onSuccess: async (id, variaveis) => {
       setAbrirFotos(!!variaveis.fotos);
       setEditor(null);
@@ -209,12 +209,18 @@ export function Servicos({ tela }: { tela: string }) {
         ) &&
         typeof id === "string"
       ) {
-        setDetalhe(id);
-        if (variaveis.imprimir) {
-          void imprimirNotaAtendimento(a.demo, oficina, id, variaveis.janela).catch(
-            (e) => setAviso(erroPublico(e)),
+        if (variaveis.pronto) {
+          // Os detalhes são carregados sob demanda; se abrissem agora, poderiam
+          // cobrir a pergunta de pagamento ao terminar de carregar.
+          perguntarPagamento(
+            { tipo: "atendimento", id, contexto: "criacao-pronta" },
+            {
+              rotulo: "Continuar",
+              rotuloAdiar: "Agora não",
+              executar: () => setDetalhe(id),
+            },
           );
-        }
+        } else setDetalhe(id);
       }
       await atualizarConsultas(
         qc,
@@ -228,9 +234,6 @@ export function Servicos({ tela }: { tela: string }) {
         ],
         [["servicos", oficina], ["detalhes-atendimento"]],
       );
-    },
-    onError: (_erro, variaveis) => {
-      variaveis.janela?.close();
     },
   });
   const nomeCliente = useCallback(
@@ -836,13 +839,12 @@ export function Servicos({ tela }: { tela: string }) {
             dados={dados}
             ocupado={salvar.isPending}
             erro={salvar.isError ? erroPublico(salvar.error) : ""}
-            salvar={(funcao, args, fotos, imprimir) =>
+            salvar={(funcao, args, fotos, pronto) =>
               salvar.mutate({
                 funcao,
                 args,
                 fotos,
-                imprimir,
-                janela: imprimir ? abrirJanelaNotaOS() : undefined,
+                pronto,
               })
             }
           />
