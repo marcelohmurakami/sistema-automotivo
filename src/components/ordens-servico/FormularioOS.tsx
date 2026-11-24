@@ -1,3 +1,4 @@
+import { OpcoesDocumento, ResumoDocumento } from "../LayoutDocumentoServico";
 import { EstadoCriacaoOS } from "../EstadoCriacaoOS";
 import { FotosCriacaoOS } from "./FotosCriacaoOS";
 import type { FotoOffline } from "../../lib/atendimentoOffline";
@@ -203,63 +204,80 @@ export function FormularioOS({
       />
     </label>
   );
+  const complementoItens = (
+    <>
+      <CampoEntregaPrometida
+        inicial={anterior?.entrega_prevista_em}
+        situacao={anterior?.situacao}
+      />
+      {texto("resumo_cliente", "Observações (opcional)")}
+      <p className="texto-suave">Aparece na nota do cliente.</p>
+    </>
+  );
   return (
-    <form className="formulario-cliente" onSubmit={enviar}>
+    <form
+      className={`formulario-cliente${!anterior ? " documento-simples" : ""}`}
+      onSubmit={enviar}
+    >
       <fieldset disabled={ocupado || criando}>
-        {!anterior || !anterior.cliente_id ? (
-          <SelecaoClienteVeiculo
-            selecionarUnicoAoAbrir={!anterior && !!clienteInicial}
-            campoAoLadoDoCliente={campoDataServico}
-            permitirAvulso
-            dadosAvulsos={{
-              nome: anterior?.dados_cliente.nome || "",
-              telefone: anterior?.dados_cliente.telefone_e164 || "",
-            }}
-            entradaLivreRetifica={especialidade === "retifica"}
-            aux={aux}
-            cliente={cliente}
-            veiculo={veiculo}
-            selecionarCliente={setCliente}
-            selecionarVeiculo={setVeiculo}
-            aoProcessar={setCriando}
-          />
-        ) : (
-          <div className="dupla-campos">
-            <p className="aviso-cliente">
-              {anterior.dados_cliente.nome} · {anterior.dados_veiculo.modelo} ·{" "}
-              {especialidade === "retifica"
-                ? anterior.dados_veiculo.motor || "Motor não informado"
-                : anterior.dados_veiculo.placa || "Sem placa"}
-            </p>
-            {campoDataServico}
-          </div>
-        )}
-        {especialidade === "retifica" && (
-          <div className="dupla-campos">
-            <label>
-              Carro
-              <input
-                name="carro_livre"
-                required
-                maxLength={160}
-                placeholder="Ex.: Gol, Uno, Golf"
-                defaultValue={anterior?.dados_veiculo.modelo || ""}
-              />
-            </label>
-            <label>
-              Motor
-              <input
-                name="motor_livre"
-                required
-                maxLength={160}
-                placeholder="Ex.: AP, CHT, Fiasa, TSI"
-                defaultValue={anterior?.dados_veiculo.motor || ""}
-              />
-            </label>
-          </div>
-        )}
-        <CamposPagamentoAtendimento inicial={anterior} />
+        <div className="documento-identificacao">
+          {!anterior || !anterior.cliente_id ? (
+            <SelecaoClienteVeiculo
+              focoInicial={!!anterior}
+              selecionarUnicoAoAbrir={!anterior && !!clienteInicial}
+              campoAoLadoDoCliente={anterior ? campoDataServico : undefined}
+              permitirAvulso
+              dadosAvulsos={{
+                nome: anterior?.dados_cliente.nome || "",
+                telefone: anterior?.dados_cliente.telefone_e164 || "",
+              }}
+              entradaLivreRetifica={especialidade === "retifica"}
+              aux={aux}
+              cliente={cliente}
+              veiculo={veiculo}
+              selecionarCliente={setCliente}
+              selecionarVeiculo={setVeiculo}
+              aoProcessar={setCriando}
+            />
+          ) : (
+            <div className="dupla-campos">
+              <p className="aviso-cliente">
+                {anterior.dados_cliente.nome} · {anterior.dados_veiculo.modelo} ·{" "}
+                {especialidade === "retifica"
+                  ? anterior.dados_veiculo.motor || "Motor não informado"
+                  : anterior.dados_veiculo.placa || "Sem placa"}
+              </p>
+              {campoDataServico}
+            </div>
+          )}
+          {especialidade === "retifica" && (
+            <div className="dupla-campos">
+              <label>
+                Carro
+                <input
+                  name="carro_livre"
+                  required
+                  maxLength={160}
+                  placeholder="Ex.: Gol, Uno, Golf"
+                  defaultValue={anterior?.dados_veiculo.modelo || ""}
+                />
+              </label>
+              <label>
+                Motor
+                <input
+                  name="motor_livre"
+                  required
+                  maxLength={160}
+                  placeholder="Ex.: AP, CHT, Fiasa, TSI"
+                  defaultValue={anterior?.dados_veiculo.motor || ""}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+        {anterior && <CamposPagamentoAtendimento inicial={anterior} />}
         <EditorItensOS
+          simplificado={!anterior}
           itens={itens}
           alterar={setItens}
           catalogo={aux.catalogo}
@@ -268,134 +286,152 @@ export function FormularioOS({
           anterior={anterior}
           aoProcessar={setCriando}
           aoEditarItem={setItemEmEdicao}
-          rodape={
-            <>
-              <CampoEntregaPrometida
-                inicial={anterior?.entrega_prevista_em}
-                situacao={anterior?.situacao}
-              />
-              {erroEntrega && (
-                <p role="alert" className="erro-formulario">
-                  {erroEntrega}
-                </p>
-              )}
-              {texto("resumo_cliente", "Observações (opcional)")}
-              <p className="texto-suave">Aparece na nota do cliente.</p>
-            </>
-          }
+          rodape={anterior ? complementoItens : undefined}
         />
-        {!anterior && (
-          <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
-        )}
-        <div className="formulario-opcionais">
-          <CampoTipoServico inicial={anterior?.tipo_servico}>
-            {ficha.especialidade === "estetica" ? (
-              <EditorFichaEspecialidade valor={ficha} alterar={setFicha} />
-            ) : (
-              <RecepcaoEspecializada valor={ficha} alterar={setFicha} />
-            )}
-          </CampoTipoServico>
-          <details className="os-detalhes os-informacoes-adicionais">
-            <summary>Informações adicionais do atendimento (opcional)</summary>
-            <FotosCriacaoOS
-              fotos={fotos}
-              alterar={setFotos}
-              processando={setPreparandoFotos}
-            />
-            {ficha.especialidade !== "estetica" && (
-              <EditorFichaEspecialidade
-                valor={ficha}
-                alterar={setFicha}
-                ocultarCampos={perfilAtendimento(ficha.especialidade).recepcaoRapida}
+        <OpcoesDocumento
+          ativo={!anterior}
+          desconto={!anterior ? controleDesconto : undefined}
+          nota={{ mostrar: mostrarDescontoNota, alterar: setMostrarDescontoNota }}
+        >
+          {!anterior && (
+            <>
+              {campoDataServico}
+              <CamposPagamentoAtendimento />
+              {complementoItens}
+              <FotosCriacaoOS
+                fotos={fotos}
+                alterar={setFotos}
+                processando={setPreparandoFotos}
               />
-            )}
-            <details className="os-detalhes">
-              <summary>Relação de peças (opcional)</summary>
-              {texto("pecas_a_trocar", "Peças trocadas ou a trocar (opcional)")}
-              <p className="texto-suave">
-                Informe quantidades, referências e fornecedor. Lista informativa, sem
-                valores ou baixa de estoque.
-              </p>
-            </details>
-            <details className="os-detalhes">
-              <summary>
-                Relato do cliente e preenchimento por voz ou foto (opcional)
-              </summary>
-              <AtendimentoExpresso
-                aoPrepararFoto={setPreparandoAssistida}
-                aoSelecionarFoto={(imagem) =>
-                  setFotoAssistida(
-                    imagem
-                      ? {
-                          id: crypto.randomUUID(),
-                          imagem,
-                          fase: "before",
-                          legenda: "Foto da leitura assistida na criação da OS",
-                          sincronizada: false,
-                        }
-                      : null,
-                  )
-                }
-                aplicar={(c) => {
-                  setRelatoRapido(
-                    [
-                      c.relato,
-                      c.placa ? `Placa lida: ${c.placa}` : "",
-                      ...c.itens.map((i) => `${i.quantidade} × ${i.descricao}`),
-                    ]
-                      .filter(Boolean)
-                      .join("\n"),
-                  );
-                  if (c.quilometragem != null) setKmRapido(c.quilometragem);
-                  if (!anterior && c.placa) {
-                    const v = aux.veiculos.find(
-                      (v) => v.placa?.replace(/[^A-Z0-9]/g, "") === c.placa,
-                    );
-                    const link = v && aux.vinculos.find((x) => x.veiculo_id === v.id);
-                    if (v && link) {
-                      setCliente(link.cliente_id);
-                      setVeiculo(v.id);
-                    }
-                  }
-                }}
-              />
-              {texto("queixa_cliente", "O que o cliente relatou?")}
-            </details>
-            <details className="os-detalhes">
-              <summary>Entrada, diagnóstico e garantia (opcional)</summary>
-              <CampoResponsavel inicial={anterior} />
-              <div className="dupla-campos">
-                {campo("quilometragem_entrada", "Quilometragem de entrada", "number")}
-                {campo("combustivel_percentual", "Combustível (%)", "number")}
-              </div>
-              {texto("pertences", "Pertences e condições de entrada")}
-              <CampoDetalhesServico observacoes={anterior?.detalhes_especialidade} />
-              {texto("diagnostico", "Diagnóstico técnico")}
-              {texto("codigos_falha", "Códigos de falha / resultados de testes")}
-              {texto("observacoes_internas", "Observações internas")}
-              <div className="dupla-campos">
-                {campo("quilometragem_saida", "Quilometragem de saída", "number")}
-                {campo("garantia_ate", "Garantia até", "date")}
-              </div>
-              {texto("condicoes_garantia", "Condições da garantia")}
-            </details>
-            {!!checklistCompleto.length && (
+            </>
+          )}
+          {!anterior && (
+            <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
+          )}
+          <div className="formulario-opcionais">
+            <CampoTipoServico inicial={anterior?.tipo_servico}>
+              {ficha.especialidade === "estetica" ? (
+                <EditorFichaEspecialidade valor={ficha} alterar={setFicha} />
+              ) : (
+                <RecepcaoEspecializada valor={ficha} alterar={setFicha} />
+              )}
+            </CampoTipoServico>
+            <details className="os-detalhes os-informacoes-adicionais">
+              <summary>Informações adicionais do atendimento (opcional)</summary>
+              {anterior && (
+                <FotosCriacaoOS
+                  fotos={fotos}
+                  alterar={setFotos}
+                  processando={setPreparandoFotos}
+                />
+              )}
+              {ficha.especialidade !== "estetica" && (
+                <EditorFichaEspecialidade
+                  valor={ficha}
+                  alterar={setFicha}
+                  ocultarCampos={perfilAtendimento(ficha.especialidade).recepcaoRapida}
+                />
+              )}
               <details className="os-detalhes">
-                <summary>Checklist anterior do atendimento</summary>
-                {checklistCompleto.map((c, i) => (
-                  <label className="os-check" key={c}>
-                    <input
-                      type="checkbox"
-                      name={"check-" + i}
-                      defaultChecked={anterior?.checklist?.[c] ?? false}
-                    />
-                    {c}
-                  </label>
-                ))}
+                <summary>Relação de peças (opcional)</summary>
+                {texto("pecas_a_trocar", "Peças trocadas ou a trocar (opcional)")}
+                <p className="texto-suave">
+                  Informe quantidades, referências e fornecedor. Lista informativa, sem
+                  valores ou baixa de estoque.
+                </p>
               </details>
-            )}
-          </details>
-        </div>
+              <details className="os-detalhes">
+                <summary>
+                  Relato do cliente e preenchimento por voz ou foto (opcional)
+                </summary>
+                <AtendimentoExpresso
+                  aoPrepararFoto={setPreparandoAssistida}
+                  aoSelecionarFoto={(imagem) =>
+                    setFotoAssistida(
+                      imagem
+                        ? {
+                            id: crypto.randomUUID(),
+                            imagem,
+                            fase: "before",
+                            legenda: "Foto da leitura assistida na criação da OS",
+                            sincronizada: false,
+                          }
+                        : null,
+                    )
+                  }
+                  aplicar={(c) => {
+                    setRelatoRapido(
+                      [
+                        c.relato,
+                        c.placa ? `Placa lida: ${c.placa}` : "",
+                        ...c.itens.map((i) => `${i.quantidade} × ${i.descricao}`),
+                      ]
+                        .filter(Boolean)
+                        .join("\n"),
+                    );
+                    if (c.quilometragem != null) setKmRapido(c.quilometragem);
+                    if (!anterior && c.placa) {
+                      const v = aux.veiculos.find(
+                        (v) => v.placa?.replace(/[^A-Z0-9]/g, "") === c.placa,
+                      );
+                      const link = v && aux.vinculos.find((x) => x.veiculo_id === v.id);
+                      if (v && link) {
+                        setCliente(link.cliente_id);
+                        setVeiculo(v.id);
+                      }
+                    }
+                  }}
+                />
+                {texto("queixa_cliente", "O que o cliente relatou?")}
+              </details>
+              <details className="os-detalhes">
+                <summary>Entrada, diagnóstico e garantia (opcional)</summary>
+                <CampoResponsavel inicial={anterior} />
+                <div className="dupla-campos">
+                  {campo("quilometragem_entrada", "Quilometragem de entrada", "number")}
+                  {campo("combustivel_percentual", "Combustível (%)", "number")}
+                </div>
+                {texto("pertences", "Pertences e condições de entrada")}
+                <CampoDetalhesServico observacoes={anterior?.detalhes_especialidade} />
+                {texto("diagnostico", "Diagnóstico técnico")}
+                {texto("codigos_falha", "Códigos de falha / resultados de testes")}
+                {texto("observacoes_internas", "Observações internas")}
+                <div className="dupla-campos">
+                  {campo("quilometragem_saida", "Quilometragem de saída", "number")}
+                  {campo("garantia_ate", "Garantia até", "date")}
+                </div>
+                {texto("condicoes_garantia", "Condições da garantia")}
+              </details>
+              {!!checklistCompleto.length && (
+                <details className="os-detalhes">
+                  <summary>Checklist anterior do atendimento</summary>
+                  {checklistCompleto.map((c, i) => (
+                    <label className="os-check" key={c}>
+                      <input
+                        type="checkbox"
+                        name={"check-" + i}
+                        defaultChecked={anterior?.checklist?.[c] ?? false}
+                      />
+                      {c}
+                    </label>
+                  ))}
+                </details>
+              )}
+            </details>
+          </div>
+        </OpcoesDocumento>
+        {!anterior && (
+          <ResumoDocumento
+            contexto="OS"
+            subtotal={controleDesconto.subtotal}
+            desconto={desconto}
+          />
+        )}
+        {erroEntrega && (
+          <p role="alert" className="erro-formulario">
+            {erroEntrega}
+          </p>
+        )}
         <button
           className="botao-primario acao-salvar-fixa"
           type="submit"

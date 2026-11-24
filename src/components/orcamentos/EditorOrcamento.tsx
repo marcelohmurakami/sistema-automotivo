@@ -1,4 +1,4 @@
-import { OpcoesOrcamento, ResumoOrcamento } from "./LayoutOrcamento";
+import { OpcoesDocumento, ResumoDocumento } from "../LayoutDocumentoServico";
 import { novoId } from "../../lib/uuid.ts";
 import { CamposTaxaDiagnostico } from "../TaxaDiagnostico";
 import { taxaDoFormulario } from "../../lib/diagnosticoOrcamento";
@@ -280,7 +280,7 @@ export function EditorOrcamento({
   }
   return (
     <form
-      className="formulario-cliente editor-proposta orcamento-simples"
+      className="formulario-cliente editor-proposta documento-simples"
       onSubmit={enviar}
     >
       {anterior && anterior.situacao !== "draft" && (
@@ -296,7 +296,7 @@ export function EditorOrcamento({
         </div>
       )}
       <fieldset disabled={ocupado || criando || pacoteOcupado}>
-        <div className="orcamento-identificacao">
+        <div className="documento-identificacao">
           <SelecaoClienteVeiculo
             focoInicial={false}
             selecionarUnicoAoAbrir={!anterior && !recuperado && !!clienteInicial}
@@ -347,7 +347,7 @@ export function EditorOrcamento({
           aoEditarItem={setEditandoItem}
           detalhesItem={detalhesItem}
         />
-        <OpcoesOrcamento desconto={controleDesconto}>
+        <OpcoesDocumento desconto={controleDesconto}>
           <CamposPagamentoAtendimento
             inicial={tecnico}
             alterar={(dados) =>
@@ -579,8 +579,8 @@ export function EditorOrcamento({
               </details>
             </details>
           </div>
-        </OpcoesOrcamento>
-        <ResumoOrcamento subtotal={subtotal} desconto={desconto} />
+        </OpcoesDocumento>
+        <ResumoDocumento subtotal={subtotal} desconto={desconto} />
       </fieldset>
       {(erro || erroLocal) && (
         <p className="erro-formulario" role="alert">

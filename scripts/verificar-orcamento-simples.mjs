@@ -53,8 +53,8 @@ try {
       p.on("pageerror", (e) => erros.push(e.message));
       await p.goto(base + "?perfil=" + perfil);
       await button("Salvar orçamento").waitFor();
-      const form = p.locator(".orcamento-simples"),
-        opcoes = form.locator(".orcamento-mais-opcoes > summary");
+      const form = p.locator(".documento-simples"),
+        opcoes = form.locator(".documento-mais-opcoes > summary");
       assert.equal(
         await form.getByLabel("Desconto (%)", { exact: true }).isVisible(),
         false,

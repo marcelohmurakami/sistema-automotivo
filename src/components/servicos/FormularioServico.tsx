@@ -1,4 +1,4 @@
-import { OpcoesOrcamento, ResumoOrcamento } from "../orcamentos/LayoutOrcamento";
+import { OpcoesDocumento, ResumoDocumento } from "../LayoutDocumentoServico";
 import { AgendamentoRecorrente } from "../AgendamentoRecorrente";
 import { regraFormulario } from "../../services/calendarioOperacao";
 import { useQuery } from "@tanstack/react-query";
@@ -128,6 +128,8 @@ export function FormularioServico({
   const acesso = useAcesso();
   const orcamentoSimples =
     editor.tipo === "atendimento" && editor.item.dados.documento === "orcamento";
+  const formularioSimples =
+    orcamentoSimples || (editor.tipo === "atendimento" && !editor.item.revisao);
   const destinoFotos = useRef(false);
   const destinoImpressao = useRef(false);
   const [servicoPronto, setServicoPronto] = useState(false);
@@ -510,7 +512,7 @@ export function FormularioServico({
     ) : null;
   return (
     <form
-      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${orcamentoSimples ? " orcamento-simples" : ""}`}
+      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${formularioSimples ? " documento-simples" : ""}`}
       onSubmit={enviar}
     >
       {editor.tipo === "atendimento" && !!item.revisao && detalhes.isPending && (
@@ -615,7 +617,7 @@ export function FormularioServico({
                   setObjetoEscolhido(undefined);
                 }}
               />
-              {!orcamentoSimples && campoDataServico}
+              {!formularioSimples && campoDataServico}
               <input type="hidden" name="objeto_id" value={objetoId} />
               <SelecaoOperacao
                 tipo="objetos"
@@ -648,7 +650,7 @@ export function FormularioServico({
               }}
             />
 
-            {linguagem.limpeza && !orcamentoSimples && (
+            {linguagem.limpeza && !formularioSimples && (
               <label className="assistencia-campo-largo">
                 Escopo combinado com o cliente
                 <textarea
@@ -701,20 +703,20 @@ export function FormularioServico({
                   )}
                 </label>
               )}
-              {!orcamentoSimples && campoPagamento}
+              {!formularioSimples && campoPagamento}
             </div>
             {!item.revisao && podeEditarValores && (
               <div className="assistencia-campo-largo">
                 <EditorItensOS
                   especialidade={ficha.especialidade}
-                  simplificado={orcamentoSimples}
+                  simplificado={formularioSimples}
                   contexto={
                     editor.item.situacao === "orcamento" &&
                     editor.item.dados.documento === "orcamento"
                       ? "orçamento"
                       : "OS"
                   }
-                  rodape={orcamentoSimples ? undefined : rodapeItens}
+                  rodape={formularioSimples ? undefined : rodapeItens}
                   itens={itens}
                   alterar={setItens}
                   catalogo={
@@ -749,22 +751,27 @@ export function FormularioServico({
               </div>
             )}
             {(!!item.revisao || !podeEditarValores) && rodapeItens}
-            {!item.revisao &&
-              editor.item.dados.documento === "ordem" &&
-              podeEditarValores && (
-                <EstadoCriacaoOS
-                  pronto={servicoPronto}
-                  alterar={setServicoPronto}
-                  emCampo={!linguagem.assistencia}
-                />
-              )}
-            <OpcoesOrcamento
-              ativo={orcamentoSimples}
+            <OpcoesDocumento
+              nota={
+                !orcamentoSimples
+                  ? { mostrar: mostrarDescontoNota, alterar: setMostrarDescontoNota }
+                  : undefined
+              }
+              ativo={formularioSimples}
               desconto={
                 !item.revisao && podeEditarValores ? controleDesconto : undefined
               }
             >
-              {linguagem.limpeza && orcamentoSimples && (
+              {!item.revisao &&
+                editor.item.dados.documento === "ordem" &&
+                podeEditarValores && (
+                  <EstadoCriacaoOS
+                    pronto={servicoPronto}
+                    alterar={setServicoPronto}
+                    emCampo={!linguagem.assistencia}
+                  />
+                )}
+              {linguagem.limpeza && formularioSimples && (
                 <label className="assistencia-campo-largo">
                   Escopo combinado com o cliente
                   <textarea
@@ -777,7 +784,7 @@ export function FormularioServico({
                 </label>
               )}
 
-              {orcamentoSimples && (
+              {formularioSimples && (
                 <>
                   {campoDataServico}
                   {campoPagamento}
@@ -967,9 +974,10 @@ export function FormularioServico({
                   </details>
                 </details>
               </div>
-            </OpcoesOrcamento>
-            {orcamentoSimples && !item.revisao && podeEditarValores && (
-              <ResumoOrcamento
+            </OpcoesDocumento>
+            {formularioSimples && !item.revisao && podeEditarValores && (
+              <ResumoDocumento
+                contexto={orcamentoSimples ? "orçamento" : "OS"}
                 subtotal={itens.reduce(
                   (total, i) =>
                     total + Math.round(i.quantidade * i.preco_unitario_centavos),

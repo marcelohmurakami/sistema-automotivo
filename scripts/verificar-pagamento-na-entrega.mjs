@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { chromium } from "playwright";
 
-const pasta = resolve("output/pagamento-na-entrega-20261124");
+const pasta = resolve(process.env.QA_OUTPUT || "output/pagamento-na-entrega-20261124");
 await mkdir(pasta, { recursive: true });
 const config = {
   configFile: false,
@@ -73,14 +73,22 @@ async function preencher() {
       .getByRole("button", { name: "Cadastrar e selecionar", exact: true })
       .click();
   }
-  await p.getByRole("button", { name: "Serviço ou peça avulsa", exact: true }).click();
+  await p.getByRole("button", { name: "Item avulso", exact: true }).click();
   await p.getByLabel("Nome do serviço ou peça", { exact: true }).fill("Revisão QA");
   await p.getByLabel("Preço unitário (R$)", { exact: true }).fill("150");
   await p.getByRole("button", { name: "Adicionar serviço", exact: true }).click();
 }
+async function marcarPronta() {
+  if (
+    !(await p
+      .getByLabel("Sim · salvar como pronto e imprimir", { exact: true })
+      .isVisible())
+  )
+    await p.locator(".documento-mais-opcoes > summary").click();
+  await p.getByLabel("Sim · salvar como pronto e imprimir", { exact: true }).check();
+}
 async function salvar(pronta = true, numero = 1, imprime = true) {
-  if (pronta)
-    await p.getByLabel("Sim · salvar como pronto e imprimir", { exact: true }).check();
+  if (pronta) await marcarPronta();
   await p
     .getByRole("button", {
       name: pronta ? "Salvar como pronto e imprimir" : "Abrir ordem de serviço",
@@ -296,7 +304,7 @@ try {
     await p.evaluate(() => {
       window.qaFalhaSalvar = true;
     });
-    await p.getByLabel("Sim · salvar como pronto e imprimir", { exact: true }).check();
+    await marcarPronta();
     await p
       .getByRole("button", { name: "Salvar como pronto e imprimir", exact: true })
       .click();
@@ -343,13 +351,11 @@ try {
         await p
           .getByRole("button", { name: "Cadastrar e selecionar", exact: true })
           .click();
-        await p.getByRole("button", { name: /^Serviço ou .+ avuls[ao]$/ }).click();
+        await p.getByRole("button", { name: "Item avulso", exact: true }).click();
         await p.getByLabel(/^Nome do serviço ou /).fill("Revisão QA");
         await p.getByLabel("Preço unitário (R$)", { exact: true }).fill("150");
         await p.getByRole("button", { name: "Adicionar serviço", exact: true }).click();
-        await p
-          .getByLabel("Sim · salvar como pronto e imprimir", { exact: true })
-          .check();
+        await marcarPronta();
         await p
           .getByRole("button", { name: "Salvar como pronto e imprimir", exact: true })
           .click();

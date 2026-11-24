@@ -1,23 +1,25 @@
 import { useRef, type ReactNode } from "react";
-import { CampoDesconto } from "../CampoDesconto";
-import type { ControleDesconto } from "../../lib/useDesconto";
-import { dinheiro } from "../../lib/formatacao";
-import "./LayoutOrcamento.css";
+import { CampoDesconto, type PreferenciaDescontoNota } from "./CampoDesconto";
+import type { ControleDesconto } from "../lib/useDesconto";
+import { dinheiro } from "../lib/formatacao";
+import "./LayoutDocumentoServico.css";
 
-export function OpcoesOrcamento({
+export function OpcoesDocumento({
   children,
   desconto,
   ativo = true,
+  nota,
 }: {
   children: ReactNode;
   desconto?: ControleDesconto;
   ativo?: boolean;
+  nota?: PreferenciaDescontoNota;
 }) {
   const painel = useRef<HTMLDetailsElement>(null);
   if (!ativo) return <>{children}</>;
   return (
     <details
-      className="orcamento-mais-opcoes"
+      className="documento-mais-opcoes"
       ref={painel}
       onInvalidCapture={(event) => {
         let elemento = (event.target as HTMLElement).parentElement;
@@ -31,25 +33,27 @@ export function OpcoesOrcamento({
         <strong>Mais opções</strong>
         <span>Desconto, pagamento e detalhes</span>
       </summary>
-      <div className="orcamento-mais-opcoes-conteudo">
-        {desconto && <CampoDesconto controle={desconto} />}
+      <div className="documento-mais-opcoes-conteudo">
+        {desconto && <CampoDesconto controle={desconto} nota={nota} />}
         {children}
       </div>
     </details>
   );
 }
 
-export function ResumoOrcamento({
+export function ResumoDocumento({
   subtotal,
   desconto,
+  contexto = "orçamento",
 }: {
   subtotal: number;
   desconto: number;
+  contexto?: "orçamento" | "OS";
 }) {
   return (
     <section
-      className="orcamento-resumo-simples"
-      aria-label="Valores do orçamento"
+      className="documento-resumo-simples"
+      aria-label={contexto === "OS" ? "Valores da OS" : "Valores do orçamento"}
       aria-live="polite"
     >
       {desconto > 0 && (
@@ -64,8 +68,8 @@ export function ResumoOrcamento({
           </div>
         </>
       )}
-      <div className="orcamento-resumo-total">
-        <span>Total do orçamento</span>
+      <div className="documento-resumo-total">
+        <span>{contexto === "OS" ? "Total da OS" : "Total do orçamento"}</span>
         <strong>{dinheiro(Math.max(0, subtotal - desconto))}</strong>
       </div>
     </section>
