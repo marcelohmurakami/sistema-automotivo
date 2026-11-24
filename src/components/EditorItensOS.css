@@ -1,10 +1,10 @@
 .os-editor-itens {
   border: 1px solid var(--borda);
   border-radius: 14px;
-  padding: 14px;
+  padding: 10px;
   display: grid;
-  gap: 12px;
-  margin-block: 12px;
+  gap: 8px;
+  margin-block: 8px;
 }
 .os-editor-catalogo button.os-catalogo-ativo {
   outline: 2px solid var(--ui-acento, #88a75f);
@@ -94,8 +94,8 @@
 }
 .os-editor-painel {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
   border: 1px solid var(--borda);
   border-radius: 12px;
   background: var(--gestao-suave);
@@ -108,8 +108,8 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 12px;
+  gap: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--borda);
 }
 .os-editor-painel-rodape > span {
@@ -334,7 +334,7 @@
 }
 @media (max-width: 700px) {
   .os-editor-itens {
-    padding: 12px;
+    padding: 8px;
   }
   .os-editor-catalogo {
     grid-template-columns: 1fr;
@@ -343,7 +343,7 @@
     grid-template-columns: 1fr 1fr;
   }
   .os-editor-painel {
-    padding: 12px;
+    padding: 8px;
   }
   .os-editor-painel-acoes {
     width: 100%;
@@ -376,9 +376,9 @@
 }
 .os-editor-complemento {
   display: grid;
-  gap: 12px;
-  margin-top: 12px;
-  padding: 12px 0 0;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 0 0;
   border-top: 1px solid var(--ui-borda);
 }
 .os-editor-complemento > p {

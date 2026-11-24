@@ -1,23 +1,61 @@
+.documento-simples {
+  gap: 8px;
+  padding-top: 0;
+}
+.estrutura-sistema .dialogo .dialogo-interior:has(> .documento-simples) {
+  --dialogo-recuo: 16px;
+  padding: var(--dialogo-recuo);
+}
+.estrutura-sistema
+  .dialogo
+  .dialogo-interior:has(> .documento-simples)
+  > .dialogo-cabecalho {
+  margin: calc(-1 * var(--dialogo-recuo)) calc(-1 * var(--dialogo-recuo)) 10px;
+  padding: 8px var(--dialogo-recuo);
+}
+.documento-simples label,
+.documento-simples .selecao-rapida {
+  gap: 4px;
+}
+.documento-simples
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  min-height: 44px;
+  padding-block: 8px;
+}
 .documento-simples > fieldset {
   display: grid;
   min-width: 0;
 }
 .documento-simples > fieldset,
 .estrutura-sistema .documento-simples > fieldset {
-  gap: 12px;
+  gap: 8px;
 }
 .documento-simples .os-editor-itens {
   margin: 0;
-  padding: 12px;
-  gap: 10px;
+  padding: 6px 10px;
+  gap: 6px;
 }
 .documento-simples .documento-identificacao {
   display: grid;
-  gap: 10px;
+  gap: 6px;
   min-width: 0;
 }
 .documento-simples .atalhos-cadastro {
   margin-block: 0;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.estrutura-sistema .documento-simples .atalhos-cadastro button,
+.estrutura-sistema .documento-simples .os-editor-itens-topo > button {
+  min-height: 32px;
+  padding-block: 4px;
+}
+.documento-simples .dupla-campos {
+  gap: 8px 12px;
+}
+.documento-simples :is(.cadastro-inline, .os-editor-painel) {
+  padding: 10px;
+  gap: 8px;
 }
 .documento-simples
   .documento-identificacao
@@ -38,7 +76,7 @@
   gap: 6px 12px;
   align-items: center;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 6px 10px;
   cursor: pointer;
   list-style: none;
 }
@@ -59,13 +97,13 @@
 }
 .documento-mais-opcoes-conteudo {
   display: grid;
-  gap: 12px;
-  padding: 0 12px 12px;
+  gap: 8px;
+  padding: 0 10px 10px;
 }
 .documento-resumo-simples {
   width: min(100%, 440px);
   margin-left: auto;
-  padding: 12px 14px;
+  padding: 8px 10px;
   border: 1px solid var(--borda);
   border-radius: 14px;
   display: grid;
@@ -89,7 +127,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 .documento-fechamento--com-acao .documento-resumo-simples {
   width: 100%;
@@ -189,21 +227,27 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
-.documento-simples > .acoes-formulario {
+.estrutura-sistema .formulario-cliente.documento-simples > .acoes-formulario {
   position: sticky;
   bottom: 0;
   background: var(--superficie);
-  padding-block: 10px;
+  padding-block: 8px;
   border-top: 1px solid var(--borda);
   z-index: 2;
 }
 @media (max-width: 600px) {
+  .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-simples) {
+    --dialogo-recuo: 12px;
+  }
+  .documento-simples .os-editor-itens {
+    padding-inline: 8px;
+  }
   .documento-mais-opcoes > summary > span {
     display: none;
   }
   .documento-resumo-simples {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
   }
   .documento-resumo-total > strong {
     font-size: 20px;
@@ -211,5 +255,11 @@
   .documento-simples .os-editor-catalogo > button {
     gap: 8px;
     padding: 10px;
+  }
+}
+@media (max-width: 600px), (pointer: coarse) {
+  .estrutura-sistema .documento-simples .atalhos-cadastro button,
+  .estrutura-sistema .documento-simples .os-editor-itens-topo > button {
+    min-height: 44px;
   }
 }
