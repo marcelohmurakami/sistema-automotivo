@@ -15,7 +15,7 @@ export function EstadoCriacaoOS({
         checked={pronto}
         onChange={(e) => alterar(e.target.checked)}
       />
-      <span>Salvar como pronto</span>
+      <span>O serviço já está pronto para entrega</span>
     </label>
   );
 }

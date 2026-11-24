@@ -69,9 +69,9 @@ try {
         await form.getByRole("region", { name: "Fotos do atendimento" }).isVisible(),
         false,
       );
-      assert(await form.getByLabel("Salvar como pronto", { exact: true }).isVisible());
+      assert(await form.getByLabel("O serviço já está pronto para entrega", { exact: true }).isVisible());
       assert.equal(
-        await form.getByLabel("Salvar como pronto", { exact: true }).isChecked(),
+        await form.getByLabel("O serviço já está pronto para entrega", { exact: true }).isChecked(),
         false,
       );
       const auto = await btn("Cliente sem cadastro").isVisible();

@@ -105,7 +105,7 @@ async function preencher(perfil, valor = "150") {
   await p.getByLabel(/^Nome do serviço ou /).fill("Revisão QA");
   await p.getByLabel("Preço unitário (R$)", { exact: true }).fill(valor);
   await btn("Adicionar serviço").click();
-  const check = p.getByLabel("Salvar como pronto", { exact: true });
+  const check = p.getByLabel("O serviço já está pronto para entrega", { exact: true });
   assert(await check.isVisible());
   assert.equal(await check.isChecked(), false);
   assert.equal(await form.locator(".documento-mais-opcoes").getAttribute("open"), null);
@@ -197,7 +197,7 @@ try {
         )
       ) {
         await p
-          .getByLabel("Salvar como pronto", { exact: true })
+          .getByLabel("O serviço já está pronto para entrega", { exact: true })
           .scrollIntoViewIfNeeded();
         await p.screenshot({ path: resolve(pasta, perfil + "-" + width + ".png") });
       }
@@ -306,7 +306,7 @@ try {
       await btn("Adicionar peça").click();
     }
     if (caso === "sem-marcar")
-      await p.getByLabel("Salvar como pronto", { exact: true }).uncheck();
+      await p.getByLabel("O serviço já está pronto para entrega", { exact: true }).uncheck();
     if (caso === "falha-criacao")
       await p.evaluate(() => {
         window.qaFalhaSalvar = true;
