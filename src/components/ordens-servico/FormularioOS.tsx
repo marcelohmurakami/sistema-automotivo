@@ -216,7 +216,7 @@ export function FormularioOS({
   );
   return (
     <form
-      className={`formulario-cliente${!anterior ? " documento-simples" : ""}`}
+      className={`formulario-cliente${!anterior ? " documento-simples documento-criacao-os" : ""}`}
       onSubmit={enviar}
     >
       <fieldset disabled={ocupado || criando}>

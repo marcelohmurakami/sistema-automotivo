@@ -272,9 +272,11 @@ export function EditorItensOS({
       {(somenteLocal || acesso.permite("catalog")) && (
         <>
           <label className="os-editor-busca">
-            {simplificado
-              ? `Buscar serviço ou ${estoque.singular}`
-              : "Buscar no catálogo"}
+            <span>
+              {simplificado
+                ? `Buscar serviço ou ${estoque.singular}`
+                : "Buscar no catálogo"}
+            </span>
             <div>
               <Search size={17} />
               <input

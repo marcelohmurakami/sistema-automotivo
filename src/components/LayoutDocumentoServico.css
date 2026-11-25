@@ -257,7 +257,25 @@
     padding: 10px;
   }
 }
+.documento-simples.documento-criacao-os .os-editor-itens {
+  padding: 4px 8px;
+  gap: 4px;
+}
+.documento-criacao-os .os-editor-busca > span,
+.documento-criacao-os .documento-mais-opcoes > summary > span {
+  display: none;
+}
+.documento-criacao-os .documento-mais-opcoes > summary {
+  min-height: 36px;
+  padding: 2px 8px;
+}
+.documento-criacao-os .documento-mais-opcoes-conteudo {
+  padding: 0 8px 8px;
+}
 @media (max-width: 600px), (pointer: coarse) {
+  .documento-criacao-os .documento-mais-opcoes > summary {
+    min-height: 44px;
+  }
   .estrutura-sistema .documento-simples .atalhos-cadastro button,
   .estrutura-sistema .documento-simples .os-editor-itens-topo > button {
     min-height: 44px;

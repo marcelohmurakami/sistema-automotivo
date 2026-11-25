@@ -512,7 +512,7 @@ export function FormularioServico({
     ) : null;
   return (
     <form
-      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${formularioSimples ? " documento-simples" : ""}`}
+      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${formularioSimples ? " documento-simples" : ""}${formularioSimples && editor.tipo === "atendimento" ? " documento-criacao-os" : ""}`}
       onSubmit={enviar}
     >
       {editor.tipo === "atendimento" && !!item.revisao && detalhes.isPending && (
