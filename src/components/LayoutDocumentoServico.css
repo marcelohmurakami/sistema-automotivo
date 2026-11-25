@@ -257,27 +257,76 @@
     padding: 10px;
   }
 }
+.documento-criacao-os {
+  --documento-espaco: 16px;
+  --documento-recuo: 18px;
+}
+.estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
+  --dialogo-recuo: 24px;
+}
+.estrutura-sistema
+  .dialogo
+  .dialogo-interior:has(> .documento-criacao-os)
+  > .dialogo-cabecalho {
+  margin-bottom: var(--documento-espaco, 16px);
+  padding-block: 14px;
+}
 .documento-simples.documento-criacao-os,
 .estrutura-sistema .documento-criacao-os > fieldset {
-  gap: 10px;
+  gap: var(--documento-espaco);
+}
+.documento-criacao-os label,
+.documento-criacao-os .selecao-rapida {
+  gap: 6px;
 }
 .documento-criacao-os .documento-identificacao {
-  gap: 8px;
+  gap: 12px;
+}
+.documento-criacao-os .dupla-campos {
+  gap: 12px 16px;
 }
 .documento-simples.documento-criacao-os .os-editor-itens {
-  padding: 10px 12px;
-  gap: 8px;
+  padding: var(--documento-espaco) var(--documento-recuo);
+  gap: 12px;
+}
+.estrutura-sistema .documento-criacao-os .atalhos-cadastro button,
+.estrutura-sistema .documento-criacao-os .os-editor-itens-topo > button {
+  min-height: 40px;
+  padding-block: 8px;
 }
 .documento-criacao-os .os-editor-busca > span,
 .documento-criacao-os .documento-mais-opcoes > summary > span {
   display: none;
 }
 .documento-criacao-os .documento-mais-opcoes > summary {
-  min-height: 44px;
-  padding: 6px 12px;
+  min-height: 52px;
+  padding: 12px var(--documento-recuo);
 }
 .documento-criacao-os .documento-mais-opcoes-conteudo {
-  padding: 0 12px 12px;
+  padding: 0 var(--documento-recuo) var(--documento-espaco);
+  gap: var(--documento-espaco);
+}
+.documento-criacao-os .documento-resumo-simples {
+  padding: 14px var(--documento-recuo);
+}
+.documento-criacao-os .documento-fechamento--com-acao {
+  gap: 12px;
+}
+@media (max-width: 600px) {
+  .documento-criacao-os {
+    --documento-espaco: 14px;
+    --documento-recuo: 14px;
+  }
+  .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
+    --dialogo-recuo: 16px;
+  }
+  .estrutura-sistema
+    .dialogo
+    .dialogo-interior:has(> .documento-criacao-os)
+    > .dialogo-cabecalho {
+    margin-bottom: 14px;
+    padding-block: 12px;
+  }
 }
 @media (max-width: 600px), (pointer: coarse) {
   .estrutura-sistema .documento-simples .atalhos-cadastro button,
