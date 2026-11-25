@@ -181,7 +181,7 @@ export const gravarServico = async (
 ) => {
   if (funcao === "criar_atendimento_com_itens") {
     const { criarAtendimentoComItens } = await import("./servicosCompletos");
-    const id = await criarAtendimentoComItens(demo, oficina, dados);
+    const id = await criarAtendimentoComItens(demo, oficina, dados, opcoes);
     if (
       !demo &&
       opcoes?.avisarConclusao !== false &&

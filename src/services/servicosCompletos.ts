@@ -33,6 +33,7 @@ export async function criarAtendimentoComItens(
   demo: boolean,
   oficina: string,
   args: Record<string, unknown>,
+  opcoes?: { avisarConclusao?: boolean },
 ): Promise<string> {
   const entrada = args.p_dados as AtendimentoServico;
   const itens = args.p_itens as ItemAtendimento[];
@@ -106,6 +107,7 @@ export async function criarAtendimentoComItens(
           },
         },
         true,
+        opcoes,
       );
     }
     return id;
