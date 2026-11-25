@@ -40,6 +40,19 @@
   gap: 6px;
   min-width: 0;
 }
+.documento-cliente-atual {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.documento-cliente-atual > span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.documento-cliente-atual > strong {
+  font-size: 18px;
+}
 .documento-simples .atalhos-cadastro {
   margin-block: 0;
   flex-wrap: wrap;

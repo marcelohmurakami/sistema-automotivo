@@ -128,8 +128,7 @@ export function FormularioServico({
   const acesso = useAcesso();
   const orcamentoSimples =
     editor.tipo === "atendimento" && editor.item.dados.documento === "orcamento";
-  const formularioSimples =
-    orcamentoSimples || (editor.tipo === "atendimento" && !editor.item.revisao);
+  const formularioSimples = editor.tipo === "atendimento";
   const destinoFotos = useRef(false);
   const destinoPronto = useRef(false);
   const [servicoPronto, setServicoPronto] = useState(false);
@@ -617,7 +616,6 @@ export function FormularioServico({
                   setObjetoEscolhido(undefined);
                 }}
               />
-              {!formularioSimples && campoDataServico}
               <input type="hidden" name="objeto_id" value={objetoId} />
               <SelecaoOperacao
                 tipo="objetos"
@@ -649,19 +647,6 @@ export function FormularioServico({
                 setObjetoEscolhido(objeto);
               }}
             />
-
-            {linguagem.limpeza && !formularioSimples && (
-              <label className="assistencia-campo-largo">
-                Escopo combinado com o cliente
-                <textarea
-                  name="solicitacao"
-                  rows={2}
-                  maxLength={2000}
-                  defaultValue={editor.item.dados.solicitacao || ""}
-                  placeholder="Ambientes ou bens incluídos, prioridades e o que será feito nesta visita."
-                />
-              </label>
-            )}
 
             <div className="servicos-filtros">
               {!item.revisao && podeEditarValores ? (
@@ -703,20 +688,18 @@ export function FormularioServico({
                   )}
                 </label>
               )}
-              {!formularioSimples && campoPagamento}
             </div>
             {!item.revisao && podeEditarValores && (
               <div className="assistencia-campo-largo">
                 <EditorItensOS
                   especialidade={ficha.especialidade}
-                  simplificado={formularioSimples}
+                  simplificado
                   contexto={
                     editor.item.situacao === "orcamento" &&
                     editor.item.dados.documento === "orcamento"
                       ? "orçamento"
                       : "OS"
                   }
-                  rodape={formularioSimples ? undefined : rodapeItens}
                   itens={itens}
                   alterar={setItens}
                   catalogo={
@@ -750,19 +733,17 @@ export function FormularioServico({
                 />
               </div>
             )}
-            {(!!item.revisao || !podeEditarValores) && rodapeItens}
             <OpcoesDocumento
               nota={
                 !orcamentoSimples
                   ? { mostrar: mostrarDescontoNota, alterar: setMostrarDescontoNota }
                   : undefined
               }
-              ativo={formularioSimples}
               desconto={
                 !item.revisao && podeEditarValores ? controleDesconto : undefined
               }
             >
-              {linguagem.limpeza && formularioSimples && (
+              {linguagem.limpeza && (
                 <label className="assistencia-campo-largo">
                   Escopo combinado com o cliente
                   <textarea
@@ -775,13 +756,9 @@ export function FormularioServico({
                 </label>
               )}
 
-              {formularioSimples && (
-                <>
-                  {campoDataServico}
-                  {campoPagamento}
-                  {!item.revisao && podeEditarValores && rodapeItens}
-                </>
-              )}
+              {campoDataServico}
+              {campoPagamento}
+              {rodapeItens}
               {acesso.permite("service_media") && (
                 <section
                   className="servicos-atalho-fotos"

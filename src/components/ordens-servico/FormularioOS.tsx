@@ -216,7 +216,7 @@ export function FormularioOS({
   );
   return (
     <form
-      className={`formulario-cliente${!anterior ? " documento-simples documento-criacao-os" : ""}`}
+      className="formulario-cliente documento-simples documento-criacao-os"
       onSubmit={enviar}
     >
       <fieldset disabled={ocupado || criando}>
@@ -225,7 +225,6 @@ export function FormularioOS({
             <SelecaoClienteVeiculo
               focoInicial={!!anterior}
               selecionarUnicoAoAbrir={!anterior && !!clienteInicial}
-              campoAoLadoDoCliente={anterior ? campoDataServico : undefined}
               permitirAvulso
               dadosAvulsos={{
                 nome: anterior?.dados_cliente.nome || "",
@@ -240,14 +239,15 @@ export function FormularioOS({
               aoProcessar={setCriando}
             />
           ) : (
-            <div className="dupla-campos">
-              <p className="aviso-cliente">
-                {anterior.dados_cliente.nome} · {anterior.dados_veiculo.modelo} ·{" "}
-                {especialidade === "retifica"
-                  ? anterior.dados_veiculo.motor || "Motor não informado"
-                  : anterior.dados_veiculo.placa || "Sem placa"}
-              </p>
-              {campoDataServico}
+            <div className="documento-cliente-atual">
+              <span>Cliente</span>
+              <strong>{anterior.dados_cliente.nome}</strong>
+              {especialidade !== "retifica" && (
+                <span>
+                  {anterior.dados_veiculo.modelo} ·{" "}
+                  {anterior.dados_veiculo.placa || "Sem placa"}
+                </span>
+              )}
             </div>
           )}
           {especialidade === "retifica" && (
@@ -275,9 +275,8 @@ export function FormularioOS({
             </div>
           )}
         </div>
-        {anterior && <CamposPagamentoAtendimento inicial={anterior} />}
         <EditorItensOS
-          simplificado={!anterior}
+          simplificado
           itens={itens}
           alterar={setItens}
           catalogo={aux.catalogo}
@@ -286,25 +285,19 @@ export function FormularioOS({
           anterior={anterior}
           aoProcessar={setCriando}
           aoEditarItem={setItemEmEdicao}
-          rodape={anterior ? complementoItens : undefined}
         />
         <OpcoesDocumento
-          ativo={!anterior}
-          desconto={!anterior ? controleDesconto : undefined}
+          desconto={anterior?.orcamento_aguardando_id ? undefined : controleDesconto}
           nota={{ mostrar: mostrarDescontoNota, alterar: setMostrarDescontoNota }}
         >
-          {!anterior && (
-            <>
-              {campoDataServico}
-              <CamposPagamentoAtendimento />
-              {complementoItens}
-              <FotosCriacaoOS
-                fotos={fotos}
-                alterar={setFotos}
-                processando={setPreparandoFotos}
-              />
-            </>
-          )}
+          {campoDataServico}
+          <CamposPagamentoAtendimento inicial={anterior} />
+          {complementoItens}
+          <FotosCriacaoOS
+            fotos={fotos}
+            alterar={setFotos}
+            processando={setPreparandoFotos}
+          />
           <div className="formulario-opcionais">
             <CampoTipoServico inicial={anterior?.tipo_servico}>
               {ficha.especialidade === "estetica" ? (
@@ -315,13 +308,6 @@ export function FormularioOS({
             </CampoTipoServico>
             <details className="os-detalhes os-informacoes-adicionais">
               <summary>Informações adicionais do atendimento (opcional)</summary>
-              {anterior && (
-                <FotosCriacaoOS
-                  fotos={fotos}
-                  alterar={setFotos}
-                  processando={setPreparandoFotos}
-                />
-              )}
               {ficha.especialidade !== "estetica" && (
                 <EditorFichaEspecialidade
                   valor={ficha}
@@ -417,9 +403,13 @@ export function FormularioOS({
             </details>
           </div>
         </OpcoesDocumento>
-        {!anterior && (
+        {!anterior?.orcamento_aguardando_id && (
           <ResumoDocumento
-            acao={<EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />}
+            acao={
+              !anterior && (
+                <EstadoCriacaoOS pronto={servicoPronto} alterar={setServicoPronto} />
+              )
+            }
             contexto="OS"
             subtotal={controleDesconto.subtotal}
             desconto={desconto}
