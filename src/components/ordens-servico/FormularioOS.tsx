@@ -430,7 +430,7 @@ export function FormularioOS({
             : anterior
               ? "Salvar alterações da OS"
               : servicoPronto
-                ? "Salvar e informar pagamento"
+                ? "Salvar ordem de serviço"
                 : "Abrir ordem de serviço"}
         </button>
         {itemEmEdicao && (

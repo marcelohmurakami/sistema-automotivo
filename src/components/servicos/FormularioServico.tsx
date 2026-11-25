@@ -1173,7 +1173,7 @@ export function FormularioServico({
                 ? editor.item.dados.documento === "orcamento"
                   ? "Salvar orçamento"
                   : servicoPronto
-                    ? "Salvar e informar pagamento"
+                    ? "Salvar ordem de serviço"
                     : "Abrir ordem de serviço"
                 : "Salvar"}
       </button>

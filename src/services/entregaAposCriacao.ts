@@ -5,7 +5,7 @@ import { diaLocal, gravarServico } from "./servicos";
 import { apresentacaoEntrega, registrarRetirada } from "../lib/assistenciaTecnica";
 import { temAceiteServico, validarAceiteServico } from "../lib/aceiteServico";
 
-/** Relê a revisão após o pagamento e conserva a operação normal de entrega. */
+/** Confirma a revisão atual e conserva a operação normal de entrega. */
 export async function entregarAposCriacao(
   demo: boolean,
   oficina: string,

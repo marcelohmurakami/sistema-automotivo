@@ -66,7 +66,7 @@ import { atualizarIntegracoes } from "../lib/atualizarIntegracoes";
 import { PecasNaEntrega } from "../components/PecasNaEntrega";
 import { faltaOrigemPeca } from "../lib/origemPecas";
 import { useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AssistenteContextual } from "../components/AtalhoAssistente";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -210,6 +210,7 @@ export function OrdensServico() {
   const perguntarPagamento = usePagamentoAposRegistro();
   const agora = useAgora();
   const [parametros, setParametros] = useSearchParams();
+  const navegar = useNavigate();
   const local = useLocation();
   const [ultimoNovo, setUltimoNovo] = useState<string | null>(null);
   const [autorizacao, setAutorizacao] = useState<{
@@ -905,19 +906,20 @@ export function OrdensServico() {
                   [["os-detalhe", acesso.demo, oficina, salvo.id]],
                 ).catch(() => {});
                 setEditor(false);
-                setId(salvo.id);
+                setId(prontoNaCriacao ? null : salvo.id);
                 setAba("atendimento");
                 setAviso(
-                  (d.servico_pronto
-                    ? "OS salva."
-                    : "Atendimento salvo.") + avisoFotos,
+                  (d.servico_pronto ? "OS salva." : "Atendimento salvo.") + avisoFotos,
                 );
                 if (prontoNaCriacao) {
-                  perguntarPagamento({
-                    tipo: "os",
-                    id: salvo.id,
-                    contexto: "criacao-pronta",
-                  });
+                  perguntarPagamento(
+                    { tipo: "os", id: salvo.id, contexto: "criacao-pronta" },
+                    {
+                      rotulo: "Continuar",
+                      rotuloAdiar: "Agora não",
+                      executar: () => navegar("/"),
+                    },
+                  );
                 }
               }, false);
             }}

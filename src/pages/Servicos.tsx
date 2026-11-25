@@ -211,14 +211,13 @@ export function Servicos({ tela }: { tela: string }) {
         typeof id === "string"
       ) {
         if (variaveis.pronto) {
-          // Os detalhes são carregados sob demanda; se abrissem agora, poderiam
-          // cobrir a pergunta de pagamento ao terminar de carregar.
+          setDetalhe(null);
           perguntarPagamento(
             { tipo: "atendimento", id, contexto: "criacao-pronta" },
             {
               rotulo: "Continuar",
               rotuloAdiar: "Agora não",
-              executar: () => setDetalhe(id),
+              executar: () => navegar("/"),
             },
           );
         } else setDetalhe(id);

@@ -41,9 +41,7 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
     proximo?.executar();
   }
   function fecharPagamento() {
-    if (registro?.contexto === "criacao-pronta") setEtapa("entrega");
-    else if (registro?.contexto === "entrega" && registro.tipo !== "compra")
-      setEtapa("impressao");
+    if (registro?.contexto && registro.tipo !== "compra") setEtapa("impressao");
     else finalizar();
   }
   return (
@@ -52,10 +50,10 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
         if (permitido || (valor.contexto && valor.tipo !== "compra")) {
           finalizada.current = false;
           setEtapa(
-            permitido
-              ? "pagamento"
-              : valor.contexto === "criacao-pronta"
-                ? "entrega"
+            valor.contexto === "criacao-pronta" && valor.tipo !== "compra"
+              ? "entrega"
+              : permitido
+                ? "pagamento"
                 : "impressao",
           );
           setSolicitacao({ registro: valor, continuacao: proximo });
@@ -84,6 +82,7 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
             tipo={registro.tipo}
             id={registro.id}
             fechar={finalizar}
+            aoEntregar={() => setEtapa(permitido ? "pagamento" : "impressao")}
           />
         </Suspense>
       )}
