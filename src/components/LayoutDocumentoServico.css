@@ -257,25 +257,29 @@
     padding: 10px;
   }
 }
+.documento-simples.documento-criacao-os,
+.estrutura-sistema .documento-criacao-os > fieldset {
+  gap: 10px;
+}
+.documento-criacao-os .documento-identificacao {
+  gap: 8px;
+}
 .documento-simples.documento-criacao-os .os-editor-itens {
-  padding: 4px 8px;
-  gap: 4px;
+  padding: 10px 12px;
+  gap: 8px;
 }
 .documento-criacao-os .os-editor-busca > span,
 .documento-criacao-os .documento-mais-opcoes > summary > span {
   display: none;
 }
 .documento-criacao-os .documento-mais-opcoes > summary {
-  min-height: 36px;
-  padding: 2px 8px;
+  min-height: 44px;
+  padding: 6px 12px;
 }
 .documento-criacao-os .documento-mais-opcoes-conteudo {
-  padding: 0 8px 8px;
+  padding: 0 12px 12px;
 }
 @media (max-width: 600px), (pointer: coarse) {
-  .documento-criacao-os .documento-mais-opcoes > summary {
-    min-height: 44px;
-  }
   .estrutura-sistema .documento-simples .atalhos-cadastro button,
   .estrutura-sistema .documento-simples .os-editor-itens-topo > button {
     min-height: 44px;
