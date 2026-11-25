@@ -1,5 +1,6 @@
-import { useId } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { dinheiro } from "../lib/formatacao";
+import { lerEntradaDesconto, validarEntradaDesconto } from "../lib/entradaDesconto";
 import type { ControleDesconto } from "../lib/useDesconto";
 import "./CampoDesconto.css";
 
@@ -14,8 +15,29 @@ export function CampoDesconto({
   controle: ControleDesconto;
   nota?: PreferenciaDescontoNota;
 }) {
-  const id = useId();
+  const id = `desconto-${useId()}`;
   const percentual = controle.estado.tipo === "percentual";
+  const input = useRef<HTMLInputElement>(null);
+  const { tipo, valor } = controle.estado;
+  const [digitacao, setDigitacao] = useState(() => ({
+    tipo,
+    valor,
+    texto: String(valor).replace(".", ","),
+  }));
+  let texto = digitacao.texto;
+  // Conserva a vírgula e os zeros enquanto a pessoa digita. Sincroniza somente
+  // quando a unidade ou o valor muda por uma ação externa, como reabrir a tela.
+  if (digitacao.tipo !== tipo || digitacao.valor !== valor) {
+    texto = String(valor).replace(".", ",");
+    setDigitacao({ tipo, valor, texto });
+  }
+  const erroEntrada = validarEntradaDesconto(
+    texto,
+    percentual ? 100 : controle.subtotal / 100,
+  );
+  useEffect(() => {
+    input.current?.setCustomValidity(erroEntrada);
+  }, [erroEntrada]);
   return (
     <div className="campo-desconto">
       <div className="campo-desconto-cabecalho">
@@ -44,20 +66,24 @@ export function CampoDesconto({
         </div>
       </div>
       <input
+        ref={input}
         id={id}
+        name="desconto"
         aria-label={percentual ? "Desconto (%)" : "Desconto (R$)"}
         aria-describedby={`${id}-ajuda`}
-        type="number"
+        type="text"
         inputMode="decimal"
-        min="0"
-        max={percentual ? 100 : controle.subtotal / 100}
-        step="0.01"
-        value={controle.estado.valor}
-        onChange={(e) =>
-          controle.alterarValor(
-            Number.isFinite(e.target.valueAsNumber) ? e.target.valueAsNumber : "",
-          )
-        }
+        autoComplete="off"
+        spellCheck={false}
+        aria-invalid={!!erroEntrada}
+        value={texto}
+        onFocus={(e) => e.currentTarget.select()}
+        onChange={(e) => {
+          const texto = e.currentTarget.value;
+          const valor = lerEntradaDesconto(texto) ?? "";
+          setDigitacao({ tipo, valor, texto });
+          controle.alterarValor(valor);
+        }}
       />
       <small id={`${id}-ajuda`} className="campo-desconto-ajuda" aria-live="polite">
         {dinheiro(controle.centavos)} de desconto sobre {dinheiro(controle.subtotal)}
