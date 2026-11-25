@@ -16,6 +16,9 @@ const PerguntaPagamento = lazy(() =>
 const EntregaAposCriacao = lazy(() =>
   import("./EntregaAposCriacao").then((m) => ({ default: m.EntregaAposCriacao })),
 );
+const PerguntaImpressaoOS = lazy(() =>
+  import("./PerguntaImpressaoOS").then((m) => ({ default: m.PerguntaImpressaoOS })),
+);
 
 export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNode }) {
   const acesso = useAcesso();
@@ -24,7 +27,9 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
     continuacao?: ContinuacaoPagamento;
   } | null>(null);
   const finalizada = useRef(false);
-  const [entrega, setEntrega] = useState(false);
+  const [etapa, setEtapa] = useState<"pagamento" | "entrega" | "impressao">(
+    "pagamento",
+  );
   const registro = solicitacao?.registro;
   const permitido = acesso.permite("finance") && acesso.oficina?.perfil !== "staff";
   function finalizar() {
@@ -32,19 +37,27 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
     finalizada.current = true;
     const proximo = solicitacao?.continuacao;
     setSolicitacao(null);
-    // A janela de impressão é aberta pelo clique, preservando a permissão do navegador.
+    // A continuação só roda uma vez, depois de encerrar todas as etapas.
     proximo?.executar();
   }
   function fecharPagamento() {
-    if (registro?.contexto === "criacao-pronta") setEntrega(true);
+    if (registro?.contexto === "criacao-pronta") setEtapa("entrega");
+    else if (registro?.contexto === "entrega" && registro.tipo !== "compra")
+      setEtapa("impressao");
     else finalizar();
   }
   return (
     <ContextoPagamentoAposRegistro.Provider
       value={(valor, proximo) => {
-        if (permitido || valor.contexto === "criacao-pronta") {
+        if (permitido || (valor.contexto && valor.tipo !== "compra")) {
           finalizada.current = false;
-          setEntrega(!permitido);
+          setEtapa(
+            permitido
+              ? "pagamento"
+              : valor.contexto === "criacao-pronta"
+                ? "entrega"
+                : "impressao",
+          );
           setSolicitacao({ registro: valor, continuacao: proximo });
         } else {
           proximo?.executar();
@@ -54,7 +67,7 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
       {children}
       <AvisoOSPronta pausado={!!registro} />
       <AvisoAtendimentoConcluido key={acesso.oficina?.id} pausado={!!registro} />
-      {registro && permitido && !entrega && (
+      {registro && permitido && etapa === "pagamento" && (
         <Suspense fallback={<p role="status">Preparando opções de pagamento…</p>}>
           <PerguntaPagamento
             key={`${registro.tipo}:${registro.id}`}
@@ -64,9 +77,19 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
           />
         </Suspense>
       )}
-      {registro && entrega && registro.tipo !== "compra" && (
+      {registro && etapa === "entrega" && registro.tipo !== "compra" && (
         <Suspense fallback={<p role="status">Preparando confirmação de entrega…</p>}>
           <EntregaAposCriacao
+            key={`${registro.tipo}:${registro.id}`}
+            tipo={registro.tipo}
+            id={registro.id}
+            fechar={finalizar}
+          />
+        </Suspense>
+      )}
+      {registro && etapa === "impressao" && registro.tipo !== "compra" && (
+        <Suspense fallback={<p role="status">Preparando opção de impressão…</p>}>
+          <PerguntaImpressaoOS
             key={`${registro.tipo}:${registro.id}`}
             tipo={registro.tipo}
             id={registro.id}

@@ -231,7 +231,10 @@ export function PerguntaPagamento({
             void q.refetch();
           }}
           aoConcluir={() => {
-            if (registro.contexto === "criacao-pronta") {
+            if (
+              registro.contexto === "criacao-pronta" ||
+              registro.contexto === "entrega"
+            ) {
               fechar();
               return;
             }
