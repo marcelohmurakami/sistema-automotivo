@@ -258,18 +258,18 @@
   }
 }
 .documento-criacao-os {
-  --documento-espaco: 16px;
-  --documento-recuo: 18px;
+  --documento-espaco: 14px;
+  --documento-recuo: 16px;
 }
 .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
-  --dialogo-recuo: 24px;
+  --dialogo-recuo: 22px;
 }
 .estrutura-sistema
   .dialogo
   .dialogo-interior:has(> .documento-criacao-os)
   > .dialogo-cabecalho {
-  margin-bottom: var(--documento-espaco, 16px);
-  padding-block: 14px;
+  margin-bottom: 14px;
+  padding-block: 12px;
 }
 .documento-simples.documento-criacao-os,
 .estrutura-sistema .documento-criacao-os > fieldset {
@@ -280,14 +280,14 @@
   gap: 6px;
 }
 .documento-criacao-os .documento-identificacao {
-  gap: 12px;
+  gap: 10px;
 }
 .documento-criacao-os .dupla-campos {
-  gap: 12px 16px;
+  gap: 10px 14px;
 }
 .documento-simples.documento-criacao-os .os-editor-itens {
   padding: var(--documento-espaco) var(--documento-recuo);
-  gap: 12px;
+  gap: 10px;
 }
 .estrutura-sistema .documento-criacao-os .atalhos-cadastro button,
 .estrutura-sistema .documento-criacao-os .os-editor-itens-topo > button {
@@ -299,22 +299,22 @@
   display: none;
 }
 .documento-criacao-os .documento-mais-opcoes > summary {
-  min-height: 52px;
-  padding: 12px var(--documento-recuo);
+  min-height: 48px;
+  padding: 10px var(--documento-recuo);
 }
 .documento-criacao-os .documento-mais-opcoes-conteudo {
   padding: 0 var(--documento-recuo) var(--documento-espaco);
   gap: var(--documento-espaco);
 }
 .documento-criacao-os .documento-resumo-simples {
-  padding: 14px var(--documento-recuo);
+  padding: 12px var(--documento-recuo);
 }
 .documento-criacao-os .documento-fechamento--com-acao {
-  gap: 12px;
+  gap: 10px;
 }
 @media (max-width: 600px) {
   .documento-criacao-os {
-    --documento-espaco: 14px;
+    --documento-espaco: 12px;
     --documento-recuo: 14px;
   }
   .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
@@ -324,7 +324,7 @@
     .dialogo
     .dialogo-interior:has(> .documento-criacao-os)
     > .dialogo-cabecalho {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     padding-block: 12px;
   }
 }
