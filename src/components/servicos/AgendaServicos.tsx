@@ -4,6 +4,8 @@ import { novoId } from "../../lib/uuid.ts";
 import { ConfiguracaoDistribuicao } from "../ConfiguracaoDistribuicao";
 import { ConfiguracaoRecursos } from "../ConfiguracaoRecursos";
 import { useMemo } from "react";
+import { useAcesso } from "../../auth/contexto";
+import { exemploBuscaOperacao } from "../../lib/buscaOperacao";
 import { CalendarioAgenda } from "../agenda/CalendarioAgenda";
 
 import { estadosAgenda, type PainelServicos } from "../../services/servicos";
@@ -31,6 +33,7 @@ export function AgendaServicos({
   visao: "dia" | "semana" | "mes";
   setVisao: (visao: "dia" | "semana" | "mes") => void;
 }) {
+  const ramo = useAcesso().oficina?.ramo;
   const atendimentosPorId = useMemo(
     () => new Map(dados.atendimentos.map((a) => [a.id, a])),
     [dados.atendimentos],
@@ -38,6 +41,10 @@ export function AgendaServicos({
   const recursosPorId = useMemo(
     () => new Map(dados.recursos.map((r) => [r.id, r])),
     [dados.recursos],
+  );
+  const objetosPorId = useMemo(
+    () => new Map(dados.objetos.map((o) => [o.id, o])),
+    [dados.objetos],
   );
   const itens = useMemo(
     () =>
@@ -53,11 +60,14 @@ export function AgendaServicos({
           recurso: x.recurso_id,
           recursoNome: equipe,
           cliente: atendimento ? nomeCliente(atendimento.cliente_id) : "Cliente",
+          identificacao: atendimento
+            ? objetosPorId.get(atendimento.objeto_id)?.nome
+            : undefined,
           servico: atendimento?.titulo,
           detalhes: adicionais?.length ? [adicionais.join(" · ")] : [],
         };
       }),
-    [dados.agenda, atendimentosPorId, recursosPorId, nomeCliente],
+    [dados.agenda, atendimentosPorId, recursosPorId, objetosPorId, nomeCliente],
   );
   const abrirReserva = (id: string) => {
     const item = dados.agenda.find((x) => x.id === id);
@@ -66,6 +76,7 @@ export function AgendaServicos({
   return (
     <>
       <CalendarioAgenda
+        exemploBusca={exemploBuscaOperacao(ramo)}
         fusoHorario="America/Sao_Paulo"
         agenda={itens}
         recursos={dados.recursos}

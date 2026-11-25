@@ -3,24 +3,8 @@
   display: grid;
   gap: 1.25rem;
 }
-.assistencia-painel .assistencia-busca {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
+.assistencia-painel > .busca-operacao {
   max-width: 34rem;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid var(--borda);
-  border-radius: 10px;
-  background: var(--superficie);
-}
-.assistencia-painel .assistencia-busca input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  min-height: 36px;
-  padding: 6px;
 }
 .assistencia-quadro {
   display: grid;

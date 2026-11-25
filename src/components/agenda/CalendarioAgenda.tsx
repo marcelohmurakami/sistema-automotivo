@@ -1,5 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { BuscaOperacao } from "../BuscaOperacao";
+import { filtrarBuscaAgenda } from "../../lib/buscaOperacao";
 import {
   inicioOcupacao,
   fimOcupacao,
@@ -20,6 +22,7 @@ import "./CalendarioAgenda.css";
 export type ItemCalendario = VisitaPlanejada & {
   cliente: string;
   identificacao?: string;
+  placa?: string;
   servico?: string;
   recurso: string;
   recursoNome?: string;
@@ -80,6 +83,7 @@ export function CalendarioAgenda({
   recursos: recursosDisponiveis = [],
   rotuloRecurso = "Box ou responsável",
   rotuloDia = "Dia por responsável",
+  exemploBusca = "Cliente, carro ou placa…",
   visao: visaoControlada,
   alterarVisao,
   aposGrade,
@@ -95,6 +99,7 @@ export function CalendarioAgenda({
   recursos?: RecursoCalendario[];
   rotuloRecurso?: string;
   rotuloDia?: string;
+  exemploBusca?: string;
   visao?: VisaoAgenda;
   alterarVisao?: (visao: VisaoAgenda) => void;
   aposGrade?: (itens: ItemCalendario[]) => ReactNode;
@@ -106,6 +111,7 @@ export function CalendarioAgenda({
   const setVisao = alterarVisao ?? setVisaoLocal;
   const [recurso, setRecurso] = useState("");
   const [situacao, setSituacao] = useState("");
+  const [busca, setBusca] = useState("");
   const hoje = diaAgenda(new Date(), fusoHorario);
   const dias = useMemo(() => diasCalendario(dia, visao), [dia, visao]);
   const recursos = useMemo(() => {
@@ -122,14 +128,14 @@ export function CalendarioAgenda({
   const nomeRecurso = (id: string) => nomesRecursos.get(id) || "Sem responsável";
   const filtrados = useMemo(
     () =>
-      agenda
+      filtrarBuscaAgenda(agenda, busca)
         .filter(
           (x) =>
             (!recurso || x.recurso === recurso) &&
             (situacao ? x.situacao === situacao : x.situacao !== "cancelado"),
         )
         .sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio)),
-    [agenda, recurso, situacao],
+    [agenda, busca, recurso, situacao],
   );
   const { porDia, quantidade: quantidadeNoPeriodo } = useMemo(
     () => agruparAgendaPorDia(filtrados, dias, fusoHorario),
@@ -210,6 +216,12 @@ export function CalendarioAgenda({
   );
   return (
     <div className="cal-oficina">
+      <BuscaOperacao
+        rotulo="Buscar na agenda"
+        exemplo={exemploBusca}
+        valor={busca}
+        alterar={setBusca}
+      />
       <div className="cal-oficina-barra">
         <div className="cal-oficina-navegacao">
           <button
@@ -286,11 +298,22 @@ export function CalendarioAgenda({
       </div>
       <div className="cal-oficina-periodo">
         <h3 aria-live="polite">{tituloPeriodo}</h3>
-        <span>
+        <span role="status">
           {quantidadeNoPeriodo}{" "}
           {quantidadeNoPeriodo === 1 ? "agendamento" : "agendamentos"}
+          {busca.trim()
+            ? quantidadeNoPeriodo === 1
+              ? " encontrado"
+              : " encontrados"
+            : ""}
         </span>
       </div>
+      {busca.trim() && quantidadeNoPeriodo === 0 && (
+        <p className="cal-oficina-vazio" role="status">
+          Nenhum agendamento encontrado neste período. Tente outro cliente ou altere a
+          data.
+        </p>
+      )}
       {historicoDias != null && dias[0] <= somarDiasAgenda(hoje, -historicoDias) && (
         <p role="status" className="cal-oficina-aviso">
           O histórico disponível nesta agenda começa nos últimos {historicoDias} dias.

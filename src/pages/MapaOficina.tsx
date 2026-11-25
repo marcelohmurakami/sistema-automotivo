@@ -1,4 +1,5 @@
 import { IconeTipoServico } from "../components/TipoServico";
+import { BuscaOperacao } from "../components/BuscaOperacao";
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { IndicadorEntrega, LegendaEntrega } from "../components/PrazoEntrega";
 import { useAgora } from "../lib/useAgora";
@@ -623,20 +624,12 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
                 ))}
               </div>
               <div className="ferramentas-mapa">
-                <label className="campo-busca">
-                  <Search size={16} />
-                  <input
-                    placeholder="Buscar veículo..."
-                    aria-label="Buscar veículo no mapa"
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                  />
-                  {busca && (
-                    <button onClick={() => setBusca("")} aria-label="Limpar busca">
-                      ×
-                    </button>
-                  )}
-                </label>
+                <BuscaOperacao
+                  rotulo="Buscar cliente ou veículo no mapa"
+                  exemplo="Cliente, carro ou placa…"
+                  valor={busca}
+                  alterar={setBusca}
+                />
                 <div
                   className="modos-visualizacao"
                   role="group"

@@ -12,6 +12,7 @@ const PainelAssistencia = componenteSobDemanda(async () => ({
   default: (await import("../components/servicos/PainelAssistencia")).PainelAssistencia,
 }));
 import { diasCalendario } from "../lib/calendarioAgenda";
+import { exemploBuscaOperacao } from "../lib/buscaOperacao";
 import { AtalhoLocalizacao } from "../components/AtalhoLocalizacao";
 import { usePagamentoAposRegistro } from "../lib/pagamentoAposRegistro";
 import { novoId } from "../lib/uuid.ts";
@@ -854,15 +855,13 @@ export function Servicos({ tela }: { tela: string }) {
   );
 }
 function Filtro({ busca, setBusca }: { busca: string; setBusca: (v: string) => void }) {
-  const assistencia = useAcesso().oficina?.ramo === "assistencia_tecnica";
+  const ramo = useAcesso().oficina?.ramo;
   return (
     <label>
       Buscar
       <input
         type="search"
-        placeholder={
-          assistencia ? "Cliente, equipamento, série ou reparo" : "Cliente ou descrição"
-        }
+        placeholder={exemploBuscaOperacao(ramo)}
         value={busca}
         onChange={(e) => setBusca(e.target.value)}
       />

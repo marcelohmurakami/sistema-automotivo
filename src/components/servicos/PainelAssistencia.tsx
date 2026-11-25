@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { atualizarConsultas } from "../../lib/atualizarConsultas";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, Pause, Search } from "lucide-react";
+import { ArrowRight, Pause } from "lucide-react";
+import { BuscaOperacao } from "../BuscaOperacao";
 import { useAcesso } from "../../auth/contexto";
 import {
   consultarPaginaServicos,
@@ -33,15 +34,12 @@ export function PainelAssistencia({
   const termo = useBuscaDebounced(busca);
   return (
     <section className="assistencia-painel" aria-label="Etapas dos reparos">
-      <label className="assistencia-busca">
-        <Search size={18} />
-        <input
-          aria-label="Buscar no painel de reparos"
-          placeholder="Cliente, equipamento ou número da OS…"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-      </label>
+      <BuscaOperacao
+        rotulo="Buscar cliente ou equipamento no painel de reparos"
+        exemplo="Cliente, equipamento ou número da OS…"
+        valor={busca}
+        alterar={setBusca}
+      />
       <div className="assistencia-quadro">
         {colunasAssistencia.map((coluna) => (
           <Coluna key={coluna.id} coluna={coluna} busca={termo} abrir={abrir} />

@@ -1,4 +1,5 @@
 import { classificarEntrega, fusoEntrega } from "./entregaPrometida.ts";
+import { normalizarBuscaOperacao, termosBuscaOperacao } from "./buscaOperacao.ts";
 
 const formatoEntrada = new Intl.DateTimeFormat("pt-BR", {
   timeZone: fusoEntrega,
@@ -63,12 +64,7 @@ export const etapasMapa = [
   },
   { id: "pronto", nome: "Prontas", descricao: "Aguardando entrega" },
 ];
-export const normalizarBuscaMapa = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toLowerCase();
+export const normalizarBuscaMapa = normalizarBuscaOperacao;
 export function prepararMapa(ordens: OrdemNoMapa[], agora = new Date()) {
   return ordens
     .filter((o) =>
@@ -179,7 +175,7 @@ export function filtrarVeiculosMapa(
   filtro: string,
   busca: string,
 ) {
-  const termo = normalizarBuscaMapa(busca);
+  const termos = termosBuscaOperacao(busca);
   return veiculos.filter(
     (v) =>
       (filtro === "todos" ||
@@ -190,6 +186,6 @@ export function filtrarVeiculosMapa(
         (filtro === "hoje" && v.hoje) ||
         (filtro === "parados" && !!v.motivo) ||
         (filtro === "sem-prazo" && v.semPrazo)) &&
-      (!termo || textoParaBusca(v).includes(termo)),
+      termos.every((termo) => textoParaBusca(v).includes(termo)),
   );
 }
