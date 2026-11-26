@@ -119,7 +119,7 @@ export function CalendarioAgenda({
     const porId = new Map(recursosDisponiveis.map((r) => [r.id, r]));
     for (const x of agenda)
       if (x.recurso && !porId.has(x.recurso))
-        porId.set(x.recurso, { id: x.recurso, nome: x.recursoNome || x.recurso });
+        porId.set(x.recurso, { id: x.recurso, nome: x.profissional?.nome || x.recursoNome || x.recurso });
     return [...porId.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   }, [recursosDisponiveis, agenda]);
   const nomesRecursos = useMemo(
