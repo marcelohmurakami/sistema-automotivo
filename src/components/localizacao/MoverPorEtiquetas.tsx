@@ -37,39 +37,58 @@ export function MoverPorEtiquetas({
   const [aviso, setAviso] = useState("");
   const campo = useRef<HTMLInputElement>(null);
   const consulta = useRef<AbortController | null>(null);
+  const pendentes = useRef<string[]>([]);
+  const itensLidos = useRef<ItemFisico[]>([]);
   const trava = useRef(false);
   const tentativa = useRef({ assinatura: "", chave: "" });
   useEffect(() => () => consulta.current?.abort(), []);
 
   async function adicionar(texto: string) {
-    if (consulta.current || trava.current) return;
+    if (trava.current || !texto.trim()) return;
+    if (pendentes.current.length + itensLidos.current.length >= 50) {
+      setErro("Limite de 50 leituras. Confira e conclua este lote.");
+      return;
+    }
+    pendentes.current.push(texto);
+    setCodigo("");
+    setLeitor(false);
+    campo.current?.focus();
+    // Leitores USB podem enviar a próxima etiqueta antes de a rede responder.
+    // Preserve essas leituras e consulte uma por vez, sem rajadas de requisições.
+    if (consulta.current) return;
     const abort = new AbortController();
     consulta.current = abort;
-    setLeitor(false);
     setBuscando(true);
     setErro("");
     setAviso("");
     try {
-      const leitura = interpretarEtiqueta(texto, window.location.origin);
-      if (leitura.tipo !== "item")
-        throw new Error("Leia o QR ou digite o código PTI da etiqueta do item.");
-      const repetido = fila.find((i) => i.codigo === leitura.codigo);
-      if (repetido) {
-        setAviso(`${repetido.descricao} já está na lista.`);
-      } else {
-        const item = await consultarItemFisico(w, leitura.codigo, abort.signal);
-        if (abort.signal.aborted) return;
-        const proxima = incluirEtiqueta(fila, item);
-        setFila(proxima);
-        setAviso(`${item.descricao} adicionado. ${proxima.length} na lista.`);
+      while (pendentes.current.length && !abort.signal.aborted) {
+        const proximo = pendentes.current.shift()!;
+        try {
+          const leitura = interpretarEtiqueta(proximo, window.location.origin);
+          if (leitura.tipo !== "item")
+            throw new Error("Leia o QR ou digite o código PTI da etiqueta do item.");
+          const repetido = itensLidos.current.find((i) => i.codigo === leitura.codigo);
+          if (repetido) {
+            setAviso(`${repetido.descricao} já está na lista.`);
+          } else {
+            const item = await consultarItemFisico(w, leitura.codigo, abort.signal);
+            if (abort.signal.aborted) return;
+            const proxima = incluirEtiqueta(itensLidos.current, item);
+            itensLidos.current = proxima;
+            setFila(proxima);
+            setAviso(`${item.descricao} adicionado. ${proxima.length} na lista.`);
+          }
+        } catch (e) {
+          if (!abort.signal.aborted)
+            setErro((anterior) =>
+              [anterior, erroPublico(e)].filter(Boolean).slice(-2).join(" "),
+            );
+        }
       }
-      setCodigo("");
-    } catch (e) {
-      if (!abort.signal.aborted) setErro(erroPublico(e));
     } finally {
       if (!abort.signal.aborted) {
         setBuscando(false);
-        campo.current?.focus();
       }
       consulta.current = null;
     }
@@ -129,24 +148,27 @@ export function MoverPorEtiquetas({
                 placeholder="Leia ou digite PTI-…"
                 autoComplete="off"
                 maxLength={2048}
-                disabled={buscando || fila.length >= 50}
+                disabled={fila.length >= 50}
               />
             </label>
             <button
               className="botao-secundario"
-              disabled={buscando || !codigo.trim() || fila.length >= 50}
+              disabled={!codigo.trim() || fila.length >= 50}
             >
-              {buscando ? "Localizando…" : "Adicionar"}
+              Adicionar
             </button>
             <button
               type="button"
               className="botao-secundario"
-              disabled={buscando || fila.length >= 50}
+              disabled={fila.length >= 50}
               onClick={() => setLeitor(true)}
             >
               <ScanLine size={18} /> Ler QR
             </button>
           </form>
+          {buscando && (
+            <small role="status">Conferindo etiquetas… Pode ler a próxima.</small>
+          )}
           {aviso && (
             <p className="loc-aviso" role="status">
               {aviso}
@@ -167,7 +189,12 @@ export function MoverPorEtiquetas({
                       className="botao-icone"
                       aria-label={`Remover ${i.descricao} da lista`}
                       disabled={buscando}
-                      onClick={() => setFila((xs) => xs.filter((x) => x.id !== i.id))}
+                      onClick={() => {
+                        itensLidos.current = itensLidos.current.filter(
+                          (x) => x.id !== i.id,
+                        );
+                        setFila(itensLidos.current);
+                      }}
                     >
                       <Trash2 size={18} />
                     </button>
