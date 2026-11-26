@@ -1,27 +1,38 @@
-import { dinheiro } from "../lib/formatacao";
-import { atualizarCadastro } from "../lib/atualizarCadastro";
-import { camposFichaFuncionario } from "../lib/camposFichaFuncionario";
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Users, Plus } from "lucide-react";
+import {
+  Ban,
+  CalendarCog,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Power,
+  Search,
+  Users,
+} from "lucide-react";
 import { useAcesso } from "../auth/contexto";
 import { Dialogo } from "../components/Dialogo";
 import { erroPublico } from "../lib/supabase";
+import { atendeClientes, corFuncionario } from "../lib/gestaoFuncionario";
 import {
   listarFuncionarios,
-  salvarFuncionario,
   novoFuncionario,
+  salvarFuncionario,
   type Funcionario,
 } from "../services/funcionarios";
-import "./Compras.css";
-import "./Funcionarios.css";
-import { CamposFichaFuncionario } from "../components/CamposFichaFuncionario";
-import { SecaoRecolhivel } from "../components/SecaoRecolhivel";
 import { componenteSobDemanda } from "../lib/componenteSobDemanda";
-const HistoricoFuncionario = componenteSobDemanda(async () => ({
-  default: (await import("../components/FichaFuncionario")).HistoricoFuncionario,
-}));
-const textoBusca = (v: string) =>
+import "./Funcionarios.css";
+const FormularioFuncionario = componenteSobDemanda(
+  () => import("../components/funcionarios/FormularioFuncionario"),
+);
+const GestaoFuncionario = componenteSobDemanda(
+  () => import("../components/funcionarios/GestaoFuncionario"),
+);
+const BloqueiosFuncionarios = componenteSobDemanda(
+  () => import("../components/funcionarios/BloqueiosFuncionarios"),
+);
+const normalizar = (v: string) =>
   v
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -30,42 +41,66 @@ const textoBusca = (v: string) =>
 
 export function Funcionarios() {
   const a = useAcesso(),
-    oficina = a.oficina!,
+    w = a.oficina!,
     qc = useQueryClient();
-  const permitido = ["owner", "manager"].includes(oficina.perfil);
+  const permitido = ["owner", "manager"].includes(w.perfil);
   const [busca, setBusca] = useState(""),
-    [situacao, setSituacao] = useState("ativos"),
-    [edicao, setEdicao] = useState<Funcionario | null>(null),
-    [erro, setErro] = useState(""),
+    [situacao, setSituacao] = useState("todos"),
+    [pagina, setPagina] = useState(1),
+    [tamanho, setTamanho] = useState(10);
+  const [edicao, setEdicao] = useState<Funcionario | null>(null),
+    [gestao, setGestao] = useState<Funcionario | null>(null),
+    [inativar, setInativar] = useState<Funcionario | null>(null),
+    [bloqueios, setBloqueios] = useState(false);
+  const [erro, setErro] = useState(""),
+    [aviso, setAviso] = useState(""),
     [ocupado, setOcupado] = useState(false),
-    [aviso, setAviso] = useState("");
-  const trava = useRef(false);
+    trava = useRef(false);
   const q = useQuery({
-    queryKey: ["funcionarios", a.demo, oficina.id],
-    queryFn: ({ signal }) => listarFuncionarios(a.demo, oficina.id, signal),
+    queryKey: ["funcionarios", a.demo, w.id],
+    queryFn: ({ signal }) => listarFuncionarios(a.demo, w.id, signal),
     enabled: permitido,
   });
-  function abrirFicha(funcionario: Funcionario) {
-    if (trava.current || q.isFetching) return;
-    setErro("");
-    setEdicao(funcionario);
-  }
+  const lista = useMemo(
+    () => [...(q.data ?? [])].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    [q.data],
+  );
+  const filtrados = useMemo(
+    () =>
+      lista.filter(
+        (f) =>
+          (situacao === "todos" || (situacao === "ativos") === f.ativo) &&
+          normalizar(
+            `${f.nome} ${f.funcao} ${f.telefone} ${f.email} ${f.dados?.documento ?? ""}`,
+          ).includes(normalizar(busca)),
+      ),
+    [lista, situacao, busca],
+  );
+  const paginas = Math.max(1, Math.ceil(filtrados.length / tamanho)),
+    atual = Math.min(pagina, paginas),
+    visiveis = filtrados.slice((atual - 1) * tamanho, atual * tamanho);
   async function gravar(f: Funcionario) {
     if (trava.current) return;
     trava.current = true;
     setOcupado(true);
     setErro("");
     try {
-      await salvarFuncionario(a.demo, oficina.id, f);
-      void atualizarCadastro(qc, [
+      await salvarFuncionario(a.demo, w.id, f);
+      qc.setQueryData<Funcionario[]>(["funcionarios", a.demo, w.id], (anteriores) => [
+        ...(anteriores ?? []).filter((x) => x.id !== f.id),
+        { ...f, revisao: f.revisao + 1 },
+      ]);
+      for (const chave of [
+        "funcionarios",
         "funcionario-registros",
-        a.demo,
-        oficina.id,
-        f.id,
-      ]).catch(() => {});
-      void atualizarCadastro(qc, ["funcionarios", a.demo, oficina.id]).catch(() => {});
+        "profissionais-agenda",
+        "distribuicao",
+        "servicos",
+      ])
+        void qc.invalidateQueries({ queryKey: [chave] });
       setEdicao(null);
-      setAviso("Cadastro atualizado.");
+      setInativar(null);
+      setAviso("Funcionário atualizado.");
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
@@ -73,293 +108,304 @@ export function Funcionarios() {
       setOcupado(false);
     }
   }
-  function salvar(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const d = new FormData(e.currentTarget);
-    const admissao = String(d.get("admissao") || ""),
-      desligamento = String(d.get("desligamento") || "");
-    if (admissao && desligamento && desligamento < admissao) {
-      setErro("Desligamento anterior à admissão.");
-      return;
-    }
-    void gravar({
-      ...edicao!,
-      nome: String(d.get("nome")).trim(),
-      funcao: String(d.get("funcao")).trim(),
-      telefone: String(d.get("telefone")).trim(),
-      email: String(d.get("email")).trim(),
-      observacoes: String(d.get("observacoes")),
-      admissao: admissao || null,
-      desligamento: desligamento || null,
-      salario_centavos:
-        d.get("salario") === "" ? null : Math.round(Number(d.get("salario")) * 100),
-      dados: {
-        ...edicao?.dados,
-        ...Object.fromEntries(
-          camposFichaFuncionario.map(([k]) => [
-            k,
-            String(d.get(`dados_${k}`) || "").trim(),
-          ]),
-        ),
-      },
-    });
+  function editar(f: Funcionario) {
+    setErro("");
+    setEdicao(f);
   }
-  const indice = useMemo(
-    () =>
-      (q.data ?? [])
-        .map((f) => ({
-          f,
-          texto: textoBusca(`${f.nome} ${f.funcao} ${f.telefone} ${f.email}`),
-        }))
-        .sort((a, b) => a.f.nome.localeCompare(b.f.nome, "pt-BR")),
-    [q.data],
-  );
-  const termo = textoBusca(busca);
-  const itens = useMemo(
-    () =>
-      indice
-        .filter(
-          ({ f, texto }) =>
-            (situacao === "ativos" ? f.ativo : !f.ativo) && texto.includes(termo),
-        )
-        .map(({ f }) => f),
-    [indice, situacao, termo],
-  );
   if (!permitido)
     return (
       <section className="os-painel">
         <h1>Funcionários</h1>
-        <p>Cadastro disponível ao proprietário e aos gerentes.</p>
+        <p>Disponível ao proprietário e aos gerentes.</p>
       </section>
     );
   return (
-    <>
-      <div className="titulo-pagina">
+    <div className="func-pagina">
+      <header className="func-cabecalho">
         <div>
-          <h1>
-            Funcionários<span>.</span>
-          </h1>
-          <p>Cadastro da equipe, sem criar acesso ao sistema.</p>
+          <span className="func-sobretitulo">Equipe</span>
+          <h1>Funcionários</h1>
+          <p>Cadastre sua equipe e organize os atendimentos.</p>
         </div>
-        <button
-          className="botao-primario"
-          disabled={ocupado}
-          onClick={() => {
-            if (trava.current) return;
-            setErro("");
-            setEdicao(novoFuncionario());
-          }}
-        >
-          <Plus size={18} />
-          Novo funcionário
-        </button>
-      </div>
-      {a.demo && (
-        <p className="aviso-cliente">
-          Demonstração · Cadastros salvos neste navegador.
-        </p>
-      )}
+        <div className="func-acoes">
+          <button className="botao-secundario" onClick={() => setBloqueios(true)}>
+            <Ban size={17} />
+            Bloqueios
+          </button>
+          <button className="botao-primario" onClick={() => editar(novoFuncionario())}>
+            <Plus size={18} />
+            Novo funcionário
+          </button>
+        </div>
+      </header>
       {aviso && (
         <p role="status" className="aviso-cliente">
           {aviso}
         </p>
       )}
-      {erro && !edicao && (
+      {erro && !edicao && !inativar && (
         <p role="alert" className="erro-formulario">
           {erro}
         </p>
       )}
-      <section className="os-painel">
-        <div className="compra-filtros">
-          <label>
-            Buscar
-            <input
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Nome, função ou contato"
-            />
+      <div className="func-resumo">
+        <Users size={18} />
+        <span>
+          <strong>{lista.filter((f) => f.ativo).length}</strong> ativos
+        </span>
+        <span>
+          <strong>{lista.filter((f) => f.ativo && atendeClientes(f)).length}</strong>{" "}
+          realizam atendimentos
+        </span>
+        <span>
+          <strong>{lista.filter((f) => !f.ativo).length}</strong> inativos
+        </span>
+      </div>
+      <section className="func-lista">
+        <div className="func-filtros">
+          <label className="func-busca">
+            Buscar funcionário
+            <div>
+              <Search size={18} />
+              <input
+                type="search"
+                value={busca}
+                onChange={(e) => {
+                  setBusca(e.target.value);
+                  setPagina(1);
+                }}
+                placeholder="Nome, função, CPF ou contato"
+              />
+            </div>
           </label>
           <label>
             Situação
-            <select value={situacao} onChange={(e) => setSituacao(e.target.value)}>
+            <select
+              value={situacao}
+              onChange={(e) => {
+                setSituacao(e.target.value);
+                setPagina(1);
+              }}
+            >
+              <option value="todos">Todos</option>
               <option value="ativos">Ativos</option>
               <option value="inativos">Inativos</option>
             </select>
           </label>
         </div>
-        {q.isFetching && !q.isPending && <p role="status">Atualizando funcionários…</p>}
         {q.isPending ? (
-          <p role="status">Carregando funcionários…</p>
-        ) : q.isError ? (
-          <p role="alert">
-            {erroPublico(q.error)}{" "}
-            <button onClick={() => void q.refetch()}>Tentar novamente</button>
+          <p className="func-vazio" role="status">
+            Carregando funcionários…
           </p>
+        ) : q.isError ? (
+          <p className="func-vazio" role="alert">
+            {erroPublico(q.error)}{" "}
+            <button className="botao-secundario" onClick={() => void q.refetch()}>
+              Tentar novamente
+            </button>
+          </p>
+        ) : !filtrados.length ? (
+          <div className="func-vazio">
+            <Users size={28} />
+            <h3>
+              {busca
+                ? "Nenhum funcionário encontrado"
+                : "Nenhum funcionário nesta lista"}
+            </h3>
+            <p>
+              {busca
+                ? "Tente outro nome ou contato."
+                : "Comece cadastrando sua equipe."}
+            </p>
+          </div>
         ) : (
-          <div className="fornecedor-grade">
-            {!itens.length && (
-              <p className="compra-vazio">Nenhum funcionário encontrado.</p>
-            )}
-            {itens.map((f) => (
+          <>
+            <div className="func-colunas" aria-hidden="true">
+              <span>Funcionário</span>
+              <span>Contato</span>
+              <span>Atendimento</span>
+              <span>Situação</span>
+              <span>Ações</span>
+            </div>
+            {visiveis.map((f) => (
               <article
-                className="fornecedor-card funcionario-linha"
                 key={f.id}
+                className="func-linha"
                 onClick={(e) => {
                   if (
                     !(e.target instanceof Element) ||
-                    e.target.closest("a, button, input, select, textarea") ||
+                    e.target.closest("button,a") ||
                     window.getSelection()?.toString()
                   )
                     return;
-                  abrirFicha(f);
+                  setGestao(f);
                 }}
               >
-                <Users size={22} aria-hidden="true" />
-                <div>
-                  <h3>
+                <div className="func-identidade">
+                  <span
+                    className="func-avatar"
+                    style={{ backgroundColor: corFuncionario(f) }}
+                    aria-hidden="true"
+                  >
+                    {f.nome
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((x) => x[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  <div>
                     <button
-                      type="button"
-                      className="funcionario-abrir"
-                      disabled={ocupado || q.isFetching}
-                      aria-label={`Abrir ficha de ${f.nome}`}
-                      aria-haspopup="dialog"
-                      onClick={() => abrirFicha(f)}
+                      className="func-nome"
+                      onClick={() => setGestao(f)}
+                      aria-label={`Gerenciar ${f.nome}`}
                     >
                       {f.nome}
-                      <span>Ver ficha completa →</span>
                     </button>
-                  </h3>
-                  <p>{f.funcao || "Função não informada"}</p>
+                    <small>{f.funcao || "Função não informada"}</small>
+                  </div>
                 </div>
-                <div className="fornecedor-contato">
+                <div className="func-contato">
                   {f.telefone && <a href={`tel:${f.telefone}`}>{f.telefone}</a>}
-                  {f.email && <p>{f.email}</p>}
-                  {!f.telefone && !f.email && <p>Contato não informado</p>}
+                  {f.email && <span>{f.email}</span>}
+                  {!f.email && !f.telefone && <small>Não informado</small>}
                 </div>
-                <div className="fornecedor-detalhes">
-                  {f.admissao && (
-                    <p>Admissão: {f.admissao.split("-").reverse().join("/")}</p>
-                  )}
-                  {f.salario_centavos != null && (
-                    <p>Salário-base: {dinheiro(f.salario_centavos)}</p>
-                  )}
-                </div>
-                <div className="compra-acoes">
+                <span className="func-etiqueta">
+                  {atendeClientes(f) ? "Atende clientes" : "Interno"}
+                </span>
+                <span className="func-etiqueta" data-ativo={f.ativo}>
+                  {f.ativo ? "Ativo" : "Inativo"}
+                </span>
+                <div className="func-acoes-linha">
                   <button
                     className="botao-secundario"
-                    disabled={ocupado || q.isFetching}
-                    onClick={() => void gravar({ ...f, ativo: !f.ativo })}
+                    onClick={() => setGestao(f)}
+                    aria-label={`Gerenciar agenda de ${f.nome}`}
                   >
-                    {f.ativo ? "Inativar" : "Reativar"}
+                    <CalendarCog size={17} />
+                    <span>Gerenciar</span>
+                  </button>
+                  <button
+                    className="botao-icone"
+                    title="Editar cadastro"
+                    aria-label={`Editar ${f.nome}`}
+                    onClick={() => editar(f)}
+                  >
+                    <Pencil size={17} />
+                  </button>
+                  <button
+                    className="botao-icone"
+                    disabled={ocupado}
+                    title={f.ativo ? "Inativar" : "Reativar"}
+                    aria-label={`${f.ativo ? "Inativar" : "Reativar"} ${f.nome}`}
+                    onClick={() => {
+                      setErro("");
+                      if (f.ativo) setInativar(f);
+                      else void gravar({ ...f, ativo: true });
+                    }}
+                  >
+                    <Power size={17} />
                   </button>
                 </div>
               </article>
             ))}
-          </div>
+          </>
         )}
+        <footer className="func-paginacao">
+          <label>
+            Por página
+            <select
+              value={tamanho}
+              onChange={(e) => {
+                setTamanho(+e.target.value);
+                setPagina(1);
+              }}
+            >
+              {[10, 20, 50].map((n) => (
+                <option key={n}>{n}</option>
+              ))}
+            </select>
+          </label>
+          <span>
+            {filtrados.length} funcionários · Página {atual} de {paginas}
+          </span>
+          <div>
+            <button
+              className="botao-icone"
+              disabled={atual === 1}
+              aria-label="Página anterior"
+              onClick={() => setPagina(atual - 1)}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <button
+              className="botao-icone"
+              disabled={atual === paginas}
+              aria-label="Próxima página"
+              onClick={() => setPagina(atual + 1)}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </footer>
       </section>
-      <Dialogo
-        aberto={!!edicao}
-        fechar={() => !ocupado && setEdicao(null)}
-        titulo={edicao?.revisao ? `Ficha de ${edicao.nome}` : "Novo funcionário"}
-        classe="dialogo-funcionario"
-      >
-        {edicao && (
-          <div className="formulario-cliente">
+      {edicao && (
+        <FormularioFuncionario
+          key={edicao.id}
+          f={edicao}
+          ocupado={ocupado}
+          erro={erro}
+          salvar={gravar}
+          fechar={() => !ocupado && setEdicao(null)}
+        />
+      )}
+      {gestao && <GestaoFuncionario f={gestao} fechar={() => setGestao(null)} />}
+      {bloqueios && (
+        <Dialogo
+          aberto
+          fechar={() => setBloqueios(false)}
+          titulo="Bloqueios da agenda"
+          classe="dialogo-func-gestao"
+        >
+          <BloqueiosFuncionarios />
+        </Dialogo>
+      )}
+      {inativar && (
+        <Dialogo
+          aberto
+          fechar={() => !ocupado && setInativar(null)}
+          titulo="Inativar funcionário?"
+        >
+          <div className="func-corpo">
+            <p>
+              <strong>{inativar.nome}</strong> deixará de receber novos agendamentos. Os
+              registros e agendamentos existentes serão mantidos.
+            </p>
             {erro && (
               <p role="alert" className="erro-formulario">
                 {erro}
               </p>
             )}
-            <fieldset disabled={ocupado}>
-              <label>
-                Nome
-                <input
-                  form="cadastro-funcionario"
-                  name="nome"
-                  autoFocus
-                  required
-                  maxLength={160}
-                  defaultValue={edicao.nome}
-                />
-              </label>
-              <SecaoRecolhivel titulo="Contato e função (opcional)">
-                <label>
-                  Função (opcional)
-                  <input
-                    form="cadastro-funcionario"
-                    name="funcao"
-                    maxLength={120}
-                    defaultValue={edicao.funcao}
-                  />
-                </label>
-                <div className="dupla-campos">
-                  <label>
-                    Telefone (opcional)
-                    <input
-                      type="tel"
-                      form="cadastro-funcionario"
-                      name="telefone"
-                      maxLength={40}
-                      defaultValue={edicao.telefone}
-                    />
-                  </label>
-                  <label>
-                    E-mail (opcional)
-                    <input
-                      type="email"
-                      form="cadastro-funcionario"
-                      name="email"
-                      maxLength={200}
-                      defaultValue={edicao.email}
-                    />
-                  </label>
-                </div>
-                <label>
-                  Observações (opcional)
-                  <textarea
-                    form="cadastro-funcionario"
-                    name="observacoes"
-                    rows={2}
-                    maxLength={2000}
-                    defaultValue={edicao.observacoes}
-                  />
-                </label>
-              </SecaoRecolhivel>
-              {edicao.revisao > 0 ? (
-                <HistoricoFuncionario
-                  key={edicao.id + "-vales"}
-                  f={edicao}
-                  somenteVales
-                />
-              ) : (
-                <section className="funcionario-vales">
-                  <h3>Vales, adiantamentos e empréstimos</h3>
-                  <p>
-                    Salve o funcionário para registrar valores e acompanhar os
-                    abatimentos.
-                  </p>
-                </section>
-              )}
-              <CamposFichaFuncionario f={edicao} formId="cadastro-funcionario" />
-              <form id="cadastro-funcionario" onSubmit={salvar}>
-                <button className="botao-primario">
-                  {ocupado ? "Salvando…" : "Salvar funcionário"}
-                </button>
-              </form>
-            </fieldset>
+            <div className="func-rodape">
+              <button
+                className="botao-secundario"
+                disabled={ocupado}
+                onClick={() => setInativar(null)}
+              >
+                Voltar
+              </button>
+              <button
+                className="botao-primario"
+                disabled={ocupado}
+                onClick={() => void gravar({ ...inativar, ativo: false })}
+              >
+                {ocupado ? "Salvando…" : "Inativar funcionário"}
+              </button>
+            </div>
           </div>
-        )}
-        {edicao && edicao.revisao > 0 && (
-          <HistoricoFuncionario key={edicao.id} f={edicao} />
-        )}
-        {edicao && !edicao.revisao && (
-          <p className="texto-suave">
-            Salve o cadastro para adicionar recados, ausências, férias e outros
-            registros na ficha.
-          </p>
-        )}
-      </Dialogo>
-    </>
+        </Dialogo>
+      )}
+    </div>
   );
 }

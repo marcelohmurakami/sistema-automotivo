@@ -22,18 +22,6 @@ export function GestaoFuncionarios() {
     financeiro = ["resultados", "contador"].includes(aba);
   return (
     <div className="eq-pagina">
-      <nav className="eq-abas" aria-label="Gestão da equipe">
-        {abas.map(([id, nome]) => (
-          <button
-            key={id}
-            type="button"
-            aria-current={aba === id ? "page" : undefined}
-            onClick={() => setP({ aba: id })}
-          >
-            {nome}
-          </button>
-        ))}
-      </nav>
       {aba === "cadastro" ? (
         <Funcionarios />
       ) : !gerente ? (
@@ -61,6 +49,21 @@ export function GestaoFuncionarios() {
           )}
         </Suspense>
       )}
+      <details className="func-extra" open={aba !== "cadastro"}>
+        <summary>Mais ferramentas da equipe</summary>
+        <nav className="eq-abas" aria-label="Gestão da equipe">
+          {abas.map(([id, nome]) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={aba === id ? "page" : undefined}
+              onClick={() => setP({ aba: id })}
+            >
+              {nome}
+            </button>
+          ))}
+        </nav>
+      </details>
     </div>
   );
 }

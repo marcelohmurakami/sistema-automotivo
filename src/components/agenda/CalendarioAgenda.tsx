@@ -26,6 +26,7 @@ export type ItemCalendario = VisitaPlanejada & {
   servico?: string;
   recurso: string;
   recursoNome?: string;
+  profissional?: {cor_agenda?:string;nome?:string};
   detalhes?: string[];
 };
 export type RecursoCalendario = { id: string; nome: string; ativo?: boolean };
@@ -177,6 +178,7 @@ export function CalendarioAgenda({
         type="button"
         key={x.id}
         className={`cal-oficina-evento cal-oficina-evento--${x.situacao}`}
+        style={/^#[0-9a-f]{6}$/i.test(x.profissional?.cor_agenda??'')?{borderLeftColor:x.profissional!.cor_agenda,borderLeftWidth:4}:undefined}
         onClick={() => abrir(x.id)}
         aria-label={`${horaAgenda(x.inicio, fusoHorario)} · ${x.cliente} · ${x.identificacao || x.servico || "Atendimento"} · ${situacoes[x.situacao] || x.situacao}`}
       >
@@ -190,7 +192,7 @@ export function CalendarioAgenda({
         {x.detalhes?.map((texto, i) => (
           <small key={i}>{texto}</small>
         ))}
-        <small>{nomeRecurso(x.recurso)}</small>
+        <small>{x.profissional?.nome || nomeRecurso(x.recurso)}</small>
         {x.visita && (
           <small>
             Sair {horarioVisita(inicioOcupacao(x))} · livre{" "}

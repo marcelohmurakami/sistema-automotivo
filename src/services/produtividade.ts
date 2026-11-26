@@ -8,6 +8,7 @@ export type Pacote = {
   itens: { item_catalogo_id: string; quantidade: number }[];
 };
 export type Agendamento = {
+  profissional?: import('./gestaoFuncionario').EscolhaProfissional;
   recursos_reservados?: string[];
   resumo_recursos?: import("./reservasRecursos").ResumoRecurso[];
   distribuicao?: import("./distribuicaoTecnicos").CriteriosDistribuicao;

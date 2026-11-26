@@ -1,39 +1,658 @@
-.funcionario-linha {
-  cursor: pointer;
+.func-pagina {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
 }
-
-.funcionario-linha:hover,
-.funcionario-linha:focus-within {
+.func-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.func-cabecalho h1 {
+  margin: 4px 0 6px;
+  font-size: clamp(26px, 3vw, 34px);
+}
+.func-cabecalho p,
+.func-intro p {
+  margin: 4px 0 0;
+  color: var(--ui-suave);
+}
+.func-sobretitulo {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-suave);
+  font-weight: 700;
+}
+.func-acoes,
+.func-acoes-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.func-resumo {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ui-suave);
+  padding: 14px 18px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 12px;
   background: var(--ui-painel);
 }
-
-.funcionario-abrir {
+.func-resumo strong {
+  color: var(--ui-texto);
+}
+.func-lista {
+  border: 1px solid var(--ui-borda);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ui-painel);
+}
+.func-filtros {
   display: grid;
-  gap: 6px;
-  max-width: 100%;
-  padding: 4px 0;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: inherit;
-  text-align: left;
-  overflow-wrap: anywhere;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 16px;
+  padding: 18px;
+}
+.func-pagina label,
+.func-corpo label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+.func-pagina input,
+.func-pagina select,
+.func-corpo input:not([type="checkbox"]),
+.func-corpo select,
+.func-corpo textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.func-busca > div {
+  position: relative;
+}
+.func-busca svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--ui-suave);
+}
+.func-busca input {
+  padding-left: 42px;
+}
+.func-colunas,
+.func-linha {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.5fr) minmax(130px, 1.2fr) 120px 75px 214px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+.func-colunas {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  font-size: 12px;
+  color: var(--ui-suave);
+  background: var(--ui-fundo);
+  border-block: 1px solid var(--ui-borda);
+}
+.func-linha {
+  border-bottom: 1px solid var(--ui-borda);
   cursor: pointer;
 }
-
-.funcionario-abrir span {
-  color: var(--ui-suave);
+.func-linha:hover,
+.func-linha:focus-within {
+  background: var(--ui-fundo);
+}
+.func-identidade {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.func-identidade > div,
+.func-contato {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
+.func-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  text-shadow: 0 1px 3px #000a;
+}
+.func-nome {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.func-identidade small,
+.func-contato,
+.func-corpo small {
   font-size: 12px;
+  color: var(--ui-suave);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.func-contato a {
+  color: inherit;
+  text-decoration: none;
+}
+.func-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--ui-fundo);
+  color: var(--ui-suave);
+  width: fit-content;
+  white-space: nowrap;
+}
+.func-etiqueta[data-ativo="true"] {
+  color: var(--sucesso, #81c99c);
+  background: color-mix(in srgb, var(--sucesso, #81c99c) 12%, transparent);
+}
+.func-acoes-linha {
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+.func-acoes-linha .botao-secundario {
+  padding: 9px 12px;
+  min-height: 40px;
+  font-size: 12px;
+}
+.func-acoes-linha .botao-icone {
+  min-width: 40px;
+  min-height: 40px;
+}
+.func-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  font-size: 12px;
+  color: var(--ui-suave);
+  flex-wrap: wrap;
+}
+.func-paginacao label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.func-paginacao select {
+  width: auto;
+  padding: 7px 25px 7px 10px;
+  min-height: 36px;
+}
+.func-paginacao > div {
+  display: flex;
+  gap: 4px;
+}
+.func-vazio {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--ui-suave);
+}
+.func-vazio > svg {
+  margin: auto;
+}
+.func-vazio h3 {
+  margin: 12px 0 6px;
+}
+.func-vazio p {
+  margin: 6px 0;
+}
+.dialogo-func-form {
+  width: min(760px, calc(100vw - 32px));
+}
+.dialogo-func-gestao {
+  width: min(1120px, calc(100vw - 32px));
+}
+.func-corpo {
+  padding: 22px;
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.func-corpo fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.func-intro {
+  margin: 0;
+  color: var(--ui-suave);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.func-intro h3,
+.func-conteudo h3,
+.func-bloqueios h3 {
+  font-size: 17px;
+  margin: 0 0 6px;
+  color: var(--ui-texto);
+}
+.func-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.func-largura {
+  grid-column: 1/-1;
+}
+.func-corpo .func-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
   font-weight: 500;
+  cursor: pointer;
 }
-
-.funcionario-abrir:hover span {
-  text-decoration: underline;
+.func-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  padding: 0;
+  margin: 0;
+  flex: 0 0 18px;
+  accent-color: var(--primaria, #b1cc83);
 }
-
-.funcionario-abrir:focus-visible {
-  outline: 2px solid var(--ui-suave);
-  outline-offset: 4px;
+.func-opcoes {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+}
+.func-detalhes {
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  min-width: 0;
+}
+.func-detalhes > summary {
+  padding: 14px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.func-detalhes > summary span {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ui-suave);
+}
+.func-detalhes > .func-form-grid {
+  padding: 2px 16px 16px;
+}
+.func-corpo input[type="color"] {
+  height: 44px;
+  padding: 5px;
+  max-width: 160px;
+}
+.func-rodape {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--ui-borda);
+  margin-top: 4px;
+}
+.func-gestao {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 24px;
+}
+.func-gestao > nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: start;
+}
+.func-gestao > nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--ui-suave);
+  border-radius: 9px;
+  padding: 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.func-gestao > nav button[aria-current="page"] {
+  background: var(--ui-fundo);
+  border-color: var(--ui-borda);
+  color: var(--ui-texto);
+  font-weight: 700;
+}
+.func-conteudo {
+  min-width: 0;
+}
+.func-conteudo form,
+.func-bloqueios fieldset {
+  display: grid;
+  gap: 16px;
+}
+.func-conteudo .func-intro {
+  margin-bottom: 2px;
+}
+.func-nota {
+  font-size: 12px;
+  color: var(--ui-suave);
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--ui-fundo);
+  line-height: 1.6;
+  margin: 0;
+}
+.func-nota .func-check {
+  margin-top: 10px;
+}
+.func-atalhos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.func-atalhos .botao-secundario {
+  font-size: 12px;
+  padding: 10px 12px;
+  min-height: 40px;
+}
+.func-jornada {
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.func-dia {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--ui-borda);
+}
+.func-dia:last-child {
+  border-bottom: 0;
+}
+.func-dia > .func-check {
+  min-height: 36px;
+}
+.func-dia[data-inativo="true"] {
+  align-items: center;
+  background: var(--ui-fundo);
+}
+.func-dia-horarios {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+.func-dia-horarios > .func-horas:last-child:not(:first-child) {
+  grid-column: 1/-1;
+}
+.func-horas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.func-horas label {
+  font-size: 11px;
+}
+.func-horas input {
+  padding: 8px;
+  min-height: 40px;
+}
+.func-servicos {
+  display: grid;
+  gap: 10px;
+  max-height: 58vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.func-servico {
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  gap: 14px;
+}
+.func-servico .func-check > span {
+  display: grid;
+  gap: 4px;
+}
+.func-bloqueios {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.func-bloqueios-global {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+}
+.func-bloqueio-lista {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+.func-bloqueio {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.func-bloqueio > div {
+  display: grid;
+  gap: 5px;
+  overflow-wrap: anywhere;
+}
+.func-bloqueio[data-cancelado="true"] {
+  opacity: 0.65;
+}
+.func-cancelamento {
+  grid-column: 1/-1;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+.func-extra {
+  border-top: 1px solid var(--ui-borda);
+  padding-top: 18px;
+}
+.func-extra > summary {
+  color: var(--ui-suave);
+  cursor: pointer;
+  font-size: 13px;
+}
+.func-extra .eq-abas {
+  margin-top: 14px;
+}
+@media (max-width: 1100px) {
+  .func-colunas,
+  .func-linha {
+    grid-template-columns: minmax(140px, 1.3fr) minmax(100px, 1fr) 105px 60px 124px;
+    gap: 10px;
+  }
+  .func-acoes-linha .botao-secundario span {
+    display: none;
+  }
+  .func-acoes-linha .botao-secundario {
+    padding: 9px;
+  }
+}
+@media (max-width: 820px) {
+  .func-gestao {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .func-gestao > nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--ui-borda);
+    padding-bottom: 12px;
+  }
+  .func-gestao > nav button {
+    padding: 10px;
+  }
+  .func-bloqueios-global {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .func-cabecalho {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .func-colunas {
+    display: none;
+  }
+  .func-linha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 16px;
+  }
+  .func-identidade {
+    grid-column: 1/-1;
+  }
+  .func-contato {
+    grid-column: 1/-1;
+  }
+  .func-acoes-linha {
+    grid-column: 1/-1;
+    justify-content: flex-end;
+    border-top: 1px solid var(--ui-borda);
+    padding-top: 10px;
+  }
+  .func-acoes-linha .botao-secundario span {
+    display: inline;
+  }
+  .func-acoes-linha .botao-secundario {
+    padding: 10px 14px;
+  }
+  .func-acoes-linha .botao-icone {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .func-resumo {
+    gap: 12px 18px;
+  }
+  .func-resumo > svg {
+    display: none;
+  }
+}
+@media (max-width: 520px) {
+  .func-pagina {
+    gap: 16px;
+  }
+  .func-cabecalho .func-acoes {
+    width: 100%;
+  }
+  .func-cabecalho .func-acoes button {
+    flex: 1;
+    font-size: 12px;
+    padding: 12px 10px;
+    min-height: 44px;
+    white-space: normal;
+  }
+  .func-filtros {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+    gap: 12px;
+  }
+  .func-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .func-corpo {
+    padding: 16px;
+    gap: 18px;
+  }
+  .dialogo-func-form,
+  .dialogo-func-gestao {
+    width: calc(100vw - 16px);
+  }
+  .func-detalhes > summary span {
+    display: block;
+    margin: 5px 0 0;
+  }
+  .func-dia {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .func-dia-horarios {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .func-rodape {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .func-rodape button {
+    width: 100%;
+    min-height: 44px;
+  }
+  .func-paginacao {
+    justify-content: center;
+  }
+  .func-paginacao > span {
+    order: 3;
+    width: 100%;
+    text-align: center;
+  }
+  .func-gestao > nav {
+    gap: 4px;
+  }
+  .func-gestao > nav button {
+    font-size: 12px;
+    gap: 6px;
+  }
+  .func-gestao > nav svg {
+    width: 16px;
+  }
+  .func-opcoes {
+    gap: 14px;
+    padding: 14px;
+  }
+  .func-corpo input:not([type="checkbox"]),
+  .func-corpo select,
+  .func-corpo textarea {
+    font-size: 16px;
+    min-height: 44px;
+  }
 }

@@ -1,3 +1,5 @@
+import { ProfissionalAgendamento } from "../funcionarios/ProfissionalAgendamento";
+import { dadosProfissional } from "../../services/gestaoFuncionario";
 import { OpcoesDocumento, ResumoDocumento } from "../LayoutDocumentoServico";
 import { AgendamentoRecorrente } from "../AgendamentoRecorrente";
 import { regraFormulario } from "../../services/calendarioOperacao";
@@ -389,6 +391,7 @@ export function FormularioServico({
         situacao: str("situacao"),
         observacoes: str("observacoes"),
         distribuicao: dadosDistribuicao(f),
+        profissional: dadosProfissional(f),
         recursos_reservados: dadosRecursos(f),
         ...(recorrente ? { regra_calendario: regraFormulario(f) } : {}),
         ...dadosVisita(f),
@@ -973,24 +976,7 @@ export function FormularioServico({
               valor={modeloVisitas}
               selecionar={setModeloVisitas}
             />
-            <label>
-              Profissional / equipe
-              <select
-                name="recurso_id"
-                required
-                value={recursoAgenda}
-                onChange={(e) => setRecursoAgenda(e.target.value)}
-              >
-                <option value="">Selecione</option>
-                {dados.recursos
-                  .filter((r) => r.ativo || r.id === editor.item.recurso_id)
-                  .map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nome}
-                    </option>
-                  ))}
-              </select>
-            </label>
+            <ProfissionalAgendamento recurso={recursoAgenda} alterarRecurso={setRecursoAgenda} recursos={dados.recursos} inicial={editor.item.profissional} escolherServico={s=>{if(s.duracao_minutos&&inicioAgenda)setFimAgenda(new Date(Date.parse(inicioAgenda)+s.duracao_minutos*60000).toISOString());}}/>
             <div className="servicos-filtros">
               <label>
                 {recorrente ? "Primeiro agendamento (Brasília)" : "Início (Brasília)"}

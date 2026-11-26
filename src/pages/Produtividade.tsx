@@ -1,3 +1,5 @@
+import { ProfissionalAgendamento } from "../components/funcionarios/ProfissionalAgendamento";
+import { dadosProfissional } from "../services/gestaoFuncionario";
 import { CalendarioOficina } from "../components/agenda/CalendarioOficina";
 import { DetalheAgendamentoOficina } from "../components/agenda/DetalheAgendamentoOficina";
 import { diaAgenda } from "../lib/calendarioAgenda";
@@ -13,7 +15,6 @@ import { dadosRecursos } from "../services/reservasRecursos";
 import { ConfiguracaoDistribuicao } from "../components/ConfiguracaoDistribuicao";
 import { DistribuicaoAgenda } from "../components/DistribuicaoAgenda";
 import {
-  listarDistribuicao,
   dadosDistribuicao,
   type CandidatoTecnico,
 } from "../services/distribuicaoTecnicos";
@@ -64,6 +65,7 @@ export function Produtividade() {
   const [inicioVisita, setInicioVisita] = useState("");
   const [fimVisita, setFimVisita] = useState("");
   const [visitaExterna, setVisitaExterna] = useState(false);
+  const [servicoVisita, setServicoVisita] = useState("");
   const [recursoVisita, setRecursoVisita] = useState("");
   const [origemEquipe, setOrigemEquipe] = useState<CandidatoTecnico>();
   function novoAgendamento(
@@ -73,6 +75,7 @@ export function Produtividade() {
     recurso = "",
   ) {
     setAgenda(null);
+    setServicoVisita("");
     setRecorrente(repetir);
     setQuantidadeVisitas(repetir ? 4 : 1);
     setInicioVisita(new Date(`${dia}T${hora}:00`).toISOString());
@@ -91,6 +94,7 @@ export function Produtividade() {
     setQuantidadeVisitas(1);
     setOrigemEquipe(undefined);
     setAgenda(x);
+    setServicoVisita(x.servico);
     setCliente(x.cliente_id);
     setVeiculo(x.veiculo_id || "");
     setInicioVisita(x.inicio);
@@ -116,12 +120,6 @@ export function Produtividade() {
     queryKey: ["aux-produtividade", oficina],
     enabled: !a.demo && agendamentoAberto,
     queryFn: () => auxiliaresOrcamento(false, oficina),
-  });
-  const equipes = useQuery({
-    queryKey: ["distribuicao", oficina],
-    queryFn: ({ signal }) => listarDistribuicao(oficina, signal),
-    enabled: agendamentoAberto && !a.demo,
-    staleTime: 30000,
   });
   const selecionado = q.data?.agenda.find((x) => x.id === (detalheId || alvo));
   function fecharDetalhe() {
@@ -263,6 +261,7 @@ export function Produtividade() {
                               : null,
                             servico: f.get("servico"),
                             distribuicao: dadosDistribuicao(f),
+                            profissional: dadosProfissional(f),
                             recursos_reservados: dadosRecursos(f),
                             ...(!agenda && recorrente
                               ? { regra_calendario: regraFormulario(f) }
@@ -304,26 +303,7 @@ export function Produtividade() {
                               }
                             />
                           </label>
-                          <label>
-                            Técnico / equipe
-                            <input
-                              name="recurso"
-                              required
-                              minLength={2}
-                              maxLength={100}
-                              placeholder="Nome do responsável ou equipe"
-                              list="equipes-agendamento"
-                              value={recursoVisita}
-                              onChange={(e) => setRecursoVisita(e.target.value)}
-                            />
-                            <datalist id="equipes-agendamento">
-                              {equipes.data?.perfis
-                                .filter((p) => p.ativo)
-                                .map((p) => (
-                                  <option key={p.id} value={p.nome} />
-                                ))}
-                            </datalist>
-                          </label>
+                          <ProfissionalAgendamento automotivo recurso={recursoVisita} alterarRecurso={setRecursoVisita} inicial={agenda?.profissional} escolherServico={s=>{setServicoVisita(s.descricao);if(s.duracao_minutos&&inicioVisita)setFimVisita(new Date(Date.parse(inicioVisita)+s.duracao_minutos*60000).toISOString());}}/>
                           <label>
                             Serviço
                             <input
@@ -331,7 +311,8 @@ export function Produtividade() {
                               required
                               minLength={2}
                               maxLength={500}
-                              defaultValue={agenda?.servico}
+                              value={servicoVisita}
+                              onChange={e=>setServicoVisita(e.target.value)}
                             />
                           </label>
                           <label>

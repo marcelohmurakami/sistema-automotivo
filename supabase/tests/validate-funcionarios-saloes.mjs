@@ -1,0 +1,50 @@
+import assert from 'node:assert/strict';
+import {randomUUID as uuid} from 'node:crypto';
+import {resolve} from 'node:path';
+import {writeFile,mkdir} from 'node:fs/promises';
+import {criarCenarioSubsistemas} from './subsistemas-fixture.mjs';
+process.env.DB_VALIDATION_MIGRATION_LIMIT='20261126182647';
+process.env.DB_VALIDATION_RUNTIME=resolve('node_modules/@electric-sql/pglite/dist/index.js');
+const inicio=Date.now(),{db,login,ids,registros}=await criarCenarioSubsistemas();
+const call=async(n,a)=>{try{return Object.values((await db.query(`select public.${n}(${a.map((_,i)=>'$'+(i+1)).join(',')})`,a)).rows[0])[0];}catch(e){e.message+=` [${n} ${JSON.stringify(a)}]`;throw e;}};
+const resultado=[];
+try{
+for(const [perfil,r] of Object.entries(registros)){
+ await login(ids[perfil]);const checks=[];const auto=!!r.proposta;
+ let g=await call('consultar_gestao_funcionario',[r.w,r.funcionario]);assert(g.configuracao);checks.push('cadastro existente vinculado à agenda');
+ const fid=uuid(),f={nome:'Funcionário teste',funcao:'Técnico',ativo:true,dados:{atende_clientes:'true',cor_agenda:'#345678'}};
+ await call('salvar_funcionario',[r.w,fid,f,null]);await call('salvar_funcionario',[r.w,fid,f,null]);
+ g=await call('consultar_gestao_funcionario',[r.w,fid]);assert.equal(g.configuracao.jornada,null);assert.equal((await call('listar_funcionarios',[r.w])).filter(f=>f.id===fid).length,1);checks.push('criação idempotente e jornada inicialmente livre');
+ const config=g.configuracao;assert.equal(!!config.recurso_id,!auto);checks.push('recurso da agenda correto em cada ramo');
+ const sid=g.catalogo[0]?.id;assert(sid);let rev=config.revisao;
+ const jornada=[{dia:1,inicio:'08:00',fim:'12:00'},{dia:1,inicio:'13:00',fim:'18:00'}];
+ await call('salvar_gestao_funcionario',[r.w,fid,'jornada',jornada,rev++]);
+ assert.deepEqual((await call('consultar_gestao_funcionario',[r.w,fid])).configuracao.jornada,jornada);checks.push('jornada e intervalo persistidos');
+ await assert.rejects(()=>call('salvar_gestao_funcionario',[r.w,fid,'jornada',[],1]),e=>e.code==='PT409');checks.push('conflito de edição detectado');
+ for(const invalida of [[{dia:7,inicio:'08:00',fim:'18:00'}],[{dia:1,inicio:'18:00',fim:'08:00'}],[...jornada,{dia:1,inicio:'11:00',fim:'14:00'}]])await assert.rejects(()=>call('salvar_gestao_funcionario',[r.w,fid,'jornada',invalida,rev]),e=>e.code==='22023');checks.push('dias inválidos, horário invertido e sobreposição recusados');
+ await call('salvar_gestao_funcionario',[r.w,fid,'servicos',[{item_catalogo_id:sid,ativo:true,duracao_minutos:45,preco_centavos:12345}],rev++]);
+ let profissionais=await call('listar_profissionais_agenda',[r.w]);let prof=profissionais.find(p=>p.id===fid);assert.equal(prof.servicos[0].preco_centavos,12345);assert.equal(prof.servicos[0].duracao_minutos,45);assert(!('salario_centavos'in prof));assert(!('dados'in prof));checks.push('serviço, preço e duração próprios; sem dados pessoais na agenda');
+ const base={id:uuid(),cliente_id:r.cliente,identificacao:'Objeto teste',veiculo_id:null,servico:'Serviço teste',atendimento_id:r.atendimento,recurso_id:config.recurso_id,recurso:config.nome_agenda,inicio:'2027-01-04T09:00:00-03:00',fim:'2027-01-04T09:45:00-03:00',situacao:'agendado',profissional:{funcionario_id:fid,item_catalogo_id:sid,preco_centavos:1},visita:false,distribuicao:{}};
+ const save=(d,rev=null)=>auto?call('operar_produtividade',[r.w,'salvar_agenda',{...d,revisao:rev}]):call('salvar_agenda_servico',[r.w,d.id,d,rev]);
+ for(const [ini,fim] of [['07:00','08:00'],['12:00','12:45'],['11:45','13:15'],['17:30','18:30']])await assert.rejects(()=>save({...base,id:uuid(),inicio:`2027-01-04T${ini}:00-03:00`,fim:`2027-01-04T${fim}:00-03:00`}),e=>e.code==='23P01');checks.push('fora da jornada e intervalo bloqueiam a agenda');
+ await assert.rejects(()=>save({...base,id:uuid(),inicio:'2027-01-05T09:00:00-03:00',fim:'2027-01-05T10:00:00-03:00'}),e=>e.code==='23P01');checks.push('dia sem expediente bloqueado');
+ await save(base);await db.exec('reset role');const table=auto?'agenda_atendimentos':'agenda_servicos';let row=(await db.query(`select * from public.${table} where id=$1`,[base.id])).rows[0];await login(ids[perfil]);assert.equal(row.profissional.preco_centavos,12345);assert.equal(row.profissional.cor_agenda,'#345678');assert.equal(row.profissional.duracao_minutos,45);checks.push('agendamento válido e valores conferidos pelo banco');
+ await save({...base,observacoes:'Edição'},row.revisao);checks.push('edição de agendamento sem conflito consigo mesmo');
+ await assert.rejects(()=>save({...base,id:uuid()}),e=>['23P01','22023'].includes(e.code));checks.push('conflito entre agendamentos impedido');
+ const block=(delta={})=>({funcionario_id:fid,tipo:'folga',inicio:'2027-01-04T10:00:00-03:00',fim:'2027-01-04T11:00:00-03:00',motivo:'Teste',dia_inteiro:false,...delta});
+ await assert.rejects(()=>call('registrar_bloqueio_funcionario',[r.w,uuid(),block({inicio:base.inicio,fim:base.fim})]),e=>e.code==='23P01');checks.push('bloqueio não sobrepõe compromisso existente');
+ let bid=uuid();await call('registrar_bloqueio_funcionario',[r.w,bid,block()]);await call('registrar_bloqueio_funcionario',[r.w,bid,block()]);assert.equal((await call('listar_bloqueios_funcionario',[r.w,fid])).filter(b=>b.id===bid).length,1);checks.push('ausência persistida sem duplicar em reenvio');
+ await assert.rejects(()=>save({...base,id:uuid(),inicio:'2027-01-04T10:15:00-03:00',fim:'2027-01-04T10:45:00-03:00'}),e=>e.code==='23P01');checks.push('ausência impede agendamento');
+ await save({...base,id:uuid(),inicio:'2027-01-04T11:00:00-03:00',fim:'2027-01-04T12:00:00-03:00'});checks.push('limite final do bloqueio e da jornada permitido');
+ await assert.rejects(()=>call('cancelar_bloqueio_funcionario',[r.w,bid,'']),e=>e.code==='22023');await call('cancelar_bloqueio_funcionario',[r.w,bid,'Funcionário disponível']);assert((await call('listar_bloqueios_funcionario',[r.w,fid])).find(b=>b.id===bid).cancelado_em);checks.push('cancelamento com motivo mantém histórico');
+ await save({...base,id:uuid(),inicio:'2027-01-04T10:00:00-03:00',fim:'2027-01-04T10:30:00-03:00'});checks.push('cancelar ausência libera horário');
+ bid=uuid();await call('registrar_bloqueio_funcionario',[r.w,bid,block({funcionario_id:null,tipo:'feriado',inicio:'2027-01-04T14:00:00-03:00',fim:'2027-01-04T15:00:00-03:00'})]);await assert.rejects(()=>save({...base,id:uuid(),inicio:'2027-01-04T14:00:00-03:00',fim:'2027-01-04T14:45:00-03:00',profissional:{}}),e=>e.code==='23P01');checks.push('bloqueio geral também protege seleção manual');await call('cancelar_bloqueio_funcionario',[r.w,bid,'Empresa aberta']);
+ await call('salvar_gestao_funcionario',[r.w,fid,'servicos',[{item_catalogo_id:sid,ativo:false,duracao_minutos:null,preco_centavos:null}],rev++]);await assert.rejects(()=>save({...base,id:uuid(),inicio:'2027-01-04T14:00:00-03:00',fim:'2027-01-04T14:45:00-03:00'}),e=>e.code==='22023');checks.push('serviço desabilitado recusado');
+ await call('salvar_gestao_funcionario',[r.w,fid,'servicos',[{item_catalogo_id:sid,ativo:true,duracao_minutos:null,preco_centavos:0}],rev++]);assert.equal((await call('listar_profissionais_agenda',[r.w])).find(p=>p.id===fid).servicos[0].preco_centavos,0);checks.push('preço zero preservado');
+ let employee=(await call('listar_funcionarios',[r.w])).find(f=>f.id===fid);await call('salvar_funcionario',[r.w,fid,{...employee,dados:{...employee.dados,atende_clientes:'false'}},employee.revisao]);await assert.rejects(()=>save({...base,id:uuid(),inicio:'2027-01-04T14:00:00-03:00',fim:'2027-01-04T14:45:00-03:00'}),e=>['22023','23514'].includes(e.code));checks.push('funcionário interno não recebe agendamentos');
+ const outra=registros[perfil==='mecanica'?'retifica':'mecanica'];await assert.rejects(()=>call('consultar_gestao_funcionario',[outra.w,fid]),e=>e.code==='42501');await assert.rejects(()=>call('salvar_gestao_funcionario',[r.w,outra.funcionario,'jornada',[],rev]),e=>e.code==='42501');await assert.rejects(()=>call('registrar_bloqueio_funcionario',[r.w,uuid(),block({funcionario_id:outra.funcionario})]),e=>e.code==='42501');checks.push('isolamento entre empresas em consulta, jornada e ausência');
+ await db.exec('reset role');await db.query("update public.membros_oficina set perfil='staff' where oficina_id=$1 and usuario_id=$2",[r.w,ids[perfil]]);await login(ids[perfil]);await assert.rejects(()=>call('consultar_gestao_funcionario',[r.w,fid]),e=>e.code==='42501');await assert.rejects(()=>call('registrar_bloqueio_funcionario',[r.w,uuid(),block()]),e=>e.code==='42501');await call('listar_profissionais_agenda',[r.w]);checks.push('equipe consulta agenda, apenas gerência altera funcionários');
+ resultado.push({perfil,checks,passou:true});console.log('PASS',perfil,checks.length);
+}
+const rel={geradoEm:new Date().toISOString(),segundos:(Date.now()-inicio)/1000,total:resultado.reduce((n,r)=>n+r.checks.length,0),resultado};await mkdir('output/funcionarios-saloes-20261126',{recursive:true});await writeFile('output/funcionarios-saloes-20261126/banco.json',JSON.stringify(rel,null,2));console.log('PASS TOTAL',rel.total,rel.segundos,'segundos');
+}finally{await db.close();}

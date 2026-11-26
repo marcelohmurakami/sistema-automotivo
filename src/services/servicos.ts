@@ -1,3 +1,4 @@
+import { validarAgendaFuncionarioDemo } from "./gestaoFuncionario";
 import { rpc } from "../lib/rpc";
 import { transacaoDemo } from "../lib/transacaoDemo";
 import {
@@ -66,6 +67,7 @@ export type AtendimentoServico = {
   revisao: number;
 };
 export type ReservaServico = {
+  profissional?: import('./gestaoFuncionario').EscolhaProfissional;
   recursos_reservados?: string[];
   resumo_recursos?: import("./reservasRecursos").ResumoRecurso[];
   distribuicao?: import("./distribuicaoTecnicos").CriteriosDistribuicao;
@@ -234,7 +236,8 @@ export const gravarServico = async (
       lista[index] = { ...novo, revisao: lista[index].revisao + 1 };
     } else lista.push({ ...novo, revisao: 1 });
   }
-  function reservar(g: ReservaServico) {
+  async function reservar(g: ReservaServico) {
+    await validarAgendaFuncionarioDemo(oficina,g);
     if (
       !Number.isInteger(g.deslocamento_minutos || 0) ||
       (g.deslocamento_minutos || 0) < 0 ||
@@ -346,10 +349,10 @@ export const gravarServico = async (
     notificar(id);
     return id;
   } else if (funcao === "salvar_agenda_servico")
-    reservar({ ...d, id } as ReservaServico);
+    await reservar({ ...d, id } as ReservaServico);
   else if (funcao === "agendar_serie_servico") {
     for (let i = 0; i < Number(dados.p_quantidade); i++)
-      reservar({
+      await reservar({
         ...d,
         id: `${id}-${i}`,
         inicio: new Date(
