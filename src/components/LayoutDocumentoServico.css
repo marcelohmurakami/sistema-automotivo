@@ -1,43 +1,49 @@
-.documento-simples {
-  gap: 8px;
+/* Criação e edição de orçamento/OS compartilham a mesma densidade visual. */
+.formulario-cliente.documento-simples {
+  --documento-espaco: 14px;
+  --documento-recuo: 16px;
+  gap: var(--documento-espaco);
   padding-top: 0;
 }
 .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-simples) {
-  --dialogo-recuo: 16px;
+  --dialogo-recuo: 22px;
   padding: var(--dialogo-recuo);
 }
 .estrutura-sistema
   .dialogo
   .dialogo-interior:has(> .documento-simples)
   > .dialogo-cabecalho {
-  margin: calc(-1 * var(--dialogo-recuo)) calc(-1 * var(--dialogo-recuo)) 10px;
-  padding: 8px var(--dialogo-recuo);
+  margin: calc(-1 * var(--dialogo-recuo)) calc(-1 * var(--dialogo-recuo)) 14px;
+  padding: 12px var(--dialogo-recuo);
+  gap: 12px;
 }
 .documento-simples label,
 .documento-simples .selecao-rapida {
-  gap: 4px;
+  gap: 6px;
 }
 .documento-simples
   :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
   min-height: 44px;
   padding-block: 8px;
 }
-.documento-simples > fieldset {
+.estrutura-sistema .documento-simples > fieldset {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
+  margin: 0;
 }
 .documento-simples > fieldset,
 .estrutura-sistema .documento-simples > fieldset {
-  gap: 8px;
+  gap: var(--documento-espaco);
 }
 .documento-simples .os-editor-itens {
   margin: 0;
-  padding: 6px 10px;
-  gap: 6px;
+  padding: var(--documento-espaco) var(--documento-recuo);
+  gap: 10px;
 }
 .documento-simples .documento-identificacao {
   display: grid;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
 }
 .documento-cliente-atual {
@@ -60,11 +66,12 @@
 }
 .estrutura-sistema .documento-simples .atalhos-cadastro button,
 .estrutura-sistema .documento-simples .os-editor-itens-topo > button {
-  min-height: 32px;
-  padding-block: 4px;
+  min-height: 40px;
+  padding-block: 8px;
 }
 .documento-simples .dupla-campos {
-  gap: 8px 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
 }
 .documento-simples :is(.cadastro-inline, .os-editor-painel) {
   padding: 10px;
@@ -78,6 +85,9 @@
 .documento-simples .servicos-filtros:has(> input[type="hidden"]:only-child) {
   display: none;
 }
+.documento-simples .servicos-filtros > label {
+  margin-bottom: 0;
+}
 .documento-mais-opcoes {
   border: 1px solid var(--borda);
   border-radius: 14px;
@@ -88,8 +98,8 @@
   flex-wrap: wrap;
   gap: 6px 12px;
   align-items: center;
-  min-height: 44px;
-  padding: 6px 10px;
+  min-height: 48px;
+  padding: 10px var(--documento-recuo);
   cursor: pointer;
   list-style: none;
 }
@@ -104,19 +114,19 @@
 .documento-mais-opcoes > summary::-webkit-details-marker {
   display: none;
 }
-.documento-mais-opcoes > summary > span {
-  color: var(--muted);
-  font-size: 12px;
+.documento-simples .os-editor-busca > span,
+.documento-simples .documento-mais-opcoes > summary > span {
+  display: none;
 }
 .documento-mais-opcoes-conteudo {
   display: grid;
-  gap: 8px;
-  padding: 0 10px 10px;
+  gap: var(--documento-espaco);
+  padding: 0 var(--documento-recuo) var(--documento-espaco);
 }
 .documento-resumo-simples {
-  width: min(100%, 440px);
+  width: calc((100% - 10px) / 2);
   margin-left: auto;
-  padding: 8px 10px;
+  padding: 12px var(--documento-recuo);
   border: 1px solid var(--borda);
   border-radius: 14px;
   display: grid;
@@ -140,7 +150,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .documento-fechamento--com-acao .documento-resumo-simples {
   width: 100%;
@@ -244,23 +254,37 @@
   position: sticky;
   bottom: 0;
   background: var(--superficie);
-  padding-block: 8px;
-  border-top: 1px solid var(--borda);
-  z-index: 2;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+  margin-inline: 0;
+  border: 0;
+  z-index: 4;
+  box-shadow: 0 -8px 20px color-mix(in srgb, var(--superficie) 95%, transparent);
+}
+.documento-simples > .acao-salvar-fixa {
+  margin-inline: 0;
 }
 @media (max-width: 600px) {
+  .formulario-cliente.documento-simples {
+    --documento-espaco: 12px;
+    --documento-recuo: 14px;
+  }
   .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-simples) {
-    --dialogo-recuo: 12px;
+    --dialogo-recuo: 16px;
   }
-  .documento-simples .os-editor-itens {
-    padding-inline: 8px;
+  .estrutura-sistema
+    .dialogo
+    .dialogo-interior:has(> .documento-simples)
+    > .dialogo-cabecalho {
+    margin-bottom: 12px;
   }
-  .documento-mais-opcoes > summary > span {
-    display: none;
+  .documento-simples .dupla-campos {
+    grid-template-columns: minmax(0, 1fr);
   }
   .documento-resumo-simples {
     width: 100%;
-    padding: 8px 10px;
   }
   .documento-resumo-total > strong {
     font-size: 20px;
@@ -269,76 +293,11 @@
     gap: 8px;
     padding: 10px;
   }
-}
-.documento-criacao-os {
-  --documento-espaco: 14px;
-  --documento-recuo: 16px;
-}
-.estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
-  --dialogo-recuo: 22px;
-}
-.estrutura-sistema
-  .dialogo
-  .dialogo-interior:has(> .documento-criacao-os)
-  > .dialogo-cabecalho {
-  margin-bottom: 14px;
-  padding-block: 12px;
-}
-.documento-simples.documento-criacao-os,
-.estrutura-sistema .documento-criacao-os > fieldset {
-  gap: var(--documento-espaco);
-}
-.documento-criacao-os label,
-.documento-criacao-os .selecao-rapida {
-  gap: 6px;
-}
-.documento-criacao-os .documento-identificacao {
-  gap: 10px;
-}
-.documento-criacao-os .dupla-campos {
-  gap: 10px 14px;
-}
-.documento-simples.documento-criacao-os .os-editor-itens {
-  padding: var(--documento-espaco) var(--documento-recuo);
-  gap: 10px;
-}
-.estrutura-sistema .documento-criacao-os .atalhos-cadastro button,
-.estrutura-sistema .documento-criacao-os .os-editor-itens-topo > button {
-  min-height: 40px;
-  padding-block: 8px;
-}
-.documento-criacao-os .os-editor-busca > span,
-.documento-criacao-os .documento-mais-opcoes > summary > span {
-  display: none;
-}
-.documento-criacao-os .documento-mais-opcoes > summary {
-  min-height: 48px;
-  padding: 10px var(--documento-recuo);
-}
-.documento-criacao-os .documento-mais-opcoes-conteudo {
-  padding: 0 var(--documento-recuo) var(--documento-espaco);
-  gap: var(--documento-espaco);
-}
-.documento-criacao-os .documento-resumo-simples {
-  padding: 12px var(--documento-recuo);
-}
-.documento-criacao-os .documento-fechamento--com-acao {
-  gap: 10px;
-}
-@media (max-width: 600px) {
-  .documento-criacao-os {
-    --documento-espaco: 12px;
-    --documento-recuo: 14px;
+  .estrutura-sistema .formulario-cliente.documento-simples > .acoes-formulario {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .estrutura-sistema .dialogo .dialogo-interior:has(> .documento-criacao-os) {
-    --dialogo-recuo: 16px;
-  }
-  .estrutura-sistema
-    .dialogo
-    .dialogo-interior:has(> .documento-criacao-os)
-    > .dialogo-cabecalho {
-    margin-bottom: 12px;
-    padding-block: 12px;
+  .documento-simples > .acoes-formulario > .botao-primario {
+    grid-row: 1;
   }
 }
 @media (max-width: 600px), (pointer: coarse) {

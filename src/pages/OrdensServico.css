@@ -697,14 +697,3 @@
 .os-informacoes-adicionais > details {
   margin: 16px 0 0;
 }
-.dialogo-orcamento .editor-proposta > .acoes-formulario {
-  position: sticky;
-  bottom: 0;
-  z-index: 4;
-  box-shadow: 0 -8px 20px color-mix(in srgb, var(--superficie) 95%, transparent);
-}
-.dialogo-orcamento .editor-proposta > .acoes-formulario {
-  padding: 12px 0;
-  background: var(--superficie);
-  border-top: 1px solid var(--borda);
-}

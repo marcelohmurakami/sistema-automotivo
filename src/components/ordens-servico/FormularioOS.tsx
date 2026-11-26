@@ -215,10 +215,7 @@ export function FormularioOS({
     </>
   );
   return (
-    <form
-      className="formulario-cliente documento-simples documento-criacao-os"
-      onSubmit={enviar}
-    >
+    <form className="formulario-cliente documento-simples" onSubmit={enviar}>
       <fieldset disabled={ocupado || criando}>
         <div className="documento-identificacao">
           {!anterior || !anterior.cliente_id ? (

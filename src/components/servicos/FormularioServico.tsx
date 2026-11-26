@@ -511,7 +511,7 @@ export function FormularioServico({
     ) : null;
   return (
     <form
-      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${formularioSimples ? " documento-simples" : ""}${formularioSimples && editor.tipo === "atendimento" ? " documento-criacao-os" : ""}`}
+      className={`formulario-cliente servicos-formulario assistencia-formulario${editor.tipo === "atendimento" ? " formulario-ordem-compartilhado" : ""}${formularioSimples ? " documento-simples" : ""}`}
       onSubmit={enviar}
     >
       {editor.tipo === "atendimento" && !!item.revisao && detalhes.isPending && (
@@ -605,49 +605,50 @@ export function FormularioServico({
           </>
         ) : editor.tipo === "atendimento" ? (
           <>
-            <div className="dupla-campos">
-              <SelecaoOperacao
-                tipo="clientes"
-                rotulo="Cliente"
-                valor={cliente}
-                selecionar={(id) => {
+            <div className="documento-identificacao">
+              <div className="dupla-campos">
+                <SelecaoOperacao
+                  tipo="clientes"
+                  rotulo="Cliente"
+                  valor={cliente}
+                  selecionar={(id) => {
+                    setCliente(id);
+                    setObjetoId("");
+                    setObjetoEscolhido(undefined);
+                  }}
+                />
+                <input type="hidden" name="objeto_id" value={objetoId} />
+                <SelecaoOperacao
+                  tipo="objetos"
+                  selecionarUnico={!editor.item.revisao}
+                  rotulo={ramos[ramo].objeto}
+                  cliente={cliente}
+                  valor={objetoId}
+                  selecionar={(id, item) => {
+                    setObjetoId(id);
+                    setObjetoEscolhido(
+                      item && "nome" in item && "dados" in item ? item : undefined,
+                    );
+                  }}
+                />
+              </div>
+              <CadastroRapidoServico
+                ramo={ramo}
+                especialidade={ficha.especialidade}
+                cliente={cliente}
+                aoAbrir={setCadastroAberto}
+                selecionarCliente={(id) => {
                   setCliente(id);
                   setObjetoId("");
                   setObjetoEscolhido(undefined);
                 }}
-              />
-              <input type="hidden" name="objeto_id" value={objetoId} />
-              <SelecaoOperacao
-                tipo="objetos"
-                selecionarUnico={!editor.item.revisao}
-                rotulo={ramos[ramo].objeto}
-                cliente={cliente}
-                valor={objetoId}
-                selecionar={(id, item) => {
-                  setObjetoId(id);
-                  setObjetoEscolhido(
-                    item && "nome" in item && "dados" in item ? item : undefined,
-                  );
+                selecionarObjeto={(objeto) => {
+                  setCliente(objeto.cliente_id);
+                  setObjetoId(objeto.id);
+                  setObjetoEscolhido(objeto);
                 }}
               />
             </div>
-            <CadastroRapidoServico
-              ramo={ramo}
-              especialidade={ficha.especialidade}
-              cliente={cliente}
-              aoAbrir={setCadastroAberto}
-              selecionarCliente={(id) => {
-                setCliente(id);
-                setObjetoId("");
-                setObjetoEscolhido(undefined);
-              }}
-              selecionarObjeto={(objeto) => {
-                setCliente(objeto.cliente_id);
-                setObjetoId(objeto.id);
-                setObjetoEscolhido(objeto);
-              }}
-            />
-
             <div className="servicos-filtros">
               {!item.revisao && podeEditarValores ? (
                 <input
