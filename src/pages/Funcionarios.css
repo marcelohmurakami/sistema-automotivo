@@ -666,10 +666,14 @@
 .dialogo-func-gestao .dialogo-interior {
   padding: 0;
 }
-.dialogo-func-form .dialogo-cabecalho,
-.dialogo-func-gestao .dialogo-cabecalho {
+.estrutura-sistema .dialogo.dialogo-func-form:not(.menu-celular) .dialogo-cabecalho,
+.estrutura-sistema .dialogo.dialogo-func-gestao:not(.menu-celular) .dialogo-cabecalho {
   margin: 0;
   padding: 20px 22px;
+}
+.dialogo-func-form .dialogo-cabecalho h2,
+.dialogo-func-gestao .dialogo-cabecalho h2 {
+  margin: 0;
 }
 .func-pagina input,
 .func-pagina select,
@@ -697,8 +701,8 @@
   padding: 6px 28px 6px 10px;
 }
 @media (max-width: 520px) {
-  .dialogo-func-form .dialogo-cabecalho,
-  .dialogo-func-gestao .dialogo-cabecalho {
+  .estrutura-sistema .dialogo.dialogo-func-form:not(.menu-celular) .dialogo-cabecalho,
+  .estrutura-sistema .dialogo.dialogo-func-gestao:not(.menu-celular) .dialogo-cabecalho {
     padding: 16px;
   }
   .func-corpo input:not([type="checkbox"]),
