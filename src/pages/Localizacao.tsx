@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { atualizarCadastro } from "../lib/atualizarCadastro";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
@@ -32,6 +32,12 @@ import {
 import { erroPublico } from "../lib/supabase";
 import type { EtiquetaFisica } from "../services/pdfEtiquetas";
 import "./Localizacao.css";
+
+const MoverPorEtiquetas = lazy(() =>
+  import("../components/localizacao/MoverPorEtiquetas").then((m) => ({
+    default: m.MoverPorEtiquetas,
+  })),
+);
 
 const etiquetasDosItens = (itens: ItemFisico[]): EtiquetaFisica[] =>
   itens.map((i) => ({
@@ -96,9 +102,10 @@ function ControleLocalizacao({
   const [situacao, setSituacao] = useState("");
   const [local, setLocal] = useState("");
   const [codigo, setCodigo] = useState(
-    codigoInicial.startsWith("PTI-") ? codigoInicial : "",
+    /^PTI-[A-F\d]{16}$/i.test(codigoInicial) ? codigoInicial.toUpperCase() : "",
   );
   const [leitor, setLeitor] = useState(false);
+  const [lote, setLote] = useState(false);
   const [novo, setNovo] = useState(false);
   const [vincular, setVincular] = useState(false);
   const [gerenciar, setGerenciar] = useState(false);
@@ -118,17 +125,20 @@ function ControleLocalizacao({
   const qLocais = useQuery({
     queryKey: ["locais-fisicos", w, ""],
     queryFn: ({ signal }) => listarLocaisFisicos(w, "", false, signal),
+    staleTime: 60_000,
   });
   const localInicial = useQuery({
     queryKey: ["locais-fisicos", w, "etiqueta", codigoInicial],
     queryFn: ({ signal }) => listarLocaisFisicos(w, codigoInicial, false, signal),
-    enabled: /^PTL-[A-F\d]{16}$/.test(codigoInicial),
+    enabled: /^PTL-[A-F\d]{16}$/i.test(codigoInicial),
+    staleTime: 60_000,
   });
   const [inicialLimpo, setInicialLimpo] = useState(false);
   const localEfetivo =
     local ||
     (!inicialLimpo
-      ? localInicial.data?.find((l) => l.codigo === codigoInicial)?.id || ""
+      ? localInicial.data?.find((l) => l.codigo === codigoInicial.toUpperCase())?.id ||
+        ""
       : "");
   const filtros = { busca: termo, situacao, local: localEfetivo, vinculo };
   const q = useInfiniteQuery({
@@ -137,6 +147,7 @@ function ControleLocalizacao({
     queryFn: ({ pageParam, signal }) =>
       listarItensFisicos(w, filtros, pageParam, signal),
     getNextPageParam: (p) => (p.tem_mais ? p.itens.at(-1) : undefined),
+    staleTime: 15_000,
   });
   const itens = useMemo(() => q.data?.pages.flatMap((p) => p.itens) || [], [q.data]);
   const idsSelecionados = useMemo(
@@ -233,6 +244,80 @@ function ControleLocalizacao({
           <Plus size={18} /> Guardar item
         </button>
       </div>
+      <div className="loc-atalhos">
+        <button className="botao-secundario" onClick={() => setLeitor(true)}>
+          <ScanLine size={18} /> Ler etiqueta
+        </button>
+        <button className="botao-secundario" onClick={() => setLote(true)}>
+          <ArrowRight size={18} /> Mover por etiquetas
+        </button>
+        <button
+          className="botao-secundario"
+          aria-pressed={selecionarVarios}
+          onClick={() => {
+            setSelecionarVarios(!selecionarVarios);
+            setSelecionados([]);
+          }}
+        >
+          {selecionarVarios ? "Sair da seleção" : "Selecionar vários"}
+        </button>
+        {a.oficina!.perfil !== "staff" && (
+          <button className="botao-texto" onClick={() => setGerenciar(true)}>
+            <MapPin size={18} /> Meus locais
+          </button>
+        )}
+        {contexto && (
+          <button className="botao-texto" onClick={() => setVincular(true)}>
+            Usar etiqueta existente
+          </button>
+        )}
+      </div>
+      <div className="loc-painel-filtros">
+        <div className="loc-filtros">
+          <label>
+            Situação
+            <select
+              value={situacao}
+              onChange={(e) => {
+                leitura.current?.abort();
+                setSituacao(e.target.value);
+                setSelecionados([]);
+              }}
+            >
+              <option value="">Todas</option>
+              {Object.entries(situacoesFisicas).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+              <option value="sem_local">Sem local informado</option>
+            </select>
+          </label>
+          <label>
+            Local
+            <select
+              value={localEfetivo}
+              onChange={(e) => {
+                leitura.current?.abort();
+                setLocal(e.target.value);
+                setInicialLimpo(true);
+                setSelecionados([]);
+                setAviso("");
+              }}
+            >
+              <option value="">Todos os locais</option>
+              {localEfetivo && !locais.some((l) => l.id === localEfetivo) && (
+                <option value={localEfetivo}>Local lido na etiqueta</option>
+              )}
+              {locais.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </div>
       {(localEfetivo || situacao) && (
         <div className="loc-filtro-ativo">
           <span>
@@ -314,7 +399,7 @@ function ControleLocalizacao({
           Limite de 50 itens por operação. Conclua esta seleção antes de continuar.
         </small>
       )}
-      {q.isPending && (
+      {(q.isPending || busca.trim() !== termo) && (
         <p className="estado-lista" role="status">
           Buscando itens…
         </p>
@@ -407,79 +492,6 @@ function ControleLocalizacao({
           {q.isFetchingNextPage ? "Carregando…" : "Carregar mais itens"}
         </button>
       )}
-      <SecaoRecolhivel titulo="Avançado">
-        <div className="loc-filtros">
-          <button
-            type="button"
-            className="botao-secundario"
-            onClick={() => setLeitor(true)}
-          >
-            <ScanLine size={18} /> Ler etiqueta
-          </button>
-          {contexto && (
-            <button className="botao-secundario" onClick={() => setVincular(true)}>
-              Usar etiqueta existente
-            </button>
-          )}
-          <label>
-            Situação
-            <select
-              value={situacao}
-              onChange={(e) => {
-                leitura.current?.abort();
-                setSituacao(e.target.value);
-                setSelecionados([]);
-              }}
-            >
-              <option value="">Todas</option>
-              {Object.entries(situacoesFisicas).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v}
-                </option>
-              ))}
-              <option value="sem_local">Sem local informado</option>
-            </select>
-          </label>
-          <label>
-            Local
-            <select
-              value={localEfetivo}
-              onChange={(e) => {
-                leitura.current?.abort();
-                setLocal(e.target.value);
-                setInicialLimpo(true);
-                setSelecionados([]);
-                setAviso("");
-              }}
-            >
-              <option value="">Todos os locais</option>
-              {localEfetivo && !locais.some((l) => l.id === localEfetivo) && (
-                <option value={localEfetivo}>Local lido na etiqueta</option>
-              )}
-              {locais.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-          {a.oficina!.perfil !== "staff" && (
-            <button className="botao-secundario" onClick={() => setGerenciar(true)}>
-              <MapPin size={18} /> Meus locais
-            </button>
-          )}
-        </div>
-        <button
-          type="button"
-          className="botao-secundario"
-          onClick={() => {
-            setSelecionarVarios(!selecionarVarios);
-            setSelecionados([]);
-          }}
-        >
-          {selecionarVarios ? "Sair da seleção" : "Selecionar vários itens"}
-        </button>
-      </SecaoRecolhivel>
       {leitor && (
         <LeitorEtiqueta fechar={() => setLeitor(false)} lido={(c) => void ler(c)} />
       )}
@@ -498,9 +510,11 @@ function ControleLocalizacao({
       {novo && (
         <CadastroItemFisico
           contexto={contexto}
+          localInicial={localEfetivo}
           fechar={() => setNovo(false)}
-          salvo={(r) => {
+          salvo={(r, imprimirAgora) => {
             setNovo(false);
+            if (imprimirAgora) setImprimir(etiquetasDosItens(r));
             setRegistrados(r);
             setAviso(
               r.length === 1 ? "Item registrado." : `${r.length} itens registrados.`,
@@ -508,6 +522,20 @@ function ControleLocalizacao({
             void atualizar();
           }}
         />
+      )}
+      {lote && (
+        <Suspense fallback={<p role="status">Abrindo leitura de etiquetas…</p>}>
+          <MoverPorEtiquetas
+            localInicial={localEfetivo}
+            fechar={() => setLote(false)}
+            salvo={(r) => {
+              setLote(false);
+              setRegistrados([]);
+              setAviso(`${r.length} itens movidos.`);
+              void atualizar();
+            }}
+          />
+        </Suspense>
       )}
       {imprimir && (
         <ImprimirEtiquetas itens={imprimir} fechar={() => setImprimir(undefined)} />
@@ -548,6 +576,7 @@ function DetalheFisico({
   const q = useQuery({
     queryKey: ["itens-fisicos", w, "detalhe", codigo],
     queryFn: ({ signal }) => consultarItemFisico(w, codigo, signal),
+    staleTime: 15_000,
   });
   const i = q.data;
   const [selecionados, setSelecionados] = useState<string[]>([]);
@@ -604,7 +633,7 @@ function DetalheFisico({
               </button>
             </div>
 
-            <SecaoRecolhivel titulo="Avançado">
+            <section className="loc-form">
               <div className="loc-acoes">
                 <button className="botao-secundario" onClick={() => setEditar(true)}>
                   <Pencil size={16} /> Identificação
@@ -620,18 +649,34 @@ function DetalheFisico({
               </div>
 
               <section className="loc-form">
-                <h3>Identificação e acessórios</h3>
-                <code>{i.codigo}</code>
-                {i.codigo_externo && (
-                  <p>
-                    Série / código do fabricante: <strong>{i.codigo_externo}</strong>
-                  </p>
-                )}
-                {i.observacoes && <p className="loc-observacoes">{i.observacoes}</p>}
+                <SecaoRecolhivel titulo="Identificação e observações">
+                  <code>{i.codigo}</code>
+                  {i.codigo_externo && (
+                    <p>
+                      Série / código do fabricante: <strong>{i.codigo_externo}</strong>
+                    </p>
+                  )}
+                  {i.observacoes && <p className="loc-observacoes">{i.observacoes}</p>}
+                </SecaoRecolhivel>
                 {!!i.relacionados.length && (
-                  <div>
+                  <div className="loc-conjunto">
                     <h3>Itens que acompanham</h3>
                     <p>Marque os que serão movimentados ou impressos junto.</p>
+                    <button
+                      type="button"
+                      className="botao-texto"
+                      onClick={() =>
+                        setSelecionados(
+                          selecionados.length === Math.min(49, i.relacionados.length)
+                            ? []
+                            : i.relacionados.slice(0, 49).map((x) => x.id),
+                        )
+                      }
+                    >
+                      {selecionados.length === Math.min(49, i.relacionados.length)
+                        ? "Desmarcar todos"
+                        : "Selecionar conjunto"}
+                    </button>
                     <ul className="loc-lista">
                       {i.relacionados.map((x) => (
                         <li key={x.id} className="loc-linha">
@@ -707,7 +752,7 @@ function DetalheFisico({
                   </button>
                 )}
               </details>
-            </SecaoRecolhivel>
+            </section>
             {editar && (
               <CadastroItemFisico
                 item={i}

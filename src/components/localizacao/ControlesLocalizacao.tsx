@@ -110,6 +110,7 @@ export function SeletorLocal({
   const q = useQuery({
     queryKey: ["locais-fisicos", w, termo],
     queryFn: ({ signal }) => listarLocaisFisicos(w, termo, false, signal),
+    staleTime: 60_000,
   });
   // Preserve a seleção quando a busca muda, sem selecionar um resultado silenciosamente.
   const [escolhido, setEscolhido] = useState<LocalFisico>();
@@ -166,7 +167,7 @@ export function SeletorLocal({
         </div>
       </SecaoRecolhivel>
       <label>
-        Onde vai ficar?
+        <span>Onde vai ficar?</span>
         <select
           required={obrigatorio}
           disabled={q.isPending || busca !== termo}
@@ -214,7 +215,6 @@ export function SeletorLocal({
           }}
         />
       )}
-      {q.isFetching && <small role="status">Buscando locais…</small>}
       {q.error && <p role="alert">{erroPublico(q.error)}</p>}
       {locais.length === 100 && (
         <small>Refine a busca para encontrar outros locais.</small>
@@ -259,6 +259,7 @@ export function GerenciarLocais({
     queryKey: ["locais-fisicos", w, "gerencia", termo],
     queryFn: ({ signal }) => listarLocaisFisicos(w, termo, true, signal),
     enabled: !novo,
+    staleTime: 60_000,
   });
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -275,9 +276,14 @@ export function GerenciarLocais({
         ativo: d.has("ativo"),
         revisao: editar?.revisao,
       });
-      // O nome nos itens é secundário; o seletor de destino deve ficar pronto primeiro.
+      // O destino confirmado fica disponível imediatamente, mesmo em rede lenta.
+      await qc.cancelQueries({ queryKey: ["locais-fisicos", w] });
+      qc.setQueriesData<LocalFisico[]>(
+        { queryKey: ["locais-fisicos", w] },
+        (anteriores) => anteriores?.map((l) => (l.id === salvo.id ? salvo : l)),
+      );
       void qc.invalidateQueries({ queryKey: ["itens-fisicos", w] }).catch(() => {});
-      await atualizarCadastro(qc, ["locais-fisicos", w]);
+      void atualizarCadastro(qc, ["locais-fisicos", w]).catch(() => {});
       setEditar(undefined);
       setId(novoId());
       aoSalvar?.(salvo);
@@ -414,19 +420,23 @@ export function CadastroItemFisico({
   contexto,
   item,
   principal,
+  localInicial = "",
   fechar,
   salvo,
 }: {
   contexto?: ContextoFisico | null;
   item?: ItemFisico;
   principal?: ItemFisico;
+  localInicial?: string;
   fechar: () => void;
-  salvo: (itens: ItemFisico[]) => void;
+  salvo: (itens: ItemFisico[], imprimir?: boolean) => void;
 }) {
   const acesso = useAcesso(),
     w = acesso.oficina!.id;
   const [id] = useState(novoId);
-  const [local, setLocal] = useState(item?.local_id || principal?.local_id || "");
+  const [local, setLocal] = useState(
+    item?.local_id || principal?.local_id || localInicial,
+  );
   const [acessorios, setAcessorios] = useState<(CadastroFisico & { id: string })[]>([]);
   const [erro, setErro] = useState("");
   const [ocupado, setOcupado] = useState(false);
@@ -437,6 +447,8 @@ export function CadastroItemFisico({
     trava.current = true;
     setErro("");
     const d = new FormData(e.currentTarget);
+    const imprimir =
+      (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value") === "imprimir";
     const dados: CadastroFisico = {
       descricao: String(d.get("descricao")).trim(),
       categoria: String(d.get("categoria")) as CadastroFisico["categoria"],
@@ -451,7 +463,7 @@ export function CadastroItemFisico({
       const r = item
         ? [await salvarItemFisico(w, item.id, dados, item.revisao)]
         : await registrarConjuntoFisico(w, id, dados, acessorios);
-      salvo(r);
+      salvo(r, imprimir);
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
@@ -507,7 +519,7 @@ export function CadastroItemFisico({
             />
           </label>
           {!item && <SeletorLocal valor={local} alterar={setLocal} />}
-          <SecaoRecolhivel titulo="Avançado">
+          <SecaoRecolhivel titulo="Mais detalhes e acessórios">
             <label>
               Categoria
               <select
@@ -524,11 +536,18 @@ export function CadastroItemFisico({
                         : "equipamento")
                 }
               >
-                {Object.entries(categoriasFisicas).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
-                ))}
+                {Object.entries(categoriasFisicas)
+                  .filter(
+                    ([k]) =>
+                      k !== "veiculo" ||
+                      acesso.oficina!.ramo === "automotivo" ||
+                      item?.categoria === "veiculo",
+                  )
+                  .map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v}
+                    </option>
+                  ))}
               </select>
             </label>
             {!item && !principal && (
@@ -640,9 +659,16 @@ export function CadastroItemFisico({
               {erro}
             </p>
           )}
-          <button className="botao-primario">
-            {ocupado ? "Salvando…" : item ? "Salvar identificação" : "Guardar item"}
-          </button>
+          <div className="loc-acoes loc-salvar">
+            <button className="botao-primario" type="submit">
+              {ocupado ? "Salvando…" : item ? "Salvar identificação" : "Guardar item"}
+            </button>
+            {!item && (
+              <button className="botao-secundario" type="submit" value="imprimir">
+                <Printer size={18} /> Guardar e imprimir
+              </button>
+            )}
+          </div>
         </fieldset>
       </form>
     </Dialogo>
@@ -655,7 +681,7 @@ export function MovimentoFisico({
 }: {
   itens: ItemFisico[];
   fechar: () => void;
-  salvo: () => void;
+  salvo: (itens: ItemFisico[]) => void;
 }) {
   const w = useAcesso().oficina!.id;
   const [acao, setAcao] = useState<AcaoFisica>(
@@ -689,8 +715,16 @@ export function MovimentoFisico({
     setOcupado(true);
     setErro("");
     try {
-      await movimentarItensFisicos(w, itens, acao, destino, quem, obs, chave);
-      salvo();
+      const resultado = await movimentarItensFisicos(
+        w,
+        itens,
+        acao,
+        destino,
+        quem,
+        obs,
+        chave,
+      );
+      salvo(resultado);
     } catch (e) {
       setErro(erroPublico(e));
     } finally {
@@ -713,6 +747,19 @@ export function MovimentoFisico({
               <li key={i.id}>{i.descricao}</li>
             ))}
           </ul>
+          <label>
+            O que aconteceu?
+            <select
+              value={acao}
+              onChange={(e) => setAcao(e.target.value as AcaoFisica)}
+            >
+              <option value="mover">Guardar / mudar de local</option>
+              <option value="externo">Saiu com técnico / terceiro</option>
+              <option value="entregar">Entregar fisicamente ao cliente</option>
+              <option value="retorno">Item entregue retornou</option>
+              <option value="nao_localizado">Não localizei o item</option>
+            </select>
+          </label>
           {(acao === "mover" || acao === "retorno") && (
             <SeletorLocal valor={local} alterar={setLocal} obrigatorio />
           )}
@@ -746,21 +793,8 @@ export function MovimentoFisico({
               serviço continuam na OS.
             </p>
           )}
-          <SecaoRecolhivel titulo="Avançado">
-            <label>
-              Outra operação
-              <select
-                value={acao}
-                onChange={(e) => setAcao(e.target.value as AcaoFisica)}
-              >
-                <option value="mover">Guardar / mudar de local</option>
-                <option value="externo">Saiu com técnico / terceiro</option>
-                <option value="entregar">Entregar fisicamente ao cliente</option>
-                <option value="retorno">Item entregue retornou</option>
-                <option value="nao_localizado">Não localizei o item</option>
-              </select>
-            </label>
-            {!motivoObrigatorio && (
+          {!motivoObrigatorio && (
+            <SecaoRecolhivel titulo="Adicionar observação">
               <label>
                 Observação (opcional)
                 <textarea
@@ -769,8 +803,8 @@ export function MovimentoFisico({
                   maxLength={1000}
                 />
               </label>
-            )}
-          </SecaoRecolhivel>
+            </SecaoRecolhivel>
+          )}
           {erro && (
             <p role="alert" className="erro-formulario">
               {erro}
