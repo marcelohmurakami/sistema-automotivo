@@ -73,6 +73,20 @@ end $$;
 create trigger sincronizar_jornada_equipe after insert or update of jornada,funcionario_id on public.perfis_distribuicao for each row execute function private.sincronizar_jornada_equipe();
 revoke all on function private.sincronizar_jornada_equipe() from public,anon,authenticated;
 
+
+-- Resolve também os vínculos antigos da distribuição para não duplicar a disponibilidade.
+create function private.funcionario_recurso_agenda(w uuid,automotivo boolean,recurso text) returns uuid language plpgsql stable security definer set search_path='' as $$
+declare ids uuid[];
+begin
+ select array_agg(distinct funcionario_id) into ids from (
+ select c.funcionario_id from public.configuracoes_funcionario c where c.oficina_id=w and case when automotivo then lower(trim(c.nome_agenda))=lower(trim(recurso)) else c.recurso_id::text=recurso end
+ union select p.funcionario_id from public.perfis_distribuicao p where p.oficina_id=w and p.funcionario_id is not null and case when automotivo then lower(trim(p.nome))=lower(trim(recurso)) else p.recurso_id::text=recurso end
+ ) vinculos;
+ if cardinality(ids)>1 then raise exception 'Esta equipe está vinculada a mais de um funcionário. Confira a distribuição.' using errcode='22023';end if;
+ return ids[1];
+end $$;
+revoke all on function private.funcionario_recurso_agenda(uuid,boolean,text) from public,anon,authenticated;
+
 create function public.consultar_gestao_funcionario(p_oficina uuid,p_funcionario uuid) returns jsonb language plpgsql security definer set search_path='' as $$
 begin
  perform private.exigir_cadastro_funcionarios(p_oficina);
@@ -122,8 +136,8 @@ begin
   return p_id;
  end if;
  if fid is not null and not exists(select 1 from public.funcionarios where oficina_id=p_oficina and id=fid) then raise exception 'Funcionário indisponível.' using errcode='42501';end if;
- if exists(select 1 from public.agenda_atendimentos a where a.oficina_id=p_oficina and a.situacao in ('agendado','convertido') and (fid is null or lower(trim(a.recurso))=(select lower(trim(nome_agenda)) from public.configuracoes_funcionario where funcionario_id=fid)) and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<(p_dados->>'fim')::timestamptz and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>(p_dados->>'inicio')::timestamptz)
- or exists(select 1 from public.agenda_servicos a where a.oficina_id=p_oficina and a.situacao in ('agendado','confirmado') and (fid is null or a.recurso_id=(select recurso_id from public.configuracoes_funcionario where funcionario_id=fid)) and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<(p_dados->>'fim')::timestamptz and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>(p_dados->>'inicio')::timestamptz) then raise exception 'Já existem agendamentos neste período. Remarque ou cancele antes de bloquear.' using errcode='23P01';end if;
+ if exists(select 1 from public.agenda_atendimentos a where a.oficina_id=p_oficina and a.situacao in ('agendado','convertido') and (fid is null or private.funcionario_recurso_agenda(p_oficina,true,a.recurso)=fid) and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<(p_dados->>'fim')::timestamptz and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>(p_dados->>'inicio')::timestamptz)
+ or exists(select 1 from public.agenda_servicos a where a.oficina_id=p_oficina and a.situacao in ('agendado','confirmado') and (fid is null or private.funcionario_recurso_agenda(p_oficina,false,a.recurso_id::text)=fid) and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<(p_dados->>'fim')::timestamptz and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>(p_dados->>'inicio')::timestamptz) then raise exception 'Já existem agendamentos neste período. Remarque ou cancele antes de bloquear.' using errcode='23P01';end if;
  insert into public.bloqueios_funcionario(id,oficina_id,funcionario_id,tipo,inicio,fim,dia_inteiro,motivo,criado_por)
  values(p_id,p_oficina,fid,p_dados->>'tipo',(p_dados->>'inicio')::timestamptz,(p_dados->>'fim')::timestamptz,coalesce((p_dados->>'dia_inteiro')::boolean,false),trim(coalesce(p_dados->>'motivo','')),uid);
  return p_id;
@@ -163,18 +177,15 @@ begin
  perform pg_advisory_xact_lock(hashtextextended('agenda-funcionarios:'||new.oficina_id,0));
  if jsonb_typeof(new.profissional) is distinct from 'object' or octet_length(new.profissional::text)>3000 then raise exception 'Profissional inválido.' using errcode='22023';end if;
  fid:=nullif(new.profissional->>'funcionario_id','')::uuid;
- if fid is not null then
-  select * into c from public.configuracoes_funcionario where oficina_id=new.oficina_id and funcionario_id=fid;
-  if not found then raise exception 'Funcionário indisponível nesta empresa.' using errcode='42501';end if;
-  if (auto and lower(trim(c.nome_agenda)) is distinct from lower(trim(to_jsonb(new)->>'recurso'))) or (not auto and c.recurso_id::text is distinct from to_jsonb(new)->>'recurso_id') then raise exception 'A equipe mudou. Selecione o funcionário novamente.' using errcode='22023';end if;
- else
-  select * into c from public.configuracoes_funcionario where oficina_id=new.oficina_id and case when auto then lower(trim(nome_agenda))=lower(trim(to_jsonb(new)->>'recurso')) else recurso_id::text=to_jsonb(new)->>'recurso_id' end;
-  fid:=c.funcionario_id;
- end if;
+ if fid is not null and fid is distinct from private.funcionario_recurso_agenda(new.oficina_id,auto,case when auto then to_jsonb(new)->>'recurso' else to_jsonb(new)->>'recurso_id' end) then raise exception 'A equipe mudou. Selecione o funcionário novamente.' using errcode='22023';end if;
+ fid:=coalesce(fid,private.funcionario_recurso_agenda(new.oficina_id,auto,case when auto then to_jsonb(new)->>'recurso' else to_jsonb(new)->>'recurso_id' end));
+ select * into c from public.configuracoes_funcionario where oficina_id=new.oficina_id and funcionario_id=fid;
  ini:=private.inicio_visita(new.inicio,new.visita,new.deslocamento_minutos,private.normalizar_logistica(new.logistica));
  fimv:=private.fim_visita(new.fim,new.inicio,new.visita,private.normalizar_logistica(new.logistica));
  if exists(select 1 from public.bloqueios_funcionario b where b.oficina_id=new.oficina_id and b.cancelado_em is null and (b.funcionario_id is null or b.funcionario_id=fid) and b.inicio<fimv and b.fim>ini) then raise exception 'Horário bloqueado: confira as ausências e os bloqueios da equipe.' using errcode='23P01';end if;
  if fid is null then return new;end if;
+ if exists(select 1 from public.agenda_atendimentos a where a.oficina_id=new.oficina_id and a.id<>new.id and a.situacao in ('agendado','convertido') and a.inicio<fimv+interval '1 day' and coalesce(a.fim,a.inicio)>ini-interval '1 day' and private.funcionario_recurso_agenda(new.oficina_id,true,a.recurso)=fid and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<fimv and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>ini)
+ or exists(select 1 from public.agenda_servicos a where a.oficina_id=new.oficina_id and a.id<>new.id and a.situacao in ('agendado','confirmado') and a.inicio<fimv+interval '1 day' and a.fim>ini-interval '1 day' and private.funcionario_recurso_agenda(new.oficina_id,false,a.recurso_id::text)=fid and private.inicio_visita(a.inicio,a.visita,a.deslocamento_minutos,private.normalizar_logistica(a.logistica))<fimv and private.fim_visita(a.fim,a.inicio,a.visita,private.normalizar_logistica(a.logistica))>ini) then raise exception 'Funcionário já possui atendimento neste horário, mesmo em outra equipe.' using errcode='23P01';end if;
  select * into f from public.funcionarios where oficina_id=new.oficina_id and id=fid;
  if not f.ativo or coalesce(f.dados->>'atende_clientes','true')='false' then raise exception 'Funcionário inativo ou sem atendimento habilitado.' using errcode='22023';end if;
  if (f.admissao is not null and f.admissao>(ini at time zone 'America/Sao_Paulo')::date) or (f.desligamento is not null and f.desligamento<=(ini at time zone 'America/Sao_Paulo')::date) then raise exception 'Funcionário fora do período de contratação.' using errcode='22023';end if;

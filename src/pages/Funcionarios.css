@@ -269,6 +269,7 @@
 }
 .func-corpo .func-check {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 9px;
   font-size: 13px;
@@ -654,5 +655,55 @@
   .func-corpo textarea {
     font-size: 16px;
     min-height: 44px;
+  }
+}
+/* O diálogo genérico tem recuos próprios; estes formulários já definem seu corpo. */
+.dialogo.dialogo-func-form,
+.dialogo.dialogo-func-gestao {
+  max-width: calc(100vw - 24px);
+}
+.dialogo-func-form .dialogo-interior,
+.dialogo-func-gestao .dialogo-interior {
+  padding: 0;
+}
+.dialogo-func-form .dialogo-cabecalho,
+.dialogo-func-gestao .dialogo-cabecalho {
+  margin: 0;
+  padding: 20px 22px;
+}
+.func-pagina input,
+.func-pagina select,
+.func-corpo input:not([type="checkbox"]),
+.func-corpo select,
+.func-corpo textarea {
+  border: 1px solid var(--ui-borda);
+  border-radius: 9px;
+  padding: 11px 12px;
+  background: var(--ui-fundo);
+  color: var(--ui-texto);
+  font: inherit;
+  line-height: 1.5;
+  min-height: 44px;
+}
+.func-pagina .func-busca input {
+  padding-left: 42px;
+}
+.func-corpo .func-check {
+  flex-direction: row;
+}
+.func-pagina .func-paginacao select {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 28px 6px 10px;
+}
+@media (max-width: 520px) {
+  .dialogo-func-form .dialogo-cabecalho,
+  .dialogo-func-gestao .dialogo-cabecalho {
+    padding: 16px;
+  }
+  .func-corpo input:not([type="checkbox"]),
+  .func-corpo select,
+  .func-corpo textarea {
+    font-size: 16px;
   }
 }
