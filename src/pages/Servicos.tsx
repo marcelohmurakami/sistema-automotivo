@@ -150,7 +150,19 @@ export function Servicos({ tela }: { tela: string }) {
     queryKey: ["servicos", oficina, a.demo, "pagina", filtros, navegacao.cursor],
     queryFn: ({ signal }) =>
       consultarPaginaServicos(oficina, a.demo, filtros, navegacao.cursor, signal),
-    placeholderData: tela === "/agenda" ? keepPreviousData : undefined,
+    // Preserva os cards durante a busca: remover o alvo entre pressionar e
+    // soltar o botão/toque fazia o clique no atalho se perder.
+    placeholderData: (anterior, consultaAnterior) => {
+      const chave = consultaAnterior?.queryKey;
+      const filtroAnterior = chave?.[4] as FiltrosServicos | undefined;
+      if (chave?.[1] !== oficina || chave?.[2] !== a.demo) return undefined;
+      if (
+        filtroAnterior?.tela !== filtros.tela ||
+        filtroAnterior?.documento !== filtros.documento
+      )
+        return undefined;
+      return keepPreviousData(anterior);
+    },
     refetchInterval: 60000,
   });
   const resumo = useQuery({

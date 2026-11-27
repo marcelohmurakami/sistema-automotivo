@@ -134,6 +134,11 @@ export function Orcamentos() {
     queryKey: [...chave, buscaConsulta, situacao, pagina],
     queryFn: ({ signal }) =>
       listarPropostas(acesso.demo, oficina, buscaConsulta, situacao, pagina, signal),
+    placeholderData: (anterior, consultaAnterior) =>
+      consultaAnterior?.queryKey[1] === chave[1] &&
+      consultaAnterior.queryKey[2] === oficina
+        ? anterior
+        : undefined,
     retry: false,
     refetchInterval: editorAberto || detalhe ? false : 30000,
   });

@@ -264,6 +264,11 @@ export function OrdensServico() {
     queryKey: ["os", acesso.demo, oficina, buscaConsulta, filtro, pagina],
     queryFn: ({ signal }) =>
       listarOS(acesso.demo, oficina, buscaConsulta, filtro, pagina, signal),
+    placeholderData: (anterior, consultaAnterior) =>
+      consultaAnterior?.queryKey[1] === acesso.demo &&
+      consultaAnterior.queryKey[2] === oficina
+        ? anterior
+        : undefined,
     refetchInterval: editor || id ? false : 30000,
   });
   const detalhe = useQuery({
