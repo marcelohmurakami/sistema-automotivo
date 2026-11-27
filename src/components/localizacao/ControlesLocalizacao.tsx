@@ -611,11 +611,16 @@ export function CadastroItemFisico({
                           )
                         }
                       >
-                        {Object.entries(categoriasFisicas).map(([k, v]) => (
-                          <option key={k} value={k}>
-                            {v}
-                          </option>
-                        ))}
+                        {Object.entries(categoriasFisicas)
+                          .filter(
+                            ([k]) =>
+                              k !== "veiculo" || acesso.oficina!.ramo === "automotivo",
+                          )
+                          .map(([k, v]) => (
+                            <option key={k} value={k}>
+                              {v}
+                            </option>
+                          ))}
                       </select>
                     </label>
                     <button

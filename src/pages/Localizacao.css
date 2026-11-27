@@ -26,6 +26,10 @@
   min-width: 0;
 }
 .loc-atalhos > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 44px;
   padding: 10px 14px;
   font-size: 0.9rem;

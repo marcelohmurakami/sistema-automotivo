@@ -573,6 +573,7 @@ function DetalheFisico({
   atualizado: () => Promise<void>;
 }) {
   const w = useAcesso().oficina!.id;
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["itens-fisicos", w, "detalhe", codigo],
     queryFn: ({ signal }) => consultarItemFisico(w, codigo, signal),
@@ -585,6 +586,28 @@ function DetalheFisico({
   const [editar, setEditar] = useState(false);
   const [acessorio, setAcessorio] = useState(false);
   const [verHistorico, setVerHistorico] = useState(false);
+  async function aplicarConfirmados(itens: ItemFisico[]) {
+    const queryKey = ["itens-fisicos", w, "detalhe", codigo];
+    await qc.cancelQueries({ queryKey, exact: true });
+    // A resposta já contém a localização confirmada: não exiba o destino
+    // anterior enquanto a lista e o histórico são reconsultados.
+    const porId = new Map(itens.map((item) => [item.id, item]));
+    const confirmado = (item: ItemFisico) => {
+      const novo = porId.get(item.id);
+      return novo && novo.revisao >= item.revisao ? novo : item;
+    };
+    qc.setQueryData<Awaited<ReturnType<typeof consultarItemFisico>>>(
+      queryKey,
+      (anterior) =>
+        anterior
+          ? {
+              ...anterior,
+              ...confirmado(anterior),
+              relacionados: anterior.relacionados.map(confirmado),
+            }
+          : anterior,
+    );
+  }
   const historico = useInfiniteQuery({
     queryKey: ["itens-fisicos", w, "historico", i?.id],
     enabled: !!i && verHistorico,
@@ -757,7 +780,8 @@ function DetalheFisico({
               <CadastroItemFisico
                 item={i}
                 fechar={() => setEditar(false)}
-                salvo={() => {
+                salvo={async (r) => {
+                  await aplicarConfirmados(r);
                   setEditar(false);
                   void atualizado();
                 }}
@@ -780,7 +804,8 @@ function DetalheFisico({
           <MovimentoFisico
             itens={mover}
             fechar={() => setMover(undefined)}
-            salvo={() => {
+            salvo={async (r) => {
+              await aplicarConfirmados(r);
               setMover(undefined);
               setSelecionados([]);
               void atualizado();
