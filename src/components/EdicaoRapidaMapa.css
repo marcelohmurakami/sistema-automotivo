@@ -1,5 +1,9 @@
-.mapa-edicao-dialogo {
+.dialogo.mapa-edicao-dialogo {
+  --atalho-recuo: clamp(12px, 8svh, 64px);
   width: min(520px, calc(100vw - 24px));
+  /* O cabeçalho não deve saltar quando a consulta substitui "Carregando". */
+  margin-block: var(--atalho-recuo) auto;
+  max-height: calc(100svh - var(--atalho-recuo) - 12px);
 }
 .mapa-edicao-contexto {
   color: var(--ui-suave);
