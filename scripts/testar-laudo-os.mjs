@@ -1,0 +1,58 @@
+import assert from "node:assert/strict";
+import { createElement as h } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createServer } from "vite";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { cssRenderizacaoTeste } from "./css-renderizacao-teste.mjs";
+const out = "output/laudo-os-20261127";
+await mkdir(out, { recursive: true });
+const server = await createServer({ configFile: false, envDir: false, plugins: [cssRenderizacaoTeste()], cacheDir: "output/.vite-laudo-os", server: { middlewareMode: true, hmr: false, ws: false, watch: null }, optimizeDeps: { noDiscovery: true, include: [] }, appType: "custom" });
+try {
+  const { laudoDaOS, laudoDoAtendimento } = await server.ssrLoadModule("/src/lib/laudoOS.ts");
+  const { DocumentoLaudoOS } = await server.ssrLoadModule("/src/components/DocumentoLaudoOS.tsx");
+  const { especialidades } = await server.ssrLoadModule("/src/lib/especialidades.ts");
+  const { perfilAtendimento, novaFichaEspecialidade } = await server.ssrLoadModule("/src/lib/perfisAtendimento.ts");
+  const { camposFichaComplementar } = await server.ssrLoadModule("/src/lib/fichaComplementarOS.ts");
+  const empresa = { nome: "Retífica Modelo", documento: "EMPRESA FICTÍCIA · DOCUMENTO DE TESTE", telefone: "11999990000", endereco: { logradouro: "Rua das Oficinas, 120", cidade: "São Paulo / SP" }, cor: "#244336" };
+  const os = { id: "ficticio", numero: 1208, revisao: 3, situacao: "ready", data_servico: "2026-11-27", dados_cliente: { nome: "Cliente de demonstração", telefone_e164: "+5511988880000" }, dados_veiculo: { modelo: "Volkswagen Gol", motor: "EA111 1.6", placa: "TESTE" }, responsavel: "Técnico de demonstração", queixa_cliente: "Cliente relata perda de compressão e consumo de óleo.", diagnostico: "Desgaste identificado durante a inspeção dimensional.\nAs medições foram registradas nos pontos de referência do componente.", detalhes_especialidade: "Avaliação de cabeçote e conjunto de válvulas.", codigos_falha: null, pecas_a_trocar: "8 guias de válvula e 8 retentores.", resumo_cliente: "Seguir as orientações de montagem e os torques especificados pelo fabricante.", observacoes_internas: "SEGREDO INTERNO NAO IMPRIMIR", quilometragem_entrada: 0, quilometragem_saida: null, combustivel_percentual: 0, pertences: null, garantia_ate: "2027-02-27", condicoes_garantia: "Garantia conforme condições acordadas e recomendações de montagem.", checklist: {}, total_centavos: 1234567, itens: [{ descricao: "Retífica de cabeçote", quantidade: 1, unidade: "serv", situacao: "done", preco_unitario_centavos: 1234567 }, { descricao: "Montagem no veículo", quantidade: 1, unidade: "serv", situacao: "pending" }] };
+  const texto = d => renderToStaticMarkup(h(DocumentoLaudoOS, { documento: d }));
+  const fixo = "2026-11-27T12:30:00.000Z";
+  let perfis = 0;
+  for (const [id, e] of Object.entries(especialidades)) {
+    const ficha = novaFichaEspecialidade(id), p = perfilAtendimento(id);
+    for (const c of p.grupos.flatMap(g => g.campos)) ficha.campos[c.id] = c.tipo === "data" ? "2026-11-27" : c.tipo === "numero" ? "0" : c.opcoes?.[0] || `Registro técnico de ${c.nome}`;
+    ficha.checklist[p.checklist[0]] = true;
+    const origem = { ...os, ficha_especialidade: ficha };
+    const antes = JSON.stringify(origem);
+    const d = e.ramo === "automotivo" ? laudoDaOS(origem, empresa, fixo) : laudoDoAtendimento({ atendimento: { ...origem, titulo: "Serviço fictício", dados: { descricao_servico: "Revisão técnica", observacoes_internas: os.observacoes_internas }, situacao: "em_execucao" }, cliente: { nome: "Cliente fictício", telefone: null }, objeto: { nome: "Equipamento de teste", dados: {} }, equipe: [], itens: [{ descricao: "Serviço fictício", quantidade: 1, unidade: "un" }] }, { ...empresa, especialidade: id }, fixo);
+    const html = texto(d);
+    assert(!html.includes(os.observacoes_internas));
+    assert(!html.includes("1234567"));
+    assert(!html.includes("NaN"));
+    for (const c of p.grupos.flatMap(g => g.campos)) assert(d.secoes.some(s => s.campos.some(x => x.rotulo === c.nome)), `${id}: falta ${c.nome}`);
+    assert.equal(JSON.stringify(origem), antes);
+    if (e.ramo !== "automotivo") assert(!html.includes("Veículo / componente"));
+    perfis++;
+  }
+  assert.equal(perfis, 26);
+  const ficha = novaFichaEspecialidade("retifica");
+  ficha.campos = { identificacao: "CAB-1208", aplicacao: "EA111 1.6", inspecao: "Componente limpo e inspecionado antes da medição.", medidas_entrada: "Altura medida: 135,20 mm.\nRegistro ilustrativo para teste do documento.", usinagens: "Regularização da superfície e revisão dos assentamentos.", teste_final: "Resultado anotado pelo técnico: estanqueidade conferida." };
+  const amostra = laudoDaOS({ ...os, ficha_especialidade: ficha }, empresa, fixo);
+  assert(amostra.secoes.some(s => s.campos.some(c => c.valor === "0 km")));
+  assert(amostra.secoes.some(s => s.campos.some(c => c.valor === "0%")));
+  assert.equal(amostra.itens[1].situacao, "A realizar");
+  assert(camposFichaComplementar(os).some(s => s.campos.some(c => c.valor === os.observacoes_internas)), "Preservar ficha interna anterior");
+  const htmlMalicioso = texto(laudoDaOS({ ...os, diagnostico: '<script>alert("teste")</script>' }, empresa, fixo));
+  assert(!htmlMalicioso.includes("<script>"));
+  assert(htmlMalicioso.includes("&lt;script&gt;"));
+  const vazio = laudoDaOS({ ...os, diagnostico: " ", detalhes_especialidade: "", queixa_cliente: null, pecas_a_trocar: "", resumo_cliente: "", responsavel: null, quilometragem_entrada: null, combustivel_percentual: null, garantia_ate: null, condicoes_garantia: null, itens: [] }, empresa, fixo);
+  assert.equal(vazio.secoes.length, 0);
+  assert(texto(vazio).includes("Nenhuma especificação técnica"));
+  const longo = structuredClone(amostra);
+  longo.secoes[0].campos[0].valor = Array.from({ length: 120 }, (_, i) => `Medição ${i + 1}: linha de teste para conferir a continuidade da impressão, com texto longo e quebra de página.`).join("\n");
+  assert(texto(longo).includes("Medição 120:"));
+  const css = await readFile("src/components/DocumentoLaudoOS.css", "utf8");
+  for (const [nome, documento] of [["previa", amostra], ["longo", longo], ["vazio", vazio]]) await writeFile(`${out}/${nome}.html`, `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laudo de teste</title><style>body{background:#e9eeea;margin:0;padding:24px 0}@media print{body{padding:0;background:white}}${css}</style>${texto(documento)}</html>`);
+  await writeFile(`${out}/testes.json`, JSON.stringify({ perfis, resultado: "PASS", cenarios: ["campos dos 26 perfis", "privacidade", "preservação da origem", "zero numérico", "status dos itens", "compatibilidade da ficha interna", "HTML escapado", "campos vazios", "texto longo sem truncamento"] }, null, 2));
+  console.log(`PASS: 26 perfis; privacidade, preservação, HTML seguro, vazios, zero, situação e texto longo. Prévias em ${out}.`);
+} finally { await server.close(); }

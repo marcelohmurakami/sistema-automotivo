@@ -35,6 +35,7 @@ import { CobrancaDiagnostico } from "../components/CobrancaDiagnostico";
 import { obterProposta } from "../services/orcamentos";
 import { abatimentoDiagnostico } from "../lib/diagnosticoOrcamento";
 import { ImprimirNotaOS } from "../components/ordens-servico/ImprimirNotaOS";
+import { ImprimirLaudoOS } from "../components/ordens-servico/ImprimirLaudoOS";
 import { PendenciasFotosOS } from "../components/ordens-servico/PendenciasFotosOS";
 import { CompartilharOS } from "../components/ordens-servico/CompartilharOS";
 import { FerramentasAtendimento } from "../components/FerramentasAtendimento";
@@ -1022,6 +1023,7 @@ export function OrdensServico() {
               </div>
               <div className="os-cabecalho-acoes">
                 <ImprimirNotaOS key={o.id} osId={o.id} />
+                <ImprimirLaudoOS key={`laudo-${o.id}`} id={o.id} />
                 <CompartilharOS key={`compartilhar-${o.id}`} os={o} />
                 {!encerrada && !o.arquivado_em && (
                   <button

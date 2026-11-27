@@ -2,7 +2,10 @@ import type { OrdemServico } from "../services/ordensServico.ts";
 import { dataDocumento } from "./documentoCliente.ts";
 import { gruposFichaEspecialidade } from "./perfisAtendimento.ts";
 
-export function camposFichaComplementar(o: OrdemServico) {
+export function camposFichaComplementar(
+  o: OrdemServico,
+  { incluirInternas = true, incluirGestao = true } = {},
+) {
   const grupos: {
     titulo: string;
     campos: { rotulo: string; valor: string }[];
@@ -23,18 +26,19 @@ export function camposFichaComplementar(o: OrdemServico) {
   }
   grupos.push(...gruposFichaEspecialidade(o.ficha_especialidade));
   grupo("Relato do cliente", [["Relato", o.queixa_cliente]]);
-  grupo("Responsável e prioridade", [
-    ["Responsável", o.responsavel],
-    [
-      "Prioridade",
-      o.prioridade && o.prioridade !== "normal"
-        ? { low: "Baixa", high: "Alta", urgent: "Urgente" }[o.prioridade] ||
-          o.prioridade
-        : o.responsavel
-          ? "Normal"
-          : null,
-    ],
-  ]);
+  if (incluirGestao)
+    grupo("Responsável e prioridade", [
+      ["Responsável", o.responsavel],
+      [
+        "Prioridade",
+        o.prioridade && o.prioridade !== "normal"
+          ? { low: "Baixa", high: "Alta", urgent: "Urgente" }[o.prioridade] ||
+            o.prioridade
+          : o.responsavel
+            ? "Normal"
+            : null,
+      ],
+    ]);
   grupo("Entrada e condições do veículo", [
     [
       "Entrada",
@@ -56,7 +60,7 @@ export function camposFichaComplementar(o: OrdemServico) {
     ["Pertences e condições", o.pertences],
   ]);
   grupo("Diagnóstico e execução", [
-    ["Relação de peças trocadas", o.pecas_a_trocar],
+    ["Relação de peças", o.pecas_a_trocar],
     ["Detalhes específicos do serviço", o.detalhes_especialidade],
     ["Diagnóstico técnico", o.diagnostico],
     ["Códigos de falha / testes", o.codigos_falha],
@@ -75,8 +79,9 @@ export function camposFichaComplementar(o: OrdemServico) {
       "Checklist de conferência",
       checklist.map(([item, marcado]) => [item, marcado ? "Conferido" : "Não marcado"]),
     );
-  grupo("Observações internas - uso da oficina", [
-    ["Anotações internas", o.observacoes_internas],
-  ]);
+  if (incluirInternas)
+    grupo("Observações internas - uso da oficina", [
+      ["Anotações internas", o.observacoes_internas],
+    ]);
   return grupos;
 }

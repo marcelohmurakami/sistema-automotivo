@@ -20,6 +20,7 @@ import { consultasQualidade } from "../lib/atualizarQualidade";
 import { atualizarConsultas } from "../lib/atualizarConsultas";
 import { novoId } from "../lib/uuid.ts";
 import { imprimirNotaAtendimento } from "../services/impressaoAtendimento";
+import { ImprimirLaudoOS } from "./ordens-servico/ImprimirLaudoOS";
 import { OcorrenciaHistorico } from "./OcorrenciaHistorico";
 import type { EventoGestao } from "../services/gestao";
 import { CobrancaDiagnostico } from "./CobrancaDiagnostico";
@@ -281,6 +282,7 @@ export function DetalhesAtendimento({
                 </p>
               </div>
               <div className="atendimento-acoes-documento">
+                <ImprimirLaudoOS key={`laudo-${id}`} id={id} tipo="atendimento" />
                 {acesso.permite("service_media") && (
                   <button
                     type="button"
