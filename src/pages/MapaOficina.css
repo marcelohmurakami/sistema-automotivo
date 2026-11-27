@@ -41,11 +41,76 @@
   }
 }
 .cartao-veiculo-conteudo {
+  position: relative;
   display: block;
   width: 100%;
   text-align: left;
   color: inherit;
   border-radius: 6px;
+}
+/* O card continua abrindo a ficha; os atalhos são botões irmãos, sem botões aninhados. */
+.mapa-real .linha-veiculo {
+  position: relative;
+}
+.mapa-real .mapa-abrir-os {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mapa-real .mapa-atalho {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  color: inherit;
+}
+.mapa-real .mapa-abrir-os:focus-visible,
+.mapa-real .mapa-atalho:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 3px;
+}
+.mapa-real .mapa-atalho:hover {
+  filter: brightness(1.15);
+}
+.mapa-real .mapa-editar-entrega {
+  display: flex;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  text-align: left;
+  min-width: 0;
+  flex: 1;
+}
+.mapa-real .mapa-editar-entrega .entrega-indicador {
+  width: 100%;
+}
+.mapa-real .icone-veiculo .mapa-atalho {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--ui-borda);
+  border-radius: 10px;
+  background: var(--ui-fundo);
+}
+.mapa-edicao-aviso {
+  font-size: 13px;
+  color: var(--ui-suave);
+  margin: 0 0 12px;
+}
+@media (max-width: 700px) {
+  .mapa-real .linha-veiculo > .mapa-editar-entrega {
+    grid-column: 1 / -1;
+  }
 }
 .mapa-real .cliente-cartao {
   font-size: 14px;

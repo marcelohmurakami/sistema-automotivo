@@ -1,6 +1,7 @@
 import { IconeTipoServico } from "../components/TipoServico";
 import { BuscaOperacao } from "../components/BuscaOperacao";
-import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import type { EdicaoMapa } from "../components/EdicaoRapidaMapa";
 import { IndicadorEntrega, LegendaEntrega } from "../components/PrazoEntrega";
 import { useAgora } from "../lib/useAgora";
 import {
@@ -58,6 +59,57 @@ import { useAcesso } from "../auth/contexto";
 import { erroPublico } from "../lib/supabase";
 import "./MapaOficina.css";
 import type { OrdemNoMapa, VeiculoMapa as Veiculo } from "../lib/mapaOficina";
+
+const EdicaoRapidaMapa = lazy(() =>
+  import("../components/EdicaoRapidaMapa").then((m) => ({
+    default: m.EdicaoRapidaMapa,
+  })),
+);
+type EditarCard = (edicao: EdicaoMapa) => void;
+
+function IconeEditavelMapa({
+  veiculo,
+  editar,
+}: {
+  veiculo: Veiculo;
+  editar?: EditarCard;
+}) {
+  return editar ? (
+    <button
+      type="button"
+      className="mapa-atalho tipo-servico-selo"
+      aria-label={`Alterar ícone da OS ${veiculo.id}`}
+      title="Alterar ícone"
+      onClick={() => editar({ campo: "tipo", veiculo })}
+    >
+      <IconeTipoServico tipo={veiculo.tipoServico} />
+    </button>
+  ) : (
+    <IconeTipoServico tipo={veiculo.tipoServico} />
+  );
+}
+
+function EntregaEditavelMapa({
+  veiculo,
+  editar,
+}: {
+  veiculo: Veiculo;
+  editar?: EditarCard;
+}) {
+  return editar ? (
+    <button
+      type="button"
+      className="mapa-atalho mapa-editar-entrega"
+      aria-label={`Alterar entrega da OS ${veiculo.id}: ${veiculo.prazoEntrega.data}`}
+      title="Alterar data e horário da entrega"
+      onClick={() => editar({ campo: "entrega", veiculo })}
+    >
+      <IndicadorEntrega prazo={veiculo.prazoEntrega} />
+    </button>
+  ) : (
+    <IndicadorEntrega prazo={veiculo.prazoEntrega} />
+  );
+}
 
 function EntradaVeiculo({ veiculo }: { veiculo: Veiculo }) {
   return veiculo.entrada ? (
@@ -296,20 +348,24 @@ const AcoesEtapaMapa = memo(function AcoesEtapaMapa({ veiculo }: { veiculo: Veic
 const CartaoVeiculo = memo(function CartaoVeiculo({
   veiculo,
   abrir,
+  editar,
 }: {
   veiculo: Veiculo;
   abrir: (veiculo: Veiculo) => void;
+  editar?: EditarCard;
 }) {
   return (
     <article
       className={`cartao-veiculo ${veiculo.etapa === "pronto" ? "cartao-pronto" : ""}`}
       data-prazo={veiculo.prazoEntrega.tipo}
     >
-      <button
-        className="cartao-veiculo-conteudo"
-        onClick={() => abrir(veiculo)}
-        aria-label={`Ver ${veiculo.modelo}, placa ${veiculo.placa}, OS ${veiculo.id}${veiculo.entrada ? `, entrada em ${veiculo.entradaTexto}` : ""}, ${veiculo.prazoEntrega.rotulo}, ${veiculo.prazoEntrega.data}`}
-      >
+      <div className="cartao-veiculo-conteudo">
+        <button
+          type="button"
+          className="mapa-abrir-os"
+          onClick={() => abrir(veiculo)}
+          aria-label={`Ver ${veiculo.modelo}, placa ${veiculo.placa}, OS ${veiculo.id}${veiculo.entrada ? `, entrada em ${veiculo.entradaTexto}` : ""}, ${veiculo.prazoEntrega.rotulo}, ${veiculo.prazoEntrega.data}`}
+        />
         <span className={`mapa-etapa-cartao etiqueta-etapa ${veiculo.etapa}`}>
           {etapas.find((e) => e.id === veiculo.etapa)?.nome}
         </span>
@@ -326,7 +382,7 @@ const CartaoVeiculo = memo(function CartaoVeiculo({
               </span>
             </div>
           </div>
-          <IconeTipoServico tipo={veiculo.tipoServico} />
+          <IconeEditavelMapa veiculo={veiculo} editar={editar} />
         </div>
         <p className="cliente-cartao">
           <UserRound size={16} aria-hidden="true" />
@@ -344,7 +400,7 @@ const CartaoVeiculo = memo(function CartaoVeiculo({
           </div>
         )}
         <div className="cartao-rodape">
-          <IndicadorEntrega prazo={veiculo.prazoEntrega} />
+          <EntregaEditavelMapa veiculo={veiculo} editar={editar} />
           <span
             className={`avatar-tecnico ${veiculo.cor}`}
             title={`Responsável: ${veiculo.tecnico}`}
@@ -352,7 +408,7 @@ const CartaoVeiculo = memo(function CartaoVeiculo({
             {veiculo.iniciais}
           </span>
         </div>
-      </button>
+      </div>
       <AcoesEtapaMapa veiculo={veiculo} />
     </article>
   );
@@ -361,21 +417,25 @@ const CartaoVeiculo = memo(function CartaoVeiculo({
 const LinhaVeiculo = memo(function LinhaVeiculo({
   veiculo: v,
   abrir,
+  editar,
 }: {
   veiculo: Veiculo;
   abrir: (veiculo: Veiculo) => void;
+  editar?: EditarCard;
 }) {
   return (
     <article className="mapa-item-lista">
-      <button
-        onClick={() => abrir(v)}
-        className="linha-veiculo"
-        data-prazo={v.prazoEntrega.tipo}
-      >
+      <div className="linha-veiculo" data-prazo={v.prazoEntrega.tipo}>
         <span className="icone-veiculo">
-          <IconeTipoServico tipo={v.tipoServico} />
+          <IconeEditavelMapa veiculo={v} editar={editar} />
         </span>
         <span>
+          <button
+            type="button"
+            className="mapa-abrir-os"
+            onClick={() => abrir(v)}
+            aria-label={`Ver ${v.modelo}, OS ${v.id}, ${v.cliente}`}
+          />
           <strong>{v.modelo}</strong>
           <small>
             OS #{v.id} · {v.cliente}
@@ -388,9 +448,9 @@ const LinhaVeiculo = memo(function LinhaVeiculo({
         <span className={`etiqueta-etapa ${v.etapa}`}>
           {etapas.find((e) => e.id === v.etapa)?.nome}
         </span>
-        <IndicadorEntrega prazo={v.prazoEntrega} />
+        <EntregaEditavelMapa veiculo={v} editar={editar} />
         <ChevronRight size={17} />
-      </button>
+      </div>
       <AcoesEtapaMapa veiculo={v} />
     </article>
   );
@@ -406,6 +466,13 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
   const agora = useAgora();
   const acesso = useAcesso(),
     navegar = useNavigate();
+  const [edicao, setEdicao] = useState<EdicaoMapa | null>(null);
+  const [avisoEdicao, setAvisoEdicao] = useState("");
+  const editarCard = useCallback((valor: EdicaoMapa) => {
+    setAvisoEdicao("");
+    setEdicao(valor);
+  }, []);
+  const editar = acesso.permite("work_orders") ? editarCard : undefined;
   const consulta = useQuery({
     queryKey: ["mapa-oficina", acesso.demo, acesso.oficina!.id],
     queryFn: ({ signal }) =>
@@ -541,6 +608,11 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
         </p>
       )}
       {consulta.isPending && <p role="status">Buscando veículos e pendências…</p>}
+      {avisoEdicao && (
+        <p role="status" className="mapa-edicao-aviso">
+          {avisoEdicao}
+        </p>
+      )}
       {consulta.data && (
         <>
           <section className="mapa-visao-rapida" aria-label="Resumo da oficina">
@@ -717,7 +789,12 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
                     </div>
                     <div className="coluna-cartoes">
                       {(porEtapa.get(etapa.id) ?? []).map((v) => (
-                        <CartaoVeiculo key={v.osId} veiculo={v} abrir={abrirVeiculo} />
+                        <CartaoVeiculo
+                          key={v.osId}
+                          veiculo={v}
+                          abrir={abrirVeiculo}
+                          editar={editar}
+                        />
                       ))}
                       {!porEtapa.has(etapa.id) && (
                         <div className="etapa-vazia">
@@ -740,13 +817,40 @@ function ConteudoMapaOficina({ chaveOrdenacao }: { chaveOrdenacao: string }) {
                 </div>
                 <div className="lista-veiculos">
                   {listaOrdenada.map((v) => (
-                    <LinhaVeiculo key={v.osId} veiculo={v} abrir={abrirVeiculo} />
+                    <LinhaVeiculo
+                      key={v.osId}
+                      veiculo={v}
+                      abrir={abrirVeiculo}
+                      editar={editar}
+                    />
                   ))}
                 </div>
               </>
             )}
           </section>
         </>
+      )}
+      {edicao && (
+        <Suspense
+          fallback={
+            <Dialogo
+              aberto
+              fechar={() => setEdicao(null)}
+              titulo={edicao.campo === "tipo" ? "Alterar ícone" : "Alterar entrega"}
+            >
+              <p role="status">Carregando…</p>
+            </Dialogo>
+          }
+        >
+          <EdicaoRapidaMapa
+            edicao={edicao}
+            fechar={() => setEdicao(null)}
+            aoSalvar={(mensagem) => {
+              setEdicao(null);
+              setAvisoEdicao(mensagem);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
