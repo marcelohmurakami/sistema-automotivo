@@ -59,10 +59,16 @@ async function iniciar(width, extra = "") {
 const btn = (name) => p.getByRole("button", { name, exact: true });
 async function conferirSaldoNaEntrega(modo) {
   if (modo === "total") {
-    await p
-      .getByText("Conferindo o pagamento já registrado…", { exact: true })
-      .waitFor({ state: "hidden" });
-    await pergunta().waitFor({ state: "hidden" });
+    await pergunta()
+      .getByText("Tudo pago. O pagamento já está registrado no financeiro.", {
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(
+      await pergunta().getByRole("button", { name: "Já recebi", exact: false }).count(),
+      0,
+    );
+    await pergunta().getByRole("button", { name: "Continuar", exact: true }).click();
     return;
   }
   await pergunta().getByRole("button", { name: "Já recebi", exact: false }).waitFor();

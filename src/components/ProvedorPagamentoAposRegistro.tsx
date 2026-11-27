@@ -2,6 +2,7 @@ import { lazy, Suspense, useRef, useState, type ReactNode } from "react";
 import { useAcesso } from "../auth/contexto";
 import { AvisoOSPronta } from "./AvisoOSPronta";
 import { AvisoAtendimentoConcluido } from "./AvisoAtendimentoConcluido";
+import { Dialogo } from "./Dialogo";
 import {
   ContextoPagamentoAposRegistro,
   type RegistroParaPagamento,
@@ -66,12 +67,31 @@ export function ProvedorPagamentoAposRegistro({ children }: { children: ReactNod
       <AvisoOSPronta pausado={!!registro} />
       <AvisoAtendimentoConcluido key={acesso.oficina?.id} pausado={!!registro} />
       {registro && permitido && etapa === "pagamento" && (
-        <Suspense fallback={<p role="status">Preparando opções de pagamento…</p>}>
+        <Suspense
+          fallback={
+            <Dialogo
+              aberto
+              fechar={fecharPagamento}
+              titulo={
+                registro.tipo === "compra"
+                  ? "Como ficou o pagamento da compra?"
+                  : "Como ficou o pagamento da OS?"
+              }
+              classe="dialogo-pagamento-registro"
+            >
+              <p role="status">Preparando opções de pagamento…</p>
+            </Dialogo>
+          }
+        >
           <PerguntaPagamento
             key={`${registro.tipo}:${registro.id}`}
             registro={registro}
             continuacao={solicitacao?.continuacao}
             fechar={fecharPagamento}
+            consultarDocumento={() => {
+              finalizada.current = true;
+              setSolicitacao(null);
+            }}
           />
         </Suspense>
       )}

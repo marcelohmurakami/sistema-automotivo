@@ -1,8 +1,9 @@
 import { dinheiro } from "../lib/formatacao";
 import { umMesDepois } from "../lib/vencimentoPagamento";
 import { hoje } from "../services/financeiro";
-import { useEffect, useState } from "react";
-import { pagamentoDefinidoNaEntrega } from "../lib/decisaoPagamentoEntrega";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { situacaoPagamentoRegistro } from "../lib/decisaoPagamentoEntrega";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, CalendarClock, Wallet, Coins } from "lucide-react";
 import { useAcesso } from "../auth/contexto";
@@ -24,10 +25,12 @@ export function PerguntaPagamento({
   registro,
   fechar,
   continuacao,
+  consultarDocumento,
 }: {
   registro: RegistroParaPagamento;
   fechar: () => void;
   continuacao?: ContinuacaoPagamento;
+  consultarDocumento?: () => void;
 }) {
   const a = useAcesso(),
     oficina = a.oficina!.id;
@@ -70,31 +73,20 @@ export function PerguntaPagamento({
   const dados = q.data;
   const pago = dados?.titulo?.baixado_centavos ?? 0;
   const restante = Math.max(0, (dados?.total ?? 0) - pago);
-  const indisponivel = dados?.cancelado || dados?.titulo?.cancelado_em;
+  const situacao = dados ? situacaoPagamentoRegistro(dados) : undefined;
+  const indisponivel = situacao === "cancelado";
   const conferirEntrega = registro.contexto === "entrega";
   const vencimentoCombinado = dados?.titulo?.pagamento_combinado
     ? dados.titulo.vencimento
     : undefined;
   const dataCombinada = vencimentoCombinado?.split("-").reverse().join("/");
   const conferindo = conferirEntrega && !concluido && !acao && q.isFetching;
-  // Espera uma consulta atual, inclusive depois de recarregar ou trocar de aparelho.
-  // Saldo pendente precisa ser conferido, mesmo com sinal ou prazo combinado.
-  const dispensar =
-    conferirEntrega &&
-    !concluido &&
-    !acao &&
-    !q.isFetching &&
-    !q.isError &&
-    !!dados &&
-    pagamentoDefinidoNaEntrega(dados);
-  useEffect(() => {
-    if (dispensar) fechar();
-  }, [dispensar, fechar]);
+  // A janela permanece visível durante a consulta e exige uma ação explícita.
+  // Uma OS sem preço não equivale a uma OS paga, nem deve desaparecer em silêncio.
   return (
     <>
-      {conferindo && <p role="status">Conferindo o pagamento já registrado…</p>}
       <Dialogo
-        aberto={!acao && !conferindo && !dispensar}
+        aberto={!acao}
         fechar={fechar}
         titulo={
           concluido
@@ -113,7 +105,7 @@ export function PerguntaPagamento({
               {continuacao?.rotulo ?? "Concluir"}
             </button>
           </div>
-        ) : q.isPending ? (
+        ) : q.isPending || conferindo ? (
           <p role="status">Consultando o pagamento…</p>
         ) : q.isError ? (
           <div role="alert">
@@ -131,11 +123,32 @@ export function PerguntaPagamento({
               <p className="pagamento-registro-descricao">{dados.descricao}</p>
               {indisponivel ? (
                 <p>Este registro foi cancelado ou arquivado. Consulte o financeiro.</p>
-              ) : restante <= 0 ? (
+              ) : situacao === "sem_valor" ? (
+                <div className="pagamento-registro-saldo" role="status">
+                  <strong>
+                    {receber ? "OS sem valor para receber" : "Compra sem valor a pagar"}
+                  </strong>
+                  <p>
+                    O total está em R$ 0,00. Confira os itens e os valores antes de
+                    registrar o pagamento.
+                  </p>
+                  {receber && consultarDocumento && (
+                    <Link
+                      className="botao-secundario"
+                      to={
+                        registro.tipo === "os"
+                          ? `/ordens-servico?os=${registro.id}`
+                          : `/atendimentos?atendimento=${registro.id}`
+                      }
+                      onClick={consultarDocumento}
+                    >
+                      Consultar OS
+                    </Link>
+                  )}
+                </div>
+              ) : situacao === "pago" ? (
                 <p role="status">
-                  {dados.total <= 0
-                    ? "Não há valor a registrar."
-                    : "Tudo pago. O pagamento já está registrado no financeiro."}
+                  Tudo pago. O pagamento já está registrado no financeiro.
                 </p>
               ) : (
                 <>
@@ -185,7 +198,7 @@ export function PerguntaPagamento({
                     (conferirEntrega && dataCombinada
                       ? `Manter pagamento para ${dataCombinada}`
                       : "Agora não"))
-                  : (continuacao?.rotulo ?? "Fechar")}
+                  : (continuacao?.rotulo ?? (conferirEntrega ? "Continuar" : "Fechar"))}
               </button>
             </>
           )
