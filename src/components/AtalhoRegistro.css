@@ -1,0 +1,68 @@
+.atalho-registro {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 44px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.atalho-registro:hover:not(:disabled) {
+  background: var(--ui-ativo);
+  border-color: var(--ui-borda);
+}
+.atalho-registro:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 2px;
+}
+.atalho-registro:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.atalho-registro .tipo-servico-selo {
+  justify-content: center;
+}
+.atalho-registro-estatico {
+  display: inline-flex;
+  min-width: 0;
+}
+.situacao-rapida-opcoes {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.situacao-rapida-opcoes button {
+  justify-content: flex-start;
+  min-height: 44px;
+}
+.lista-registro-identificacao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.lista-registro-identificacao > .atalho-registro {
+  flex-shrink: 0;
+  min-width: 44px;
+}
+.lista-registro-abrir {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  min-width: 0;
+  cursor: pointer;
+}
+.lista-registro-abrir:focus-visible {
+  outline: 2px solid var(--ui-texto);
+  outline-offset: 4px;
+  border-radius: 4px;
+}

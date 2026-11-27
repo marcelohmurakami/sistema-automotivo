@@ -134,9 +134,24 @@
   color: var(--ui-suave);
   background: var(--ui-fundo);
 }
-.os-lista-identificacao > strong {
+.os-lista-identificacao > strong,
+.os-lista-identificacao > .os-lista-nome {
   grid-column: 2;
   grid-row: 1;
+}
+.linha-os-interativa {
+  cursor: default;
+}
+.linha-os-interativa .os-lista-numero,
+.linha-os-interativa .os-lista-seta {
+  min-height: 44px;
+}
+.linha-os-interativa .os-lista-identificacao > .atalho-registro {
+  width: 44px;
+  height: 44px;
+}
+.linha-os-interativa .os-lista-identificacao {
+  grid-template-columns: 44px minmax(0, 1fr);
 }
 .os-lista-identificacao > small {
   grid-column: 2;

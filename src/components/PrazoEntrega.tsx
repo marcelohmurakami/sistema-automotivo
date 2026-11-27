@@ -44,10 +44,12 @@ export function CampoEntregaPrometida({
   inicial,
   situacao = "open",
   alterar,
+  ajuda = "Opcional · Horário de São Paulo. Aparece no mapa e na lista de OS.",
 }: {
   inicial?: string | null;
   situacao?: string;
   alterar?: (iso: string | null) => void;
+  ajuda?: string;
 }) {
   const [valor, setValor] = useState(() => entregaParaCampo(inicial));
   const id = useId();
@@ -89,9 +91,7 @@ export function CampoEntregaPrometida({
           }
         }}
       />
-      <small id={id + "-ajuda"}>
-        Opcional · Horário de São Paulo. Aparece no mapa e na lista de OS.
-      </small>
+      <small id={id + "-ajuda"}>{ajuda}</small>
       {valor && !erro && (
         <p className="entrega-previa" data-prazo={prazo.tipo}>
           {prazo.rotulo} · {prazo.data}

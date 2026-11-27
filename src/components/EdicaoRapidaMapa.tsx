@@ -20,7 +20,10 @@ import { CampoEntregaPrometida } from "./PrazoEntrega";
 import { Dialogo } from "./Dialogo";
 import "./EdicaoRapidaMapa.css";
 
-export type EdicaoMapa = { campo: "tipo" | "entrega"; veiculo: VeiculoMapa };
+export type EdicaoMapa = {
+  campo: "tipo" | "entrega";
+  veiculo: Pick<VeiculoMapa, "id" | "osId" | "modelo" | "cliente">;
+};
 
 export function EdicaoRapidaMapa({
   edicao,

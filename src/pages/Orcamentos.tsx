@@ -17,6 +17,16 @@ import { CobrancaDiagnostico } from "../components/CobrancaDiagnostico";
 import { abatimentoDiagnostico } from "../lib/diagnosticoOrcamento";
 import { FiltrosSituacao } from "../components/FiltrosSituacao";
 import { AcaoOrcamento } from "../components/AcaoOrcamento";
+import { AtalhoRegistro } from "../components/AtalhoRegistro";
+import { IconeTipoServico } from "../components/TipoServico";
+import { IndicadorEntrega } from "../components/PrazoEntrega";
+import { classificarEntrega } from "../lib/entregaPrometida";
+import { useAgora } from "../lib/useAgora";
+import type { EdicaoListaOrcamento } from "../components/orcamentos/EdicaoRapidaOrcamento";
+const EdicaoRapidaOrcamento = componenteSobDemanda(async () => ({
+  default: (await import("../components/orcamentos/EdicaoRapidaOrcamento"))
+    .EdicaoRapidaOrcamento,
+}));
 
 import { dinheiro } from "../lib/formatacao";
 import { useBuscaDebounced } from "../lib/useBuscaDebounced";
@@ -73,6 +83,8 @@ import {
 } from "../services/orcamentos";
 
 export function Orcamentos() {
+  const agora = useAgora();
+  const [atalho, setAtalho] = useState<EdicaoListaOrcamento | null>(null);
   const acesso = useAcesso(),
     cache = useQueryClient();
   const oficina = acesso.oficina!.id;
@@ -281,6 +293,17 @@ export function Orcamentos() {
           Novo orçamento
         </button>
       </div>
+      {atalho && (
+        <EdicaoRapidaOrcamento
+          edicao={atalho}
+          fechar={() => setAtalho(null)}
+          aoSalvar={(mensagem) => {
+            setAtalho(null);
+            setAviso(mensagem);
+          }}
+          aprovar={(q) => void aprovar(q)}
+        />
+      )}
       {acesso.demo && (
         <div className="nota-demo">
           Demonstração · Orçamentos, aprovações e OS salvos somente neste navegador.
@@ -434,16 +457,25 @@ export function Orcamentos() {
                 className="linha-proposta"
                 aria-label={`Orçamento #${q.numero}`}
               >
-                <button
-                  className="abrir-proposta"
-                  disabled={ocupado}
-                  onClick={() => void abrir(q.id)}
-                  aria-label={`Abrir orçamento #${q.numero} de ${q.cliente}`}
-                >
-                  <span className="icone-proposta">
-                    <FileText size={22} />
-                  </span>
-                  <div>
+                <div className="abrir-proposta proposta-interativa">
+                  <AtalhoRegistro
+                    nome={`Alterar ícone do orçamento #${q.numero}`}
+                    classe="icone-proposta"
+                    desabilitado={ocupado}
+                    alterar={
+                      !q.arquivado_em
+                        ? () => setAtalho({ campo: "tipo", id: q.id, numero: q.numero })
+                        : undefined
+                    }
+                  >
+                    <IconeTipoServico tipo={q.tipo_servico} />
+                  </AtalhoRegistro>
+                  <button
+                    className="lista-registro-abrir proposta-identificacao"
+                    disabled={ocupado}
+                    onClick={() => void abrir(q.id)}
+                    aria-label={`Abrir orçamento #${q.numero} de ${q.cliente}`}
+                  >
                     <strong>
                       #{String(q.numero).padStart(4, "0")} · {q.cliente}
                     </strong>
@@ -451,11 +483,42 @@ export function Orcamentos() {
                       {q.veiculo}
                       {q.placa ? ` · ${q.placa}` : ""} · Versão {q.numero_versao}
                     </small>
-                  </div>
-                  <span className={`situacao-proposta ${q.situacao}`}>
-                    {q.arquivado_em ? "Excluído" : rotulosSituacao[q.situacao]}
-                  </span>
-                  <div>
+                  </button>
+                  <AtalhoRegistro
+                    classe="proposta-situacao-atalho"
+                    nome={`Alterar situação do orçamento #${q.numero}`}
+                    desabilitado={ocupado}
+                    alterar={
+                      !q.arquivado_em
+                        ? () =>
+                            setAtalho({ campo: "situacao", id: q.id, numero: q.numero })
+                        : undefined
+                    }
+                  >
+                    <span className={`situacao-proposta ${q.situacao}`}>
+                      {q.arquivado_em ? "Excluído" : rotulosSituacao[q.situacao]}
+                    </span>
+                  </AtalhoRegistro>
+                  <AtalhoRegistro
+                    classe="proposta-entrega-atalho"
+                    nome={`Alterar entrega do orçamento #${q.numero}`}
+                    desabilitado={ocupado}
+                    alterar={
+                      !q.arquivado_em
+                        ? () =>
+                            setAtalho({ campo: "entrega", id: q.id, numero: q.numero })
+                        : undefined
+                    }
+                  >
+                    <IndicadorEntrega
+                      prazo={classificarEntrega(
+                        q.entrega_prevista_em,
+                        q.situacao === "cancelled" ? "cancelled" : "open",
+                        agora,
+                      )}
+                    />
+                  </AtalhoRegistro>
+                  <div className="proposta-total-lista">
                     <strong>
                       {dinheiro(q.total_aprovado_centavos ?? q.total_centavos)}
                     </strong>
@@ -466,8 +529,15 @@ export function Orcamentos() {
                         </small>
                       )}
                   </div>
-                  <ChevronRight size={18} />
-                </button>
+                  <button
+                    className="lista-registro-abrir proposta-seta"
+                    disabled={ocupado}
+                    onClick={() => void abrir(q.id)}
+                    aria-label={`Ver detalhes do orçamento #${q.numero}`}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
                 <div className="acoes-linha-proposta">
                   <AcaoOrcamento
                     proposta={q}

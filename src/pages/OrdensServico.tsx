@@ -45,6 +45,15 @@ import { dataServicoDoCampo } from "../lib/dataServico";
 import { useBuscaDebounced } from "../lib/useBuscaDebounced";
 import { DesistenciaAtendimento } from "../components/DesistenciaAtendimento";
 import { IconeTipoServico } from "../components/TipoServico";
+import { AtalhoRegistro } from "../components/AtalhoRegistro";
+import type { EdicaoMapa } from "../components/EdicaoRapidaMapa";
+const EdicaoRapidaMapa = componenteSobDemanda(async () => ({
+  default: (await import("../components/EdicaoRapidaMapa")).EdicaoRapidaMapa,
+}));
+const SituacaoRapidaOS = componenteSobDemanda(async () => ({
+  default: (await import("../components/ordens-servico/SituacaoRapidaOS"))
+    .SituacaoRapidaOS,
+}));
 import { SecaoRecolhivel } from "../components/SecaoRecolhivel";
 import { EtapasExecucao } from "../components/EtapasExecucao";
 
@@ -237,6 +246,8 @@ export function OrdensServico() {
     [aviso, setAviso] = useState("");
   const [novaSituacao, setNovaSituacao] = useState(""),
     [motivo, setMotivo] = useState("");
+  const [atalho, setAtalho] = useState<EdicaoMapa | null>(null);
+  const [situacaoRapida, setSituacaoRapida] = useState<OrdemServico | null>(null);
   const [exclusao, setExclusao] = useState<OrdemServico | null>(null),
     [motivoExclusao, setMotivoExclusao] = useState("");
   // Um atalho pode abrir outra OS sem sair desta página.
@@ -571,28 +582,57 @@ export function OrdensServico() {
             {lista.data.itens.map((w) => {
               const dataServico = dataServicoDoCampo(w);
               const dataServicoFormatada = dataDocumento(dataServico, false);
+              const editavel =
+                !w.arquivado_em && !["delivered", "cancelled"].includes(w.situacao);
+              const editarCampo = (campo: EdicaoMapa["campo"]) =>
+                setAtalho({
+                  campo,
+                  veiculo: {
+                    id: w.numero,
+                    osId: w.id,
+                    modelo: w.dados_veiculo.modelo,
+                    cliente: w.dados_cliente.nome,
+                  },
+                });
+              const abrirRegistro = () => {
+                setId(w.id);
+                setAba("atendimento");
+                setErro("");
+                setAviso("");
+              };
               return (
                 <article className="registro-os" key={w.id}>
-                  <button
-                    className="linha-ordem-servico"
-                    aria-label={`Abrir OS #${w.numero} de ${w.dados_cliente.nome}, data do serviço ${dataServicoFormatada}`}
+                  <div
+                    className="linha-ordem-servico linha-os-interativa"
                     data-prazo={
                       classificarEntrega(w.entrega_prevista_em, w.situacao, agora).tipo
                     }
-                    onClick={() => {
-                      setId(w.id);
-                      setAba("atendimento");
-                      setErro("");
-                      setAviso("");
-                    }}
                   >
-                    <span className="os-lista-numero" aria-hidden="true">
+                    <button
+                      type="button"
+                      className="os-lista-numero lista-registro-abrir"
+                      onClick={abrirRegistro}
+                      aria-label={`Abrir OS #${w.numero}`}
+                    >
                       <small>OS</small>
                       <strong>#{String(w.numero).padStart(4, "0")}</strong>
-                    </span>
+                    </button>
                     <span className="os-lista-identificacao">
-                      <IconeTipoServico tipo={w.tipo_servico} />{" "}
-                      <strong>{w.dados_veiculo.modelo}</strong>
+                      <AtalhoRegistro
+                        classe="tipo-servico-selo"
+                        nome={`Alterar ícone da OS #${w.numero}`}
+                        alterar={editavel ? () => editarCampo("tipo") : undefined}
+                      >
+                        <IconeTipoServico tipo={w.tipo_servico} />
+                      </AtalhoRegistro>
+                      <button
+                        type="button"
+                        className="lista-registro-abrir os-lista-nome"
+                        onClick={abrirRegistro}
+                        aria-label={`Abrir OS #${w.numero} de ${w.dados_cliente.nome}`}
+                      >
+                        <strong>{w.dados_veiculo.modelo}</strong>
+                      </button>
                       <small>
                         {w.dados_cliente.nome}
                         {acesso.oficina?.especialidade === "retifica"
@@ -612,9 +652,14 @@ export function OrdensServico() {
                       </span>
                     </span>
                     <span className="os-lista-situacao">
-                      <span className={"os-status " + w.situacao}>
-                        {w.arquivado_em ? "Excluída" : situacoesOS[w.situacao]}
-                      </span>
+                      <AtalhoRegistro
+                        nome={`Alterar situação da OS #${w.numero}`}
+                        alterar={editavel ? () => setSituacaoRapida(w) : undefined}
+                      >
+                        <span className={"os-status " + w.situacao}>
+                          {w.arquivado_em ? "Excluída" : situacoesOS[w.situacao]}
+                        </span>
+                      </AtalhoRegistro>
                       {!w.arquivado_em &&
                         (w.paradas_abertas ??
                           w.paradas?.filter((p) => !p.encerrado_em).length) > 0 && (
@@ -622,23 +667,35 @@ export function OrdensServico() {
                         )}
                     </span>
                     <span className="os-lista-entrega">
-                      <IndicadorEntrega
-                        prazo={classificarEntrega(
-                          w.entrega_prevista_em,
-                          w.situacao,
-                          agora,
-                        )}
-                      />
+                      <AtalhoRegistro
+                        nome={`Alterar entrega da OS #${w.numero}`}
+                        alterar={editavel ? () => editarCampo("entrega") : undefined}
+                      >
+                        <IndicadorEntrega
+                          prazo={classificarEntrega(
+                            w.entrega_prevista_em,
+                            w.situacao,
+                            agora,
+                          )}
+                        />
+                      </AtalhoRegistro>
                     </span>
                     <strong className="os-lista-total">
                       {dinheiro(w.total_centavos)}
                     </strong>
-                    <ChevronRight
-                      className="os-lista-seta"
-                      size={18}
-                      aria-hidden="true"
-                    />
-                  </button>
+                    <button
+                      type="button"
+                      className="lista-registro-abrir os-lista-seta"
+                      onClick={abrirRegistro}
+                      aria-label={`Ver detalhes da OS #${w.numero}`}
+                    >
+                      <ChevronRight
+                        className="os-lista-seta"
+                        size={18}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
                   <div className="acoes-linha-os">
                     <Link
                       className="botao-icone"
@@ -1578,6 +1635,27 @@ export function OrdensServico() {
           </>
         )}
       </Dialogo>
+      {atalho && (
+        <EdicaoRapidaMapa
+          edicao={atalho}
+          fechar={() => setAtalho(null)}
+          aoSalvar={(mensagem) => {
+            setAtalho(null);
+            setAviso(mensagem);
+          }}
+        />
+      )}
+      {situacaoRapida && (
+        <SituacaoRapidaOS
+          id={situacaoRapida.id}
+          numero={situacaoRapida.numero}
+          fechar={() => setSituacaoRapida(null)}
+          aoSalvar={(mensagem) => {
+            setSituacaoRapida(null);
+            setAviso(mensagem);
+          }}
+        />
+      )}
       <Dialogo
         aberto={!!novaSituacao}
         fechar={() => !ocupado && setNovaSituacao("")}

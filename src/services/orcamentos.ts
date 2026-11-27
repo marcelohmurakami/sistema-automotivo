@@ -28,6 +28,7 @@ export type ItemProposta = {
   total_item_centavos?: number;
 };
 export type VersaoProposta = {
+  entrega_prevista_em?: string | null;
   taxa_diagnostico?: TaxaDiagnostico;
   data_servico?: string | null;
   ficha_especialidade?: FichaEspecialidade | null;
@@ -113,6 +114,8 @@ export type Proposta = {
   adicional_aplicado_em?: string | null;
 };
 export type ResumoProposta = {
+  tipo_servico?: string | null;
+  entrega_prevista_em?: string | null;
   ordem_servico_id?: string | null;
   adicional_os_id?: string | null;
   arquivado_em?: string | null;
@@ -415,6 +418,8 @@ export async function listarPropostas(
       total_centavos: q.versao.total_centavos,
       total_aprovado_centavos: q.aprovacao?.total_aprovado_centavos,
       numero_versao: q.versao.numero_versao,
+      tipo_servico: q.versao.tipo_servico,
+      entrega_prevista_em: q.versao.entrega_prevista_em,
       expira_em: q.versao.expira_em,
       criado_em: "",
     }))
@@ -505,6 +510,7 @@ export async function salvarProposta(
   if (dados.desconto_centavos > subtotal)
     throw new Error("Desconto maior que o subtotal.");
   const versao: VersaoProposta = {
+    entrega_prevista_em: anterior?.versao.entrega_prevista_em,
     data_servico:
       dados.data_servico === undefined
         ? anterior?.versao.data_servico
@@ -762,6 +768,7 @@ export async function acaoProposta(
             }
           : {}),
         tipo_servico: atual.versao.tipo_servico,
+        entrega_prevista_em: atual.versao.entrega_prevista_em,
         detalhes_especialidade: atual.versao.detalhes_especialidade,
         ficha_especialidade: atual.versao.ficha_especialidade,
         queixa_cliente: atual.versao.queixa_cliente,

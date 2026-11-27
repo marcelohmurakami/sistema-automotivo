@@ -1,4 +1,13 @@
 import { componenteSobDemanda } from "../lib/componenteSobDemanda";
+import { AtalhoRegistro } from "../components/AtalhoRegistro";
+import { IconeTipoServico } from "../components/TipoServico";
+import { IndicadorEntrega } from "../components/PrazoEntrega";
+import { classificarEntrega } from "../lib/entregaPrometida";
+import { useAgora } from "../lib/useAgora";
+const EdicaoRapidaAtendimento = componenteSobDemanda(async () => ({
+  default: (await import("../components/servicos/EdicaoRapidaAtendimento"))
+    .EdicaoRapidaAtendimento,
+}));
 const DetalhesAtendimento = componenteSobDemanda(async () => ({
   default: (await import("../components/DetalhesAtendimento")).DetalhesAtendimento,
 }));
@@ -77,6 +86,11 @@ import {
 import type { Editor } from "../components/servicos/tipos";
 
 export function Servicos({ tela }: { tela: string }) {
+  const agora = useAgora();
+  const [atalho, setAtalho] = useState<{
+    id: string;
+    campo: "tipo" | "entrega" | "situacao";
+  } | null>(null);
   const perguntarPagamento = usePagamentoAposRegistro();
   const a = useAcesso(),
     oficina = a.oficina!.id,
@@ -608,37 +622,81 @@ export function Servicos({ tela }: { tela: string }) {
                   const operacional = resumoOperacao(t, hoje, dados.agenda);
                   return (
                     <article className="servico-card" key={t.id}>
-                      <button
-                        className="servico-linha-abrir"
-                        onClick={() => setDetalhe(t.id)}
-                      >
-                        <small>
-                          #{t.numero || t.id.slice(0, 8)} · Serviço em{" "}
-                          {(t.data_servico || t.vencimento)
-                            .split("-")
-                            .reverse()
-                            .join("/")}
-                        </small>
-                        <strong>{t.titulo}</strong>
-                        <span>
-                          {nomeCliente(t.cliente_id)} ·{" "}
-                          {objetosPorId.get(t.objeto_id)?.nome}
-                        </span>
-                      </button>
-                      <div className="servico-linha-resumo">
-                        <span className={`servico-status status-${t.situacao}`}>
-                          {rotuloSituacaoDocumento(t, estadosServico[t.situacao])}
-                        </span>
-                        <strong>{dinheiro(t.valor_centavos)}</strong>
-                        {operacional.prazo && (
-                          <small
-                            className={
-                              operacional.atrasados ? "subsetor-atrasado" : undefined
-                            }
-                          >
-                            Prazo: {operacional.prazo.split("-").reverse().join("/")}
+                      <div className="lista-registro-identificacao">
+                        <AtalhoRegistro
+                          nome={`Alterar ícone do atendimento #${t.numero}`}
+                          alterar={
+                            podeOrdens &&
+                            !["concluido", "cancelado"].includes(t.situacao)
+                              ? () => setAtalho({ id: t.id, campo: "tipo" })
+                              : undefined
+                          }
+                        >
+                          <IconeTipoServico tipo={t.dados.tipo_servico} />
+                        </AtalhoRegistro>
+                        <button
+                          className="servico-linha-abrir"
+                          onClick={() => setDetalhe(t.id)}
+                        >
+                          <small>
+                            #{t.numero || t.id.slice(0, 8)} · Serviço em{" "}
+                            {(t.data_servico || t.vencimento)
+                              .split("-")
+                              .reverse()
+                              .join("/")}
                           </small>
-                        )}
+                          <strong>{t.titulo}</strong>
+                          <span>
+                            {nomeCliente(t.cliente_id)} ·{" "}
+                            {objetosPorId.get(t.objeto_id)?.nome}
+                          </span>
+                        </button>
+                      </div>
+                      <div className="servico-linha-resumo">
+                        <AtalhoRegistro
+                          nome={`Alterar situação do atendimento #${t.numero}`}
+                          alterar={
+                            podeOrdens && t.situacao !== "cancelado"
+                              ? () => setAtalho({ id: t.id, campo: "situacao" })
+                              : undefined
+                          }
+                        >
+                          <span className={`servico-status status-${t.situacao}`}>
+                            {rotuloSituacaoDocumento(t, estadosServico[t.situacao])}
+                          </span>
+                        </AtalhoRegistro>
+                        <strong>{dinheiro(t.valor_centavos)}</strong>
+                        <AtalhoRegistro
+                          nome={`Alterar entrega do atendimento #${t.numero}`}
+                          alterar={
+                            podeOrdens &&
+                            !["concluido", "cancelado"].includes(t.situacao)
+                              ? () => setAtalho({ id: t.id, campo: "entrega" })
+                              : undefined
+                          }
+                        >
+                          {operacional.prazo && !t.dados.entrega_prevista_em ? (
+                            <small
+                              className={
+                                operacional.atrasados ? "subsetor-atrasado" : undefined
+                              }
+                            >
+                              Prazo: {operacional.prazo.split("-").reverse().join("/")}
+                            </small>
+                          ) : (
+                            <IndicadorEntrega
+                              prazo={classificarEntrega(
+                                t.dados.entrega_prevista_em,
+                                t.situacao === "cancelado"
+                                  ? "cancelled"
+                                  : t.situacao === "concluido"
+                                    ? "ready"
+                                    : "open",
+                                agora,
+                              )}
+                            />
+                          )}
+                        </AtalhoRegistro>
                         {(operacional.espera ||
                           t.ficha_especialidade?.campos.pendencia) && (
                           <small className="subsetor-pendencia">
@@ -765,6 +823,16 @@ export function Servicos({ tela }: { tela: string }) {
             </>
           ) : null}
         </>
+      )}
+      {atalho && (
+        <EdicaoRapidaAtendimento
+          {...atalho}
+          fechar={() => setAtalho(null)}
+          aoSalvar={(mensagem) => {
+            setAtalho(null);
+            setAviso(mensagem);
+          }}
+        />
       )}
       {!editor && salvar.isError && <p role="alert">{erroPublico(salvar.error)}</p>}
       {(detalhe || atendimentoLink) && !editor && (
