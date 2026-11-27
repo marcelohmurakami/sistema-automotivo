@@ -142,6 +142,7 @@ export function Orcamentos() {
     retry: false,
     refetchInterval: editorAberto || detalhe ? false : 30000,
   });
+  const atualizandoLista = busca !== buscaConsulta || lista.isPlaceholderData;
   const aux = useQuery({
     queryKey: ["auxiliares-orcamento", acesso.demo ? "demo" : acesso.usuario, oficina],
     queryFn: () => auxiliaresOrcamento(acesso.demo, oficina),
@@ -455,7 +456,7 @@ export function Orcamentos() {
             )}
           </div>
         ) : (
-          <div className="lista-propostas">
+          <div className="lista-propostas" aria-busy={atualizandoLista}>
             {lista.data.itens.map((q) => (
               <article
                 key={q.id}
@@ -466,7 +467,7 @@ export function Orcamentos() {
                   <AtalhoRegistro
                     nome={`Alterar ícone do orçamento #${q.numero}`}
                     classe="icone-proposta"
-                    desabilitado={ocupado}
+                    desabilitado={ocupado || atualizandoLista}
                     alterar={
                       !q.arquivado_em
                         ? () => setAtalho({ campo: "tipo", id: q.id, numero: q.numero })
@@ -492,7 +493,7 @@ export function Orcamentos() {
                   <AtalhoRegistro
                     classe="proposta-situacao-atalho"
                     nome={`Alterar situação do orçamento #${q.numero}`}
-                    desabilitado={ocupado}
+                    desabilitado={ocupado || atualizandoLista}
                     alterar={
                       !q.arquivado_em
                         ? () =>
@@ -507,7 +508,7 @@ export function Orcamentos() {
                   <AtalhoRegistro
                     classe="proposta-entrega-atalho"
                     nome={`Alterar entrega do orçamento #${q.numero}`}
-                    desabilitado={ocupado}
+                    desabilitado={ocupado || atualizandoLista}
                     alterar={
                       !q.arquivado_em
                         ? () =>

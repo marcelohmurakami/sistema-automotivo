@@ -271,6 +271,8 @@ export function OrdensServico() {
         : undefined,
     refetchInterval: editor || id ? false : 30000,
   });
+  // O resultado anterior permanece visível, mas pode mudar de posição ao filtrar.
+  const atualizandoLista = busca !== buscaConsulta || lista.isPlaceholderData;
   const detalhe = useQuery({
     queryKey: ["os-detalhe", acesso.demo, oficina, id],
     queryFn: ({ signal }) => consultarOS(acesso.demo, oficina, id!, signal),
@@ -583,7 +585,7 @@ export function OrdensServico() {
             )}
           </div>
         ) : (
-          <div className="lista-ordens-servico">
+          <div className="lista-ordens-servico" aria-busy={atualizandoLista}>
             {lista.data.itens.map((w) => {
               const dataServico = dataServicoDoCampo(w);
               const dataServicoFormatada = dataDocumento(dataServico, false);
@@ -626,6 +628,7 @@ export function OrdensServico() {
                       <AtalhoRegistro
                         classe="tipo-servico-selo"
                         nome={`Alterar ícone da OS #${w.numero}`}
+                        desabilitado={atualizandoLista}
                         alterar={editavel ? () => editarCampo("tipo") : undefined}
                       >
                         <IconeTipoServico tipo={w.tipo_servico} />
@@ -659,6 +662,7 @@ export function OrdensServico() {
                     <span className="os-lista-situacao">
                       <AtalhoRegistro
                         nome={`Alterar situação da OS #${w.numero}`}
+                        desabilitado={atualizandoLista}
                         alterar={editavel ? () => setSituacaoRapida(w) : undefined}
                       >
                         <span className={"os-status " + w.situacao}>
@@ -674,6 +678,7 @@ export function OrdensServico() {
                     <span className="os-lista-entrega">
                       <AtalhoRegistro
                         nome={`Alterar entrega da OS #${w.numero}`}
+                        desabilitado={atualizandoLista}
                         alterar={editavel ? () => editarCampo("entrega") : undefined}
                       >
                         <IndicadorEntrega

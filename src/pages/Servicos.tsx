@@ -165,6 +165,7 @@ export function Servicos({ tela }: { tela: string }) {
     },
     refetchInterval: 60000,
   });
+  const atualizandoLista = busca !== termo || q.isPlaceholderData;
   const resumo = useQuery({
     queryKey: ["servicos", oficina, a.demo, "resumo", subsetor],
     queryFn: ({ signal }) => consultarResumoServicos(oficina, a.demo, subsetor, signal),
@@ -629,7 +630,7 @@ export function Servicos({ tela }: { tela: string }) {
                     }))}
                 />
               </details>
-              <div className="servicos-cards">
+              <div className="servicos-cards" aria-busy={atualizandoLista}>
                 {atendimentos.map((t) => {
                   const operacional = resumoOperacao(t, hoje, dados.agenda);
                   return (
@@ -637,6 +638,7 @@ export function Servicos({ tela }: { tela: string }) {
                       <div className="lista-registro-identificacao">
                         <AtalhoRegistro
                           nome={`Alterar ícone do atendimento #${t.numero}`}
+                          desabilitado={atualizandoLista}
                           alterar={
                             podeOrdens &&
                             !["concluido", "cancelado"].includes(t.situacao)
@@ -667,6 +669,7 @@ export function Servicos({ tela }: { tela: string }) {
                       <div className="servico-linha-resumo">
                         <AtalhoRegistro
                           nome={`Alterar situação do atendimento #${t.numero}`}
+                          desabilitado={atualizandoLista}
                           alterar={
                             podeOrdens && t.situacao !== "cancelado"
                               ? () => setAtalho({ id: t.id, campo: "situacao" })
@@ -680,6 +683,7 @@ export function Servicos({ tela }: { tela: string }) {
                         <strong>{dinheiro(t.valor_centavos)}</strong>
                         <AtalhoRegistro
                           nome={`Alterar entrega do atendimento #${t.numero}`}
+                          desabilitado={atualizandoLista}
                           alterar={
                             podeOrdens &&
                             !["concluido", "cancelado"].includes(t.situacao)
